@@ -81,6 +81,8 @@ class VehicleVariant(BaseModel):
     created_at: str
     updated_at: str
     notes: list[str] = Field(default_factory=list)
+    candidate_raw: dict = Field(default_factory=dict)
+    identity_confidence: str = "unknown"
 
     @model_validator(mode="after")
     def check_years(self):
