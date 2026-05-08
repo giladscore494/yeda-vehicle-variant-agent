@@ -59,7 +59,14 @@ with tabs[1]:
     if not client.has_api_key() and not fm:
         st.warning("GEMINI_API_KEY is missing. Run will report Gemini failure and may fallback to mock based on setting.")
     if st.button("Run Agent"):
-        r = run_single_model(mk, m, seed.year_start if seed else None, seed.year_end if seed else None, market, fm, allow_fallback)
+        try:
+            r = run_single_model(mk, m, seed.year_start if seed else None, seed.year_end if seed else None, market, fm, allow_fallback)
+        except Exception as exc:
+            st.error(f"Run failed: {type(exc).__name__}: {exc}")
+            st.exception(exc)
+            r = None
+        if r is None:
+            st.stop()
         st.subheader("Run result")
         trace = r.get('trace', {})
         st.info(f"Execution mode: {trace.get('execution_mode')}\nGemini attempted: {trace.get('gemini_attempted')}\nGemini model: {trace.get('gemini_model_used')}\nGrounding requested: {trace.get('grounding_requested')}\nGemini error: {trace.get('gemini_error')}")
