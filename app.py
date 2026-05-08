@@ -197,7 +197,7 @@ with tabs[2]:
         st.json(run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=True))
 
     st.subheader("Resume from file")
-    uploaded = st.file_uploader("Upload progress JSON", type=["json"], key="resume_upload")
+    uploaded = st.file_uploader("Import resume package", type=["json"], key="resume_upload")
     overwrite_import = st.checkbox("Overwrite local state/files", value=False)
     confirm_import = st.checkbox("I confirm importing this progress file", value=False)
     if uploaded is not None:
@@ -289,10 +289,10 @@ with tabs[7]:
     if q.get("warnings"):
         st.write({"warnings": q.get("warnings")})
 
-    st.download_button("Download clean final export JSON", json.dumps(final_payload, ensure_ascii=False, indent=2).encode("utf-8"), file_name="combined_vehicle_variants_final_clean.json")
-    st.download_button("Download quality report JSON", json.dumps(final_payload.get("quality_gate", {}), ensure_ascii=False, indent=2).encode("utf-8"), file_name="final_export_quality_report.json")
+    st.download_button("Full accumulated export", json.dumps(final_payload, ensure_ascii=False, indent=2).encode("utf-8"), file_name="combined_vehicle_variants_final_clean.json")
+    st.download_button("Download quality report", json.dumps(final_payload.get("quality_gate", {}), ensure_ascii=False, indent=2).encode("utf-8"), file_name="final_export_quality_report.json")
     resume_pkg = build_resume_package()
-    st.download_button("Download resume package JSON", json.dumps(resume_pkg, ensure_ascii=False, indent=2).encode("utf-8"), file_name="resume_package.json")
+    st.download_button("Resume package export", json.dumps(resume_pkg, ensure_ascii=False, indent=2).encode("utf-8"), file_name="resume_package.json")
     out_dir = get_output_paths()["run_history"].parents[0]
     for name in ["latest_batch_result.json", "batch_state.json", "run_history.json"]:
         path = out_dir / name
