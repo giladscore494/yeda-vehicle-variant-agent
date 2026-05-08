@@ -8,7 +8,7 @@ from storage.json_store import ensure_output_files, load_outputs_summary, get_ou
 from storage.export import export_verified_for_yeda
 from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
-from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean
+from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -209,6 +209,9 @@ with tabs[2]:
 
     if st.button("Run hole repair batch"):
         st.json(run_next_batch(limit=batch_limit_ui, market=market, resume=True))
+
+    if st.button("Clean retryable schema errors"):
+        st.json(cleanup_retryable_schema_errors(market=market))
 
     reset_confirm = st.checkbox("Confirm reset batch state", value=False)
     if st.button("Reset batch state") and reset_confirm:
