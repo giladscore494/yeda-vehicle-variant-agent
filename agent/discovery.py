@@ -1,5 +1,5 @@
 from agent.prompts import build_discovery_prompt
-from tools.gemini_client import GeminiClient, parse_json_from_gemini_text
+from tools.gemini_client import GeminiClient, parse_json_from_gemini_text, salvage_candidate_variants_from_raw
 
 NORMALIZED_KEYS = [
     "year_start", "year_end", "generation", "body_type", "seats",
@@ -61,38 +61,6 @@ def extract_candidate_variants(parsed_json):
     return [], "none", "no candidate list found in known paths", 0
 
 
-def _salvage_candidates_from_raw(raw_text: str):
-    if not raw_text or '"candidate_variants"' not in raw_text:
-        return None
-    try:
-        left = raw_text.split('"candidate_variants"', 1)[1]
-        start = left.find('[')
-        end = left.rfind(']')
-        if start == -1 or end == -1 or end <= start:
-            return None
-        arr = left[start:end+1]
-        decoder = __import__('json').JSONDecoder()
-        idx = 0
-        complete = []
-        while idx < len(arr):
-            while idx < len(arr) and arr[idx] in ' [\n\t,':
-                idx += 1
-            if idx >= len(arr) or arr[idx] == ']':
-                break
-            try:
-                obj, next_idx = decoder.raw_decode(arr, idx)
-                if isinstance(obj, dict):
-                    complete.append(_normalize_candidate(obj))
-                idx = next_idx
-            except Exception:
-                break
-        if complete:
-            return {"candidate_variants": complete, "sources": []}, True
-    except Exception:
-        return None
-    return None
-
-
 def run_discovery(seed, market='IL', model_name=None) -> dict:
     prompt = build_discovery_prompt(seed, market)
     res = GeminiClient().grounded_generate_json(prompt=prompt, model_override=model_name)
@@ -108,11 +76,19 @@ def run_discovery(seed, market='IL', model_name=None) -> dict:
         parse_error = parse_error or fallback_error
     salvage_used = False
     dropped_incomplete = False
+    salvaged_count = 0
+    if bool(res.get('json_salvage_used')):
+        salvage_used = True
+        dropped_incomplete = bool(res.get('dropped_incomplete_candidate', False))
+        if isinstance(payload, dict):
+            salvaged_count = len(payload.get("candidate_variants", []) or [])
     if payload is None and res.get('raw_text'):
-        salvaged = _salvage_candidates_from_raw(res.get('raw_text'))
+        salvaged = salvage_candidate_variants_from_raw(res.get('raw_text'))
         if salvaged:
-            payload, dropped_incomplete = salvaged
+            payload = salvaged
             salvage_used = True
+            dropped_incomplete = bool((salvaged.get("_salvage") or {}).get("dropped_incomplete_candidate", False))
+            salvaged_count = int((salvaged.get("_salvage") or {}).get("salvaged_candidate_count", 0))
 
     if payload is None:
         return {
@@ -124,7 +100,7 @@ def run_discovery(seed, market='IL', model_name=None) -> dict:
                 'error': res.get('error'), 'raw_text': res.get('raw_text'), 'parsed_json': None, 'parse_error': parse_error,
                 'discovery_raw_text_debug_available': bool(res.get('raw_text')), 'discovery_parsed_top_level_keys': [],
                 'candidate_extraction_path': 'none', 'candidate_extraction_warning': 'parse_failed',
-                'raw_candidates_count_before_normalization': 0, 'candidate_variants_count_after_extraction': 0, 'json_salvage_used': salvage_used, 'dropped_incomplete_candidate': dropped_incomplete,
+                'raw_candidates_count_before_normalization': 0, 'candidate_variants_count_after_extraction': 0, 'json_salvage_used': salvage_used, 'dropped_incomplete_candidate': dropped_incomplete, 'salvaged_candidate_count': salvaged_count,
             }
         }
 
@@ -142,5 +118,5 @@ def run_discovery(seed, market='IL', model_name=None) -> dict:
         'parse_error_original': res.get('parse_error_original'), 'repair_attempted': bool(res.get('repair_attempted', False)), 'repair_success': bool(res.get('repair_success', False)), 'repaired_raw_text': res.get('repaired_raw_text'),
         'discovery_raw_text_debug_available': bool(res.get('raw_text')), 'discovery_parsed_top_level_keys': top_level_keys,
         'candidate_extraction_path': extraction_path, 'candidate_extraction_warning': extraction_warning,
-        'raw_candidates_count_before_normalization': raw_count, 'candidate_variants_count_after_extraction': len(extracted), 'json_salvage_used': salvage_used, 'dropped_incomplete_candidate': dropped_incomplete,
+        'raw_candidates_count_before_normalization': raw_count, 'candidate_variants_count_after_extraction': len(extracted), 'json_salvage_used': salvage_used, 'dropped_incomplete_candidate': dropped_incomplete, 'salvaged_candidate_count': salvaged_count,
     }}

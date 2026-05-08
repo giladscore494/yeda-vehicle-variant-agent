@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from agent.discovery import run_discovery
 from agent.prompts import build_discovery_prompt
 from agent.runner import _field_to_verified
-from tools.gemini_client import parse_json_from_gemini_text
+from tools.gemini_client import parse_json_from_gemini_text, salvage_candidate_variants_from_raw
 
 
 def test_valid_compact_json_parses():
@@ -20,14 +20,15 @@ def test_malformed_notes_tail_fails_initial_parse():
     assert err
 
 
-def test_repair_path_triggered_on_malformed_json(monkeypatch):
+def test_salvage_skips_repair_on_malformed_json_with_candidates(monkeypatch):
     def fake_grounded(self, **kwargs):
-        return {"ok": False, "raw_text": '{"candidate_variants":[{"engine":"1.4"}],"sources":[],"notes":', "parsed_json": None, "parse_error": "bad", "repair_attempted": True, "repair_success": True, "repaired_raw_text": '{"candidate_variants":[{"engine":"1.4"}],"sources":[]}', "data": {"candidate_variants": [{"engine": "1.4"}], "sources": []}}
+        return {"ok": True, "raw_text": '{"candidate_variants":[{"engine":"1.4"}],"sources":[],"notes":', "parsed_json": {"candidate_variants": [{"engine": "1.4"}], "sources": [], "_salvage": {"json_salvage_used": True, "dropped_incomplete_candidate": True, "salvaged_candidate_count": 1}}, "parse_error": None, "repair_attempted": False, "repair_success": False, "data": {"candidate_variants": [{"engine": "1.4"}], "sources": []}, "json_salvage_used": True, "dropped_incomplete_candidate": True}
 
     monkeypatch.setattr('agent.discovery.GeminiClient.grounded_generate_json', fake_grounded)
     seed = SimpleNamespace(make='Alfa Romeo', model='Giulietta', year_start=2010, year_end=2020)
     out = run_discovery(seed, market='IL', model_name='m')
-    assert out['gemini_metadata']['repair_attempted'] is True
+    assert out['gemini_metadata']['repair_attempted'] is False
+    assert out['gemini_metadata']['json_salvage_used'] is True
 
 
 def test_salvage_drops_incomplete_last_candidate(monkeypatch):
@@ -41,6 +42,15 @@ def test_salvage_drops_incomplete_last_candidate(monkeypatch):
     out = run_discovery(seed, market='IL', model_name='m')
     assert len(out['data']['candidate_variants']) >= 3
     assert out['gemini_metadata']['json_salvage_used'] is True
+    assert out['gemini_metadata']['dropped_incomplete_candidate'] is True
+
+
+def test_salvage_candidate_variants_from_raw_giulietta_notes_tail():
+    raw = '{"sources":[{"source_id":"src_1"}],"candidate_variants":[{"engine":"1.4"},{"engine":"1.6"},{"engine":"2.0","notes":'
+    salvaged = salvage_candidate_variants_from_raw(raw)
+    assert salvaged is not None
+    assert len(salvaged["candidate_variants"]) == 2
+    assert salvaged["_salvage"]["json_salvage_used"] is True
 
 
 def test_discovery_prompt_is_compact_without_notes_reasons_or_evidence():
