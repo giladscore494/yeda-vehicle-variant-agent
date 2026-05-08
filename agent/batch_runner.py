@@ -32,14 +32,15 @@ def get_ordered_seed_list(market: str = "IL") -> list[dict]:
     return [{"make": s.make, "model": s.model, "year_start": int(s.year_start or 0), "year_end": int(s.year_end or 0), "market": market, "seed_id": build_seed_id(s.make, s.model, int(s.year_start or 0), int(s.year_end or 0), market)} for s in ordered]
 
 
-def seed_to_dict(seed: dict) -> dict:
+def seed_to_dict(seed: dict, default_market: str = "IL") -> dict:
+    market = seed.get("market") or default_market
     return {
         "seed_id": seed["seed_id"],
         "make": seed["make"],
         "model": seed["model"],
         "year_start": seed["year_start"],
         "year_end": seed["year_end"],
-        "market": seed.get("market", "IL"),
+        "market": market,
     }
 
 
@@ -146,8 +147,11 @@ def _refresh_coverage(state: dict, ordered_seeds: list[dict]):
 def _process_seeds(seed_queue: list[dict], state: dict, ordered: list[dict], limit: int, force_refresh=False, use_cache=True, progress_callback: Callable | None = None):
     results = []
     for idx, seed in enumerate(seed_queue[:limit], start=1):
-        market = seed.get("market") or state.get("market") or "IL"
-        seed["market"] = market
+        selected_market = state.get("market")
+        seed["market"] = seed.get("market") or selected_market or "IL"
+        market = seed["market"]
+        if not seed.get("seed_id"):
+            seed["seed_id"] = build_seed_id(seed.get("make"), seed.get("model"), seed.get("year_start"), seed.get("year_end"), market)
         sid = seed["seed_id"]
         state["in_progress_seed_id"] = sid
         _save_state(state)
@@ -181,9 +185,9 @@ def run_next_batch(limit=5, market="IL", make_filter=None, force_refresh=False, 
         state["in_progress_seed_id"] = None
     candidates = [s for s in ordered if not make_filter or s["make"].lower() == make_filter.lower()]
     coverage = audit_coverage_until_last_completed(candidates, state, outputs)
-    holes = [seed_to_dict(s) for s in coverage["missing_seeds"]]
+    holes = [seed_to_dict(s, default_market=market) for s in coverage["missing_seeds"]]
     batch_mode = "fill_coverage_holes" if holes else "resume_forward"
-    queue = holes if holes else [seed_to_dict(s) for s in candidates if s["seed_id"] not in state.get("processed_seed_ids", []) and (include_failed or s["seed_id"] not in state.get("failed_seed_ids", []))]
+    queue = holes if holes else [seed_to_dict(s, default_market=market) for s in candidates if s["seed_id"] not in state.get("processed_seed_ids", []) and (include_failed or s["seed_id"] not in state.get("failed_seed_ids", []))]
     if not queue:
         _refresh_coverage(state, ordered)
         _save_state(state)
@@ -195,7 +199,7 @@ def run_next_batch(limit=5, market="IL", make_filter=None, force_refresh=False, 
     coverage_after = audit_coverage_until_last_completed(candidates, state, outputs_after)
     remaining = len(queue) - min(limit, len(queue))
     latest_batch_path = project_root() / "data/output/latest_batch_result.json"
-    payload = {"batch": {"batch_id": batch_id, "started_at": _now(), "requested_limit": limit, "processed": len(results), "batch_mode": batch_mode}, "results": results}
+    payload = {"batch": {"batch_id": batch_id, "started_at": _now(), "requested_limit": limit, "processed": len(results), "batch_mode": batch_mode}, "results": results, "coverage_audit_after_batch": coverage_after}
     save_json(latest_batch_path, payload)
     return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after}
 
@@ -227,6 +231,22 @@ def build_final_export(include_partial=True, include_verified=True, include_conf
     p = get_output_paths()
     verified = load_json_list(p["vehicle_variants_verified"]) if include_verified else []
     partial = load_json_list(p["vehicle_variants_partial"]) if include_partial else []
+    if not verified and not partial:
+        combined_path = project_root() / "data/output/combined_vehicle_variants_final.json"
+        combined = load_json_object(combined_path)
+        if isinstance(combined.get("variants"), list):
+            fallback_variants = [v for v in combined.get("variants", []) if isinstance(v, dict)]
+            verified = [v for v in fallback_variants if str(v.get("verification_status") or v.get("classification") or "").lower() == "verified"]
+            partial = [v for v in fallback_variants if v not in verified]
+    if not verified and not partial:
+        latest_batch = load_json_object(project_root() / "data/output/latest_batch_result.json")
+        rebuilt = []
+        for row in latest_batch.get("results", []):
+            parsed = (((row.get("result") or {}).get("trace") or {}).get("discovery_parsed_json_debug") or {})
+            for cand in parsed.get("candidate_variants", []):
+                if isinstance(cand, dict):
+                    rebuilt.append(cand)
+        partial = rebuilt
     final_export = build_clean_final_export(
         verified_variants=verified,
         partial_variants=partial,

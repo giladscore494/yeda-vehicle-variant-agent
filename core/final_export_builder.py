@@ -101,6 +101,8 @@ def evaluate_final_export_quality(final_export: dict) -> dict:
     blocking, warnings = [], []
     score = 100
     variants = final_export.get("variants", [])
+    if len(variants) == 0:
+        blocking.append("No variants in final export.")
     if any(is_mock_contaminated_variant(v) for v in variants):
         blocking.append("Mock markers remain in final export.")
     for v in variants:
@@ -140,8 +142,25 @@ def evaluate_final_export_quality(final_export: dict) -> dict:
 
 
 def assert_no_mock_in_final_export(final_export: dict):
+    payload_text = json.dumps(final_export, ensure_ascii=False).lower()
+    if "source_mock_" in payload_text:
+        raise ValueError("Mock contamination still exists in final export")
     if any(is_mock_contaminated_variant(v) for v in final_export.get("variants", [])):
         raise ValueError("Mock contamination still exists in final export")
+
+
+def _clean_sources(sources: list[dict] | None) -> tuple[list[dict], int]:
+    cleaned = []
+    removed = 0
+    for src in sources or []:
+        if not isinstance(src, dict):
+            continue
+        text = json.dumps(src, ensure_ascii=False).lower()
+        if "source_mock_" in text or src.get("source_type") == "mock" or str(src.get("reason", "")).strip().lower() == "mock" or "mock mode" in text:
+            removed += 1
+            continue
+        cleaned.append(src)
+    return cleaned, removed
 
 
 def _tkey(v: dict) -> str:
@@ -200,7 +219,9 @@ def build_clean_final_export(verified_variants, partial_variants, sources=None, 
             counts["variants_with_no_sources"] += 1
     total = max(1, len(variants))
     audit = {"mock_contamination_found": mock_removed > 0, "source_id_coverage_ratio": with_ids / max(gt0, 1), "verified_ratio": counts["verified"] / total, "partial_ratio": counts["partial"] / total, "fields_checked": fields_checked, "fields_with_sources_count_gt_0": gt0, "fields_with_source_ids": with_ids, "status_rebuilt": True, "trim_merge_enabled": merge_trim_options}
-    out = {"schema_version": "vehicle_variants_final_v2", "created_at": _now(), "counts": counts, "variants": variants, "sources": sources or [], "conflicts": conflicts if include_conflicts else [], "unresolved": unresolved if include_unresolved else [], "audit": audit}
+    cleaned_sources, mock_sources_removed = _clean_sources(sources)
+    counts["mock_sources_removed"] = mock_sources_removed
+    out = {"schema_version": "vehicle_variants_final_v2", "created_at": _now(), "counts": counts, "variants": variants, "sources": cleaned_sources, "conflicts": conflicts if include_conflicts else [], "unresolved": unresolved if include_unresolved else [], "audit": audit}
     out["quality_gate"] = evaluate_final_export_quality(out)
     if strict_no_mock and mock_removed > 0:
         out["quality_gate"].setdefault("blocking_issues", []).append("Mock contaminated variants were removed from final export.")
