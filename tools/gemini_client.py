@@ -59,7 +59,24 @@ class GeminiClient:
             "grounding_supported": (genai is not None and types is not None) if self.has_api_key() else None,
         }
 
-    def _response(self, *, model: str, grounding_requested: bool, request_attempted: bool, ok: bool, error: str = None, data=None, raw_text=None):
+    def _extract_response_metadata(self, response):
+        md = {}
+        for attr in ("finish_reason", "usage_metadata", "grounding_metadata", "source_metadata", "citation_metadata"):
+            val = getattr(response, attr, None)
+            if val is not None:
+                md[attr] = val
+        cand = getattr(response, "candidates", None)
+        if cand:
+            first = cand[0]
+            fr = getattr(first, "finish_reason", None)
+            gm = getattr(first, "grounding_metadata", None)
+            if fr is not None:
+                md["candidate_finish_reason"] = fr
+            if gm is not None:
+                md["candidate_grounding_metadata"] = gm
+        return md
+
+    def _response(self, *, model: str, grounding_requested: bool, request_attempted: bool, ok: bool, error: str = None, data=None, raw_text=None, parse_error=None, response_metadata=None):
         return {
             "ok": ok,
             "provider": "gemini",
@@ -69,6 +86,9 @@ class GeminiClient:
             "error": error,
             "data": data,
             "raw_text": raw_text,
+            "parsed_json": data,
+            "parse_error": parse_error,
+            "response_metadata": response_metadata or {},
         }
 
     def _parse_or_repair(self, model: str, text: str):
@@ -118,11 +138,12 @@ class GeminiClient:
             )
             raw_text = getattr(response, "text", "") or ""
             data, parsed_text, parse_error = self._parse_or_repair(model, raw_text)
+            response_metadata = self._extract_response_metadata(response)
             if parse_error:
-                return self._response(model=model, grounding_requested=False, request_attempted=True, ok=False, error=parse_error, data=None, raw_text=parsed_text)
-            return self._response(model=model, grounding_requested=False, request_attempted=True, ok=True, error=None, data=data, raw_text=parsed_text)
+                return self._response(model=model, grounding_requested=False, request_attempted=True, ok=False, error=parse_error, data=None, raw_text=raw_text, parse_error=parse_error, response_metadata=response_metadata)
+            return self._response(model=model, grounding_requested=False, request_attempted=True, ok=True, error=None, data=data, raw_text=raw_text, parse_error=None, response_metadata=response_metadata)
         except Exception as exc:
-            return self._response(model=model, grounding_requested=False, request_attempted=True, ok=False, error=f"Gemini call failed: {exc}", data=None, raw_text=None)
+            return self._response(model=model, grounding_requested=False, request_attempted=True, ok=False, error=f"Gemini call failed: {exc}", data=None, raw_text=None, parse_error=None)
 
     def grounded_generate_json(self, prompt, schema_hint=None, strong=False, model_override=None):
         model = model_override or (self.strong_model if strong else self.fast_model)
@@ -146,8 +167,9 @@ class GeminiClient:
             )
             raw_text = getattr(response, "text", "") or ""
             data, parsed_text, parse_error = self._parse_or_repair(model, raw_text)
+            response_metadata = self._extract_response_metadata(response)
             if parse_error:
-                return self._response(model=model, grounding_requested=True, request_attempted=True, ok=False, error=parse_error, data=None, raw_text=parsed_text)
-            return self._response(model=model, grounding_requested=True, request_attempted=True, ok=True, error=None, data=data, raw_text=parsed_text)
+                return self._response(model=model, grounding_requested=True, request_attempted=True, ok=False, error=parse_error, data=None, raw_text=raw_text, parse_error=parse_error, response_metadata=response_metadata)
+            return self._response(model=model, grounding_requested=True, request_attempted=True, ok=True, error=None, data=data, raw_text=raw_text, parse_error=None, response_metadata=response_metadata)
         except Exception as exc:
-            return self._response(model=model, grounding_requested=True, request_attempted=True, ok=False, error=f"Gemini grounding/search call failed: {exc}", data=None, raw_text=None)
+            return self._response(model=model, grounding_requested=True, request_attempted=True, ok=False, error=f"Gemini grounding/search call failed: {exc}", data=None, raw_text=None, parse_error=None)

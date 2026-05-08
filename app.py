@@ -35,7 +35,9 @@ st.sidebar.write({"model_policy": model_policy, "model_mode": model_mode, "fast_
 batch_limit = st.sidebar.selectbox("Batch limit", [1, 5, 10, 20], index=1)
 make_filter = st.sidebar.selectbox("Make filter", [""] + get_makes())
 
-tabs = st.tabs(["Dashboard", "Run Single Model", "Batch Runner", "Agent Inspector", "Variants", "Conflicts", "Sources", "Export"])
+show_raw_debug = st.sidebar.checkbox("Show raw Gemini debug", value=True)
+
+tabs = st.tabs(["Dashboard", "Run Single Model", "Batch Runner", "Agent Inspector", "Variants", "Conflicts", "Sources", "Raw Gemini", "Export"])
 
 with tabs[0]:
     cols = st.columns(3)
@@ -106,6 +108,17 @@ with tabs[1]:
         st.json(r)
         with st.expander("Trace JSON"):
             st.json(r.get("trace", {}))
+        if show_raw_debug:
+            with st.expander("Raw Gemini response"):
+                raw_runs = load_json_list(paths["gemini_raw_runs"])
+                selected = next((x for x in reversed(raw_runs) if x.get("run_id") == trace.get("run_id")), None)
+                if not selected:
+                    st.write("No raw response captured.")
+                else:
+                    st.text_area("Discovery raw text", value=selected.get("discovery_raw_text") or "", height=400)
+                    st.json(selected.get("discovery_parsed_json") or {})
+                    st.text_area("Verification raw text", value=selected.get("verification_raw_text") or "", height=400)
+                    st.json(selected.get("verification_parsed_json") or {})
 
 with tabs[2]:
     st.caption("No run-all button by design.")
@@ -142,7 +155,39 @@ with tabs[6]:
     st.dataframe(pd.DataFrame(s) if s else pd.DataFrame())
 
 with tabs[7]:
+    raw_runs = load_json_list(paths["gemini_raw_runs"])
+    raw_candidates = load_json_list(paths["vehicle_candidates_raw"])
+    run_ids = [x.get("run_id") for x in raw_runs if x.get("run_id")]
+    if run_ids:
+        rid = st.selectbox("Select run_id", list(reversed(run_ids)))
+        selected_run = next(x for x in raw_runs if x.get("run_id") == rid)
+        st.write({
+            "make": selected_run.get("make"), "model": selected_run.get("model"), "year_start": selected_run.get("year_start"),
+            "year_end": selected_run.get("year_end"), "market": selected_run.get("market"),
+            "discovery_model": selected_run.get("discovery_model_used"), "verification_model": selected_run.get("verification_model_used"),
+            "discovery_parse_error": selected_run.get("discovery_parse_error"), "verification_parse_error": selected_run.get("verification_parse_error"),
+            "discovery_raw_text_available": bool(selected_run.get("discovery_raw_text")), "verification_raw_text_available": bool(selected_run.get("verification_raw_text")),
+        })
+        st.text_area("Discovery raw response", value=selected_run.get("discovery_raw_text") or "", height=400)
+        st.json(selected_run.get("discovery_parsed_json") or {})
+        st.text_area("Verification raw response", value=selected_run.get("verification_raw_text") or "", height=400)
+        st.json(selected_run.get("verification_parsed_json") or {})
+        selected_candidates = next((x for x in raw_candidates if x.get("run_id") == rid), {})
+        cand_list = selected_candidates.get("candidate_variants") or []
+        if isinstance(cand_list, list) and cand_list:
+            st.dataframe(pd.DataFrame(cand_list))
+        with st.expander("Full raw candidates JSON"):
+            st.json(selected_candidates)
+        st.download_button("Download selected discovery raw text", (selected_run.get("discovery_raw_text") or "").encode("utf-8"), file_name=f"{rid}_discovery_raw.txt")
+        st.download_button("Download selected verification raw text", (selected_run.get("verification_raw_text") or "").encode("utf-8"), file_name=f"{rid}_verification_raw.txt")
+        st.download_button("Download selected raw run JSON", json.dumps(selected_run, ensure_ascii=False, indent=2).encode("utf-8"), file_name=f"{rid}_raw_run.json")
+    st.download_button("Download all gemini_raw_runs.json", paths["gemini_raw_runs"].read_bytes(), file_name=paths["gemini_raw_runs"].name)
+    st.download_button("Download all vehicle_candidates_raw.json", paths["vehicle_candidates_raw"].read_bytes(), file_name=paths["vehicle_candidates_raw"].name)
+
+with tabs[8]:
     for name, path in paths.items():
         st.download_button(f"Download {name}.json", path.read_bytes(), file_name=path.name)
     yeda = json.dumps(export_verified_for_yeda(), ensure_ascii=False, indent=2).encode("utf-8")
     st.download_button("Download Yeda Rechev Export JSON", yeda, file_name="yeda_rechev_export.json")
+    st.download_button("Download Gemini raw runs JSON", paths["gemini_raw_runs"].read_bytes(), file_name=paths["gemini_raw_runs"].name)
+    st.download_button("Download raw candidate variants JSON", paths["vehicle_candidates_raw"].read_bytes(), file_name=paths["vehicle_candidates_raw"].name)

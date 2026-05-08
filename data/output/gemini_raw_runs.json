@@ -1,0 +1,577 @@
+[
+  {
+    "run_id": "6d7fc1f8-4101-4de9-a113-08664809ded5",
+    "created_at": "2026-05-08T12:36:24.129334+00:00",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 2000,
+    "year_end": 2005,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.8",
+          "transmission": "manual",
+          "body_type": "sedan"
+        }
+      ]
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "07f252b2-793a-4703-8a79-27cccbafe122",
+    "created_at": "2026-05-08T12:36:24.148248+00:00",
+    "make": "Toyota",
+    "model": "Avensis",
+    "year_start": 1997,
+    "year_end": 2018,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.6",
+          "transmission": "manual",
+          "body_type": "sedan"
+        },
+        {
+          "engine": "1.8",
+          "transmission": "automatic",
+          "body_type": "sedan"
+        },
+        {
+          "engine": "2.0",
+          "transmission": "automatic",
+          "body_type": "wagon"
+        }
+      ]
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "96acde22-636b-4480-b28c-8345d10dad2e",
+    "created_at": "2026-05-08T12:36:24.166886+00:00",
+    "make": "Toyota",
+    "model": "Avensis",
+    "year_start": 1997,
+    "year_end": 2018,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.6"
+        },
+        {
+          "engine": "2.0"
+        }
+      ]
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "ed3de72b-6db3-425f-a8af-4b82c0708b04",
+    "created_at": "2026-05-08T12:36:24.190711+00:00",
+    "make": "Toyota",
+    "model": "Avensis",
+    "year_start": 1997,
+    "year_end": 2018,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {}
+      ]
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "8c1437b6-732b-42af-ab7c-313e4aa7c2c3",
+    "created_at": "2026-05-08T12:36:24.209885+00:00",
+    "make": "Toyota",
+    "model": "Auris",
+    "year_start": 2013,
+    "year_end": 2018,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "candidate_variants": [
+        {}
+      ],
+      "sources": [
+        {
+          "source_id": "source_mock_kia_sportage"
+        }
+      ]
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "8237b21c-8c4a-4fe8-9a72-ba022f89a1cf",
+    "created_at": "2026-05-08T12:36:24.240857+00:00",
+    "make": "Kia",
+    "model": "Sportage",
+    "year_start": 2019,
+    "year_end": 2020,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": "{\"candidate_variants\": [{\"engine\":\"1.6T\"}]}",
+    "discovery_parsed_json": {
+      "candidate_variants": [
+        {
+          "engine": "1.6T"
+        }
+      ]
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": "{\"variant_verifications\": []}",
+    "verification_parsed_json": {
+      "variant_verifications": []
+    },
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {
+        "finish_reason": "STOP"
+      },
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "7deca4c8-6478-4d01-b88d-af4dbd4bc672",
+    "created_at": "2026-05-08T12:36:24.263013+00:00",
+    "make": "Toyota",
+    "model": "C-HR",
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.2",
+          "transmission": "cvt",
+          "fuel_type": "petrol",
+          "body_type": "crossover"
+        },
+        {
+          "engine": "1.8",
+          "transmission": "cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover"
+        },
+        {
+          "engine": "2.0",
+          "transmission": "automatic",
+          "fuel_type": "petrol",
+          "body_type": "crossover"
+        }
+      ]
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "4950e647-0db3-4907-98ef-35d099f7d823",
+    "created_at": "2026-05-08T12:36:24.285907+00:00",
+    "make": "Toyota",
+    "model": "C-HR",
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.2 Turbo",
+          "transmission": "cvt",
+          "fuel_type": "petrol",
+          "body_type": "crossover",
+          "generation": "X10"
+        },
+        {
+          "engine": "1.8 Hybrid",
+          "transmission": "e_cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover",
+          "generation": "X10"
+        },
+        {
+          "engine": "2.0 Hybrid",
+          "transmission": "e_cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover",
+          "generation": "X10"
+        },
+        {
+          "engine": "2.0 Hybrid",
+          "transmission": "e_cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover",
+          "generation": "X10"
+        }
+      ]
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "656186db-c040-457a-95ed-ca59b29dbbb5",
+    "created_at": "2026-05-08T12:36:24.304811+00:00",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "a57e103c-e8cf-4c26-8e00-d072f2f58759",
+    "created_at": "2026-05-08T12:36:24.322818+00:00",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "06574a12-f9ee-4905-b57c-d0379017392b",
+    "created_at": "2026-05-08T12:36:24.340732+00:00",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "038d0f6d-f93b-48e7-a557-25440bb5e0d5",
+    "created_at": "2026-05-08T12:36:24.359096+00:00",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "44addd72-2d5b-4636-a7ac-aed012fd1b58",
+    "created_at": "2026-05-08T12:36:24.397930+00:00",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "23e53561-2217-417e-8c5c-1fa5aa332ff6",
+    "created_at": "2026-05-08T12:36:24.420613+00:00",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "de367d6c-7941-4443-a86c-9eb913ffe0ab",
+    "created_at": "2026-05-08T12:36:24.439422+00:00",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  },
+  {
+    "run_id": "4febb36d-fb2c-4258-aa65-2488a55aa825",
+    "created_at": "2026-05-08T12:36:24.457647+00:00",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "model_policy": "pro_only",
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_parse_error": null,
+    "verification_raw_text": null,
+    "verification_parsed_json": null,
+    "verification_parse_error": null,
+    "gemini_metadata": {
+      "discovery": {},
+      "verification": {}
+    }
+  }
+]
