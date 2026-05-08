@@ -119,17 +119,27 @@ def test_latest_batch_export_is_separate_file_path():
 def test_import_vehicle_variant_resume_package_restores_progress(monkeypatch):
     state = {"processed_seed_ids": [], "failed_seed_ids": []}
     saved = {}
+    ordered = [
+        {"seed_id": "abarth__124_spider__2016__2020__il", "make": "Abarth", "model": "124 Spider", "year_start": 2016, "year_end": 2020, "market": "IL"},
+        {"seed_id": "aiways__u5__2021__2024__il", "make": "Aiways", "model": "U5", "year_start": 2021, "year_end": 2024, "market": "IL"},
+        {"seed_id": "alfa_romeo__giulia__2016__2020__il", "make": "Alfa Romeo", "model": "Giulia", "year_start": 2016, "year_end": 2020, "market": "IL"},
+        {"seed_id": "alpine__a110__2018__2024__il", "make": "Alpine", "model": "A110", "year_start": 2018, "year_end": 2024, "market": "IL"},
+    ]
     monkeypatch.setattr(batch_runner, "load_batch_state", lambda market="IL": state)
+    monkeypatch.setattr(batch_runner, "get_ordered_seed_list", lambda market="IL": ordered)
+    monkeypatch.setattr(batch_runner, "_load_outputs", lambda: {"run_history": [], "unresolved": [], "conflicts": [], "verified": [], "partial": [], "sources": []})
     monkeypatch.setattr(batch_runner, "get_output_paths", lambda: {k: k for k in ["vehicle_variants_verified", "vehicle_variants_partial", "run_history", "vehicle_sources", "unresolved_models", "vehicle_conflicts"]})
     monkeypatch.setattr(batch_runner, "load_json_list", lambda path: list(saved.get(path, [])))
     monkeypatch.setattr(batch_runner, "save_json", lambda path, data: saved.__setitem__(str(path), data))
     monkeypatch.setattr(batch_runner, "_batch_state_path", lambda: "batch_state.json")
-    monkeypatch.setattr(batch_runner, "rebuild_batch_state_from_outputs", lambda market="IL": {"processed_seed_ids": saved.get("batch_state.json", {}).get("processed_seed_ids", ["x"]), "next_seed_id": "after_alpine"})
+    monkeypatch.setattr(batch_runner, "rebuild_batch_state_from_outputs", lambda market="IL": {"processed_seed_ids": [], "next_seed_id": "abarth__124_spider__2016__2020__il"})
     variants = [{"variant_id": f"v{i}", "classification": "verified" if i < 60 else "partial"} for i in range(90)]
-    pkg = {"schema_version": "vehicle_variant_resume_package_v1", "batch_state": {"processed_seed_ids": ["abarth", "aiways", "alfa", "alpine"], "processed_seeds": 4}, "final_export": {"variants": variants, "sources": [], "counts": {"makes_count": 4, "models_count": 30}}}
+    pkg = {"schema_version": "vehicle_variant_resume_package_v1", "batch_state": {"processed_seed_ids": ["abarth__124_spider__2016__2020__il", "aiways__u5__2021__2024__il", "alfa_romeo__giulia__2016__2020__il"], "processed_seeds": 3}, "final_export": {"variants": variants, "sources": [], "counts": {"makes_count": 4, "models_count": 30}}}
     out = batch_runner.import_progress_json(pkg)
     assert out["file_type"] == "resume_package"
     assert out["imported_variants"] == 90
-    assert len(saved["batch_state.json"]["processed_seed_ids"]) == 4
+    assert len(saved["batch_state.json"]["processed_seed_ids"]) == 3
+    assert saved["batch_state.json"]["last_completed_seed_id"] is not None
+    assert saved["batch_state.json"]["next_seed_id"] != "abarth__124_spider__2016__2020__il"
     assert len(saved["vehicle_variants_verified"]) + len(saved["vehicle_variants_partial"]) == 90
     assert "imported_accumulated_dataset.json" in " ".join(saved.keys())

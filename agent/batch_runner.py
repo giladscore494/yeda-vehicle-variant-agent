@@ -432,6 +432,37 @@ def detect_import_file_type(uploaded_json) -> str:
     return "unknown"
 
 
+def _normalize_imported_batch_state(imported_state: dict, market: str = "IL") -> dict:
+    ordered = get_ordered_seed_list(market)
+    canonical_seed_ids = [s["seed_id"] for s in ordered]
+    canonical_set = set(canonical_seed_ids)
+    processed_seed_ids = [sid for sid in (imported_state.get("processed_seed_ids") or []) if sid in canonical_set]
+    failed_seed_ids = [sid for sid in (imported_state.get("failed_seed_ids") or []) if sid in canonical_set]
+
+    now = _now()
+    normalized = {
+        "schema_version": BATCH_STATE_SCHEMA,
+        "market": imported_state.get("market") or market or "IL",
+        "created_at": imported_state.get("created_at") or now,
+        "updated_at": now,
+        "last_batch_id": imported_state.get("last_batch_id"),
+        "total_seeds": len(ordered),
+        "processed_seed_ids": processed_seed_ids,
+        "processed_seeds": imported_state.get("processed_seeds", len(processed_seed_ids)),
+        "failed_seed_ids": failed_seed_ids,
+        "skipped_seed_ids": imported_state.get("skipped_seed_ids", []),
+        "in_progress_seed_id": None,
+        "run_history": imported_state.get("run_history", []),
+        "failed_details": imported_state.get("failed_details", []),
+    }
+
+    furthest_idx = max([i for i, sid in enumerate(canonical_seed_ids) if sid in set(processed_seed_ids)], default=-1)
+    normalized["last_completed_seed_id"] = canonical_seed_ids[furthest_idx] if furthest_idx >= 0 else None
+    normalized["next_seed_id"] = next((sid for sid in canonical_seed_ids if sid not in set(processed_seed_ids)), None)
+    _refresh_coverage(normalized, ordered)
+    return normalized
+
+
 def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, market: str = "IL") -> dict:
     file_type = detect_import_file_type(uploaded_json if isinstance(uploaded_json, dict) else uploaded_json)
     paths = get_output_paths()
@@ -504,8 +535,9 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
             save_json(paths["unresolved_models"], pkg.get("unresolved", []))
             save_json(paths["vehicle_conflicts"], pkg.get("conflicts", []))
         imported_state = pkg.get("batch_state", state) if isinstance(pkg.get("batch_state"), dict) else state
-        save_json(_batch_state_path(), imported_state)
-        result["processed_added"] = max(0, len(set(imported_state.get("processed_seed_ids", [])) - set(state.get("processed_seed_ids", []))))
+        normalized_state = _normalize_imported_batch_state(imported_state, market=market)
+        save_json(_batch_state_path(), normalized_state)
+        result["processed_added"] = max(0, len(set(normalized_state.get("processed_seed_ids", [])) - set(state.get("processed_seed_ids", []))))
         result["variants_verified_added"] = max(0, len(merged_verified) - len(verified))
         result["variants_partial_added"] = max(0, len(merged_partial) - len(partial))
         c = acc.get("counts", {}) if isinstance(acc, dict) else {}
@@ -515,5 +547,8 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
     else:
         result["import_status"] = "skipped"
         result["warnings"].append("Unknown import file type")
-    rebuild_batch_state_from_outputs(market)
+    if file_type != "resume_package":
+        rebuild_batch_state_from_outputs(market)
+    else:
+        audit_coverage_until_last_completed(get_ordered_seed_list(market), load_batch_state(market), _load_outputs())
     return result
