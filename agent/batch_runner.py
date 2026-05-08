@@ -360,10 +360,11 @@ def build_resume_package() -> dict:
     variants = accumulated_clean_export.get("variants", [])
     makes = {str(v.get("make", "")).strip().lower() for v in variants if isinstance(v, dict) and v.get("make")}
     models = {f"{str(v.get('make','')).strip().lower()}::{str(v.get('model','')).strip().lower()}" for v in variants if isinstance(v, dict) and v.get("make") and v.get("model")}
+    normalized_state = normalize_batch_state_for_resume(load_batch_state(), get_ordered_seed_list("IL"), variants=variants, market="IL")
     return {
         "schema_version": "resume_package_v1",
         "created_at": _now(),
-        "batch_state": load_batch_state(),
+        "batch_state": normalized_state,
         "run_history": load_json_list(p["run_history"]),
         "verified_variants": load_json_list(p["vehicle_variants_verified"]),
         "partial_variants": load_json_list(p["vehicle_variants_partial"]),
@@ -433,33 +434,94 @@ def detect_import_file_type(uploaded_json) -> str:
 
 
 def _normalize_imported_batch_state(imported_state: dict, market: str = "IL") -> dict:
-    ordered = get_ordered_seed_list(market)
-    canonical_seed_ids = [s["seed_id"] for s in ordered]
-    canonical_set = set(canonical_seed_ids)
-    processed_seed_ids = [sid for sid in (imported_state.get("processed_seed_ids") or []) if sid in canonical_set]
-    failed_seed_ids = [sid for sid in (imported_state.get("failed_seed_ids") or []) if sid in canonical_set]
+    return normalize_batch_state_for_resume(imported_state, get_ordered_seed_list(market), market=market)
+
+
+def normalize_batch_state_for_resume(batch_state: dict, ordered_seeds: list[dict], variants: list[dict] | None = None, market: str = "IL") -> dict:
+    canonical_by_id = {s["seed_id"]: seed_to_dict(s, default_market=market) for s in ordered_seeds}
+    canonical_ids = [s["seed_id"] for s in ordered_seeds]
+    canonical_set = set(canonical_ids)
+
+    def _parse_sid(sid: str):
+        parts = str(sid or "").split("__")
+        if len(parts) != 5:
+            return None
+        try:
+            return {"make": parts[0], "model": parts[1], "year_start": int(parts[2]), "year_end": int(parts[3]), "market": parts[4]}
+        except Exception:
+            return None
+
+    variants = variants or []
+    seen_mm_year = set()
+    for v in variants:
+        if not isinstance(v, dict):
+            continue
+        mk = normalize_token(v.get("make"))
+        md = normalize_token(v.get("model"))
+        ys = v.get("year_start")
+        ye = v.get("year_end")
+        if mk and md and isinstance(ys, int) and isinstance(ye, int):
+            seen_mm_year.add((mk, md, ys, ye))
+
+    incoming_ids = list(batch_state.get("processed_seed_ids") or [])
+    processed_seeds_rows = batch_state.get("processed_seeds") if isinstance(batch_state.get("processed_seeds"), list) else []
+    for s in processed_seeds_rows:
+        if isinstance(s, dict) and s.get("seed_id"):
+            incoming_ids.append(s["seed_id"])
+
+    processed = set()
+    for sid in incoming_ids:
+        if sid in canonical_set:
+            processed.add(sid)
+            continue
+        legacy = _parse_sid(sid)
+        if not legacy:
+            continue
+        for can in ordered_seeds:
+            cmk = normalize_token(can.get("make"))
+            cmd = normalize_token(can.get("model"))
+            if legacy["make"] != cmk or legacy["model"] != cmd:
+                continue
+            cys, cye = int(can["year_start"]), int(can["year_end"])
+            overlaps = not (legacy["year_end"] < cys or legacy["year_start"] > cye)
+            has_variant_overlap = any(mk == cmk and md == cmd and not (ye < cys or ys > cye) for mk, md, ys, ye in seen_mm_year)
+            if overlaps and (has_variant_overlap or (legacy["year_start"] >= cys and legacy["year_end"] <= cye)):
+                processed.add(can["seed_id"])
+
+    ordered_processed = [sid for sid in canonical_ids if sid in processed]
+    processed_set = set(ordered_processed)
+    next_seed_id = next((sid for sid in canonical_ids if sid not in processed_set), None)
+    contiguous_idx = -1
+    for idx, sid in enumerate(canonical_ids):
+        if sid in processed_set:
+            contiguous_idx = idx
+            continue
+        break
+    last_completed = canonical_ids[contiguous_idx] if contiguous_idx >= 0 else None
+
+    failed_seed_ids = [sid for sid in (batch_state.get("failed_seed_ids") or []) if sid in canonical_set and sid not in processed_set]
+    skipped_seed_ids = [sid for sid in (batch_state.get("skipped_seed_ids") or []) if sid in canonical_set and sid not in processed_set]
+    failed_details = [d for d in (batch_state.get("failed_details") or []) if isinstance(d, dict) and d.get("seed_id") not in processed_set]
 
     now = _now()
     normalized = {
         "schema_version": BATCH_STATE_SCHEMA,
-        "market": imported_state.get("market") or market or "IL",
-        "created_at": imported_state.get("created_at") or now,
+        "market": batch_state.get("market") or market or "IL",
+        "created_at": batch_state.get("created_at") or now,
         "updated_at": now,
-        "last_batch_id": imported_state.get("last_batch_id"),
-        "total_seeds": len(ordered),
-        "processed_seed_ids": processed_seed_ids,
-        "processed_seeds": imported_state.get("processed_seeds", len(processed_seed_ids)),
+        "last_batch_id": batch_state.get("last_batch_id"),
+        "total_seeds": len(ordered_seeds),
+        "processed_seed_ids": ordered_processed,
+        "processed_seeds": [canonical_by_id[sid] for sid in ordered_processed],
         "failed_seed_ids": failed_seed_ids,
-        "skipped_seed_ids": imported_state.get("skipped_seed_ids", []),
+        "skipped_seed_ids": skipped_seed_ids,
         "in_progress_seed_id": None,
-        "run_history": imported_state.get("run_history", []),
-        "failed_details": imported_state.get("failed_details", []),
+        "last_completed_seed_id": last_completed,
+        "next_seed_id": next_seed_id,
+        "run_history": batch_state.get("run_history", []),
+        "failed_details": failed_details,
     }
-
-    furthest_idx = max([i for i, sid in enumerate(canonical_seed_ids) if sid in set(processed_seed_ids)], default=-1)
-    normalized["last_completed_seed_id"] = canonical_seed_ids[furthest_idx] if furthest_idx >= 0 else None
-    normalized["next_seed_id"] = next((sid for sid in canonical_seed_ids if sid not in set(processed_seed_ids)), None)
-    _refresh_coverage(normalized, ordered)
+    _refresh_coverage(normalized, ordered_seeds)
     return normalized
 
 
@@ -476,6 +538,7 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
         if not overwrite:
             merged["processed_seed_ids"] = sorted(local_processed | incoming_processed)
             merged["failed_seed_ids"] = sorted(set(state.get("failed_seed_ids", [])) | set(incoming.get("failed_seed_ids", [])))
+        merged = normalize_batch_state_for_resume(merged, get_ordered_seed_list(market), market=market)
         save_json(_batch_state_path(), merged)
         result["processed_added"] = len(set(merged.get("processed_seed_ids", [])) - local_processed)
     elif file_type == "latest_batch_result":
@@ -535,7 +598,7 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
             save_json(paths["unresolved_models"], pkg.get("unresolved", []))
             save_json(paths["vehicle_conflicts"], pkg.get("conflicts", []))
         imported_state = pkg.get("batch_state", state) if isinstance(pkg.get("batch_state"), dict) else state
-        normalized_state = _normalize_imported_batch_state(imported_state, market=market)
+        normalized_state = normalize_batch_state_for_resume(imported_state, get_ordered_seed_list(market), variants=variants, market=market)
         save_json(_batch_state_path(), normalized_state)
         result["processed_added"] = max(0, len(set(normalized_state.get("processed_seed_ids", [])) - set(state.get("processed_seed_ids", []))))
         result["variants_verified_added"] = max(0, len(merged_verified) - len(verified))
