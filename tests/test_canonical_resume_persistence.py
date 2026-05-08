@@ -93,3 +93,26 @@ def test_persist_canonical_blocks_invalid_update(monkeypatch):
     result = batch_runner.persist_canonical_resume_package(push_to_github=False)
     assert result["ok"] is False
     assert called["save"] == 0
+
+
+def test_manual_push_uses_local_canonical_not_rebuild(monkeypatch):
+    local_package = {
+        "schema_version": "resume_package_v1",
+        "variants": [_variant(i) for i in range(263)],
+        "batch_state": {"processed_seed_ids": [f"s-{i}" for i in range(59)], "next_seed_id": "audi__rs6__2008__2026__il"},
+    }
+    pushed = {"count": 0}
+
+    monkeypatch.setattr(batch_runner, "load_local_canonical_resume_package", lambda: local_package)
+    monkeypatch.setattr(batch_runner, "build_final_export", lambda: {"variants": [_variant(i) for i in range(116)]})
+    monkeypatch.setattr(batch_runner, "fetch_file_from_github", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        batch_runner,
+        "push_canonical_resume_package",
+        lambda package, previous_package=None, batch_id=None: pushed.update({"count": len(package.get("variants", []))}) or {"ok": True, "canonical": {"commit_sha": "abc"}},
+    )
+    monkeypatch.setattr(batch_runner, "save_local_canonical_resume_package", lambda package: None)
+
+    result = batch_runner.push_local_canonical_to_github()
+    assert result["ok"] is True
+    assert pushed["count"] == 263

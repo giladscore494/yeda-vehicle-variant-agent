@@ -67,6 +67,25 @@ def _api_get(url: str, token: str | None) -> dict:
     }
 
 
+def _api_get_text(url: str, token: str | None) -> dict:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        resp = requests.get(url, headers=headers, timeout=30)
+    except Exception as exc:
+        return {"status_code": None, "ok": False, "text": "", "message": f"{type(exc).__name__}: {exc}"}
+    return {
+        "status_code": resp.status_code,
+        "ok": resp.status_code < 400,
+        "text": resp.text if isinstance(resp.text, str) else "",
+        "message": "",
+    }
+
+
 def _extract_package_fields(payload: dict | None) -> dict:
     package = payload if isinstance(payload, dict) else {}
     variants = _extract_resume_variants(package)
@@ -167,6 +186,7 @@ def diagnose_canonical_github_sync() -> dict:
         "github_sha_exists": False,
         "github_download_url_exists": False,
         "github_is_valid_json": False,
+        "github_parse_failed": False,
         "github_variant_count": 0,
         "github_processed_count": 0,
         "github_next_seed_id": None,
@@ -202,13 +222,35 @@ def diagnose_canonical_github_sync() -> dict:
         contents_result = _api_get(f"https://api.github.com/repos/{repo}/contents/{quote(canonical_path)}?ref={quote(branch)}", token)
         content_body = contents_result.get("json", {})
         github_payload = None
+        github_parse_failed = False
         if contents_result.get("status_code") == 200:
             encoded = content_body.get("content")
-            if isinstance(encoded, str):
+            encoding = content_body.get("encoding")
+            download_url = content_body.get("download_url")
+            if isinstance(encoded, str) and encoded.strip() and str(encoding or "").lower() == "base64":
                 try:
                     github_payload = json.loads(base64.b64decode(encoded).decode("utf-8"))
                 except Exception:
                     github_payload = None
+                    github_parse_failed = True
+            elif isinstance(encoded, str) and encoded.strip():
+                github_parse_failed = True
+            if not isinstance(github_payload, dict) and isinstance(download_url, str) and download_url.strip():
+                raw_result = _api_get_text(download_url, token)
+                if raw_result.get("status_code") == 200:
+                    try:
+                        raw_payload = json.loads(raw_result.get("text") or "{}")
+                    except Exception:
+                        raw_payload = None
+                    if isinstance(raw_payload, dict):
+                        github_payload = raw_payload
+                        github_parse_failed = False
+                    else:
+                        github_parse_failed = True
+                elif raw_result.get("status_code") is not None:
+                    github_parse_failed = True
+            if not isinstance(github_payload, dict):
+                github_parse_failed = True
         github_fields = _extract_package_fields(github_payload if isinstance(github_payload, dict) else {})
         contents_api.update(
             {
@@ -218,6 +260,7 @@ def diagnose_canonical_github_sync() -> dict:
                 "github_sha_exists": bool(content_body.get("sha")),
                 "github_download_url_exists": bool(content_body.get("download_url")),
                 "github_is_valid_json": isinstance(github_payload, dict),
+                "github_parse_failed": bool(contents_result.get("status_code") == 200 and github_parse_failed),
                 "github_variant_count": int(github_fields.get("variant_count", 0) or 0),
                 "github_processed_count": int(github_fields.get("processed_count", 0) or 0),
                 "github_next_seed_id": github_fields.get("next_seed_id"),
@@ -225,14 +268,32 @@ def diagnose_canonical_github_sync() -> dict:
             }
         )
 
-    manual_push_uses_local_canonical = False
-    manual_push_rebuilds_package = True
+    local_fallback_mode_active = bool(
+        not contents_api.get("github_file_exists")
+        and local_check.get("local_expected_file")
+        and local_check.get("local_next_seed_at_or_after_expected")
+    )
+
+    manual_push_uses_local_canonical = True
+    manual_push_rebuilds_package = False
     push_behavior = {
         "manual_push_uses_local_canonical": manual_push_uses_local_canonical,
         "manual_push_rebuilds_package": manual_push_rebuilds_package,
+        "local_fallback_mode_active": local_fallback_mode_active,
     }
 
-    previous_count = int(contents_api.get("github_variant_count", 0) or 0) if contents_api.get("github_file_exists") else int(local_check.get("local_variant_count", 0) or 0)
+    previous_count_unknown_due_to_parse_error = False
+    if contents_api.get("github_file_exists"):
+        if contents_api.get("github_is_valid_json"):
+            previous_count = int(contents_api.get("github_variant_count", 0) or 0)
+        elif local_fallback_mode_active:
+            previous_count = int(local_check.get("local_variant_count", 0) or 0)
+        else:
+            previous_count = 0
+            previous_count_unknown_due_to_parse_error = True
+    else:
+        previous_count = int(local_check.get("local_variant_count", 0) or 0)
+
     build_final_export_count = None
     build_final_export_error = ""
     try:
@@ -250,10 +311,14 @@ def diagnose_canonical_github_sync() -> dict:
         if build_final_export_count is not None:
             new_candidate_count = build_final_export_count
     uploaded_session_count = len(load_imported_accumulated_variants())
-    shrink_detected = bool(previous_count > 0 and isinstance(new_candidate_count, int) and new_candidate_count < previous_count)
-    shrink_delta = (int(new_candidate_count) - int(previous_count)) if isinstance(new_candidate_count, int) else None
+    shrink_detected = bool(
+        previous_count_unknown_due_to_parse_error
+        or (previous_count > 0 and isinstance(new_candidate_count, int) and new_candidate_count < previous_count)
+    )
+    shrink_delta = (int(new_candidate_count) - int(previous_count)) if isinstance(new_candidate_count, int) and not previous_count_unknown_due_to_parse_error else None
     shrink_guard = {
         "previous_count": previous_count,
+        "previous_count_unknown_due_to_parse_error": previous_count_unknown_due_to_parse_error,
         "new_candidate_count": new_candidate_count,
         "build_final_export_count": build_final_export_count,
         "uploaded_session_canonical_count": uploaded_session_count,
@@ -324,6 +389,10 @@ def diagnose_canonical_github_sync() -> dict:
         root_cause = "Token lacks Contents permission."
         final_diagnosis = root_cause
         recommended_action = "Grant Contents read/write permission to the token."
+    elif contents_api.get("github_file_exists") and not contents_api.get("github_is_valid_json"):
+        root_cause = "GitHub canonical exists but JSON parsing failed."
+        final_diagnosis = "GitHub canonical file exists but could not be parsed as JSON. The GitHub Contents API metadata/download handling is broken."
+        recommended_action = "Fix GitHub canonical loading to decode base64 content or use download_url raw JSON; do not continue batch until parsing is valid."
     elif manual_push_rebuilds_package and local_check.get("local_expected_file") and isinstance(build_final_export_count, int) and build_final_export_count < int(local_check.get("local_variant_count", 0) or 0):
         root_cause = "Manual push rebuilds from incomplete local outputs instead of pushing the valid local canonical."
         final_diagnosis = root_cause
@@ -341,7 +410,26 @@ def diagnose_canonical_github_sync() -> dict:
         final_diagnosis = "Canonical GitHub sync checks passed with no blocking root cause detected."
         recommended_action = "Continue batch processing and keep canonical in sync after each successful batch."
 
-    safe_to_continue_batch = bool(local_check.get("local_expected_file") and local_check.get("local_next_seed_at_or_after_expected") and not shrink_detected)
+    github_exists = bool(contents_api.get("github_file_exists"))
+    github_valid = bool(contents_api.get("github_is_valid_json"))
+    github_counts_ok = bool(
+        (not github_exists)
+        or (
+            int(contents_api.get("github_variant_count", 0) or 0) >= EXPECTED_LOCAL_MIN_VARIANTS
+            and int(contents_api.get("github_processed_count", 0) or 0) >= EXPECTED_LOCAL_MIN_PROCESSED
+            and bool(contents_api.get("github_next_seed_id"))
+        )
+    )
+    github_source_ok = bool((github_valid and github_counts_ok) or local_fallback_mode_active)
+    manual_push_safe = bool(manual_push_uses_local_canonical and not manual_push_rebuilds_package)
+    safe_to_continue_batch = bool(
+        local_check.get("local_expected_file")
+        and local_check.get("local_next_seed_at_or_after_expected")
+        and github_source_ok
+        and github_counts_ok
+        and manual_push_safe
+        and not shrink_detected
+    )
 
     checks = {
         "secrets": {
@@ -371,6 +459,7 @@ def diagnose_canonical_github_sync() -> dict:
             "github_sha_exists": contents_api.get("github_sha_exists"),
             "github_download_url_exists": contents_api.get("github_download_url_exists"),
             "github_is_valid_json": contents_api.get("github_is_valid_json"),
+            "github_parse_failed": contents_api.get("github_parse_failed"),
             "github_variant_count": contents_api.get("github_variant_count"),
             "github_processed_count": contents_api.get("github_processed_count"),
             "github_next_seed_id": contents_api.get("github_next_seed_id"),
@@ -1157,6 +1246,39 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
         "package": package,
         "push_result": pushed,
         "commit_sha": ((pushed or {}).get("canonical") or {}).get("commit_sha"),
+    }
+
+
+def push_local_canonical_to_github(batch_id: str | None = None, market: str = "IL") -> dict:
+    local_package = load_local_canonical_resume_package()
+    if not isinstance(local_package, dict):
+        return {"ok": False, "error": "Local canonical resume package is missing or invalid JSON."}
+    local_fields = _extract_package_fields(local_package)
+    if int(local_fields.get("variant_count", 0) or 0) < EXPECTED_LOCAL_MIN_VARIANTS:
+        return {
+            "ok": False,
+            "error": f"Local canonical must contain at least {EXPECTED_LOCAL_MIN_VARIANTS} variants before GitHub push.",
+            "package": local_package,
+        }
+    previous_github = fetch_file_from_github(get_github_config().get("canonical_path") or CANONICAL_RESUME_PATH_DEFAULT)
+    pushed = push_canonical_resume_package(local_package, previous_package=previous_github, batch_id=batch_id)
+    if not pushed.get("ok"):
+        return {
+            "ok": False,
+            "error": pushed.get("error") or "Failed to push local canonical package to GitHub.",
+            "package": local_package,
+            "push_result": pushed,
+        }
+    local_package.setdefault("merge_metadata", {})
+    local_package["merge_metadata"]["pushed_to_github"] = True
+    local_package["merge_metadata"]["last_push_commit_sha"] = ((pushed.get("canonical") or {}).get("commit_sha"))
+    save_local_canonical_resume_package(local_package)
+    return {
+        "ok": True,
+        "issues": [],
+        "package": local_package,
+        "push_result": pushed,
+        "commit_sha": ((pushed.get("canonical") or {}).get("commit_sha")),
     }
 
 
