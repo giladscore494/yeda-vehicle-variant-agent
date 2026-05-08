@@ -88,7 +88,13 @@ with tabs[1]:
             st.stop()
         st.subheader("Run result")
         trace = r.get('trace', {})
-        st.info(f"Execution mode: {trace.get('execution_mode')}\nModel mode: {trace.get('model_mode')}\nDiscovery model: {trace.get('discovery_model_used')}\nVerification model: {trace.get('verification_model_used')}\nEscalated: {trace.get('escalated_to_strong')}\nEscalation reason: {trace.get('escalation_reason')}\nSources required min: {trace.get('sources_required_min')}\nGemini attempted: {trace.get('gemini_attempted')}\nGrounding requested: {trace.get('grounding_requested')}\nGemini error: {trace.get('gemini_error')}")
+        gemini_attempted = trace.get('gemini_attempted')
+        if gemini_attempted is None:
+            gemini_attempted = (trace.get('execution_mode') == 'gemini') or ((trace.get('gemini_calls_count') or 0) > 0)
+        grounding_requested = trace.get('grounding_requested')
+        if grounding_requested is None:
+            grounding_requested = (trace.get('grounded_calls_count') or 0) > 0
+        st.info(f"Execution mode: {trace.get('execution_mode')}\nModel mode: {trace.get('model_mode')}\nDiscovery model: {trace.get('discovery_model_used')}\nVerification model: {trace.get('verification_model_used')}\nEscalated: {trace.get('escalated_to_strong')}\nEscalation reason: {trace.get('escalation_reason')}\nSources required min: {trace.get('sources_required_min')}\nGemini attempted: {gemini_attempted}\nGrounding requested: {grounding_requested}\nGemini error: {trace.get('gemini_error')}")
         if trace.get('execution_mode') != 'gemini':
             st.warning('This result did not come from a real Gemini run.')
         warnings=[]
@@ -116,7 +122,7 @@ with tabs[3]:
     if ids:
         rid = st.selectbox("run_id", ids)
         run = next(r for r in runs if r.get("run_id") == rid)
-        keys = ['input','execution_mode','model_mode','discovery_model_used','verification_model_used','escalated_to_strong','escalation_reason','sources_required_min','gemini_attempted','gemini_error','grounding_requested','grounding_supported','search_queries','sources_found','candidate_variants_count','variants_created','verified_count','partial_count','conflict_count','blocked_fields','field_verifications','range_collapsed','range_collapse_reason','final_decision','error']
+        keys = ['input','execution_mode','model_mode','discovery_model_used','verification_model_used','escalated_to_strong','escalation_reason','sources_required_min','gemini_attempted','gemini_error','grounding_requested','grounding_supported','search_queries','sources_found','candidate_variants_count','variants_created','verified_count','partial_count','conflict_count','blocked_fields','field_verifications','range_collapsed','range_collapse_reason','discovery_candidates_preview','final_decision','error']
         st.json({k: run.get(k) for k in keys})
 
 with tabs[4]:
