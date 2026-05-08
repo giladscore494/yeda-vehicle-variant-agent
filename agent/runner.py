@@ -5,13 +5,19 @@ import uuid
 from core.ingest import find_seed, load_model_seeds
 from core.schemas import VerifiedField, VerificationStatus, Confidence, Market, VehicleVariant
 from core.variant_id import generate_variant_id
-from storage.json_store import ensure_output_files, get_output_paths, add_run_history, load_json_list
+from storage.json_store import ensure_output_files, get_output_paths, add_run_history, load_json_list, save_json
 from tools.gemini_client import GeminiClient
 from agent.discovery import run_discovery
 from agent.verifier import verify_candidates_batch, CRITICAL_FIELDS, _unknown_default
 from core.source_compactor import compact_sources_for_model
 
 MOCK_MARKERS = ["source_mock_", "kia sportage", "1.6 turbo", "ql"]
+
+def _append_output_record(path, record):
+    items = load_json_list(path)
+    items.append(record)
+    save_json(path, items)
+
 
 
 def _now(): return datetime.now(timezone.utc).isoformat()
@@ -119,6 +125,8 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         discovery_result = run_discovery(seed, market, model_name=selected_model)
         trace['gemini_calls_count'] += 1; trace['grounded_calls_count'] += 1
     trace['discovery_model_used'] = selected_model
+    discovery_meta = discovery_result.get('gemini_metadata', {}) if isinstance(discovery_result, dict) else {}
+    discovery_data_raw = discovery_result.get('data') if isinstance(discovery_result.get('data'), dict) else {}
     if not discovery_result.get('ok'):
         trace['gemini_error'] = discovery_result.get('error')
         add_run_history(trace | {'status': 'error', 'execution_mode': 'gemini'})
@@ -134,6 +142,30 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     ver = verify_candidates_batch(candidates, sources, model_name=strong)
     trace['gemini_calls_count'] += 1
     trace['verification_model_used'] = strong
+    verification_meta = ver.get('gemini_metadata', {}) if isinstance(ver, dict) else {}
+
+    raw_paths = get_output_paths()
+    raw_candidates_record = {
+        'run_id': run_id, 'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market,
+        'candidate_variants': discovery_data_raw.get('candidate_variants', []),
+        'sources': discovery_data_raw.get('sources', []),
+        'search_queries': discovery_data_raw.get('search_queries', []),
+        'conflicts': discovery_data_raw.get('conflicts', []),
+        'unresolved': bool(discovery_data_raw.get('unresolved', False)),
+        'unresolved_reason': discovery_data_raw.get('unresolved_reason'),
+    }
+    _append_output_record(raw_paths['vehicle_candidates_raw'], raw_candidates_record)
+
+    raw_run_record = {
+        'run_id': run_id, 'created_at': _now(), 'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market,
+        'model_policy': 'pro_only', 'discovery_model_used': selected_model, 'verification_model_used': strong,
+        'discovery_raw_text': discovery_meta.get('raw_text'), 'discovery_parsed_json': discovery_meta.get('parsed_json') or discovery_data_raw,
+        'discovery_parse_error': discovery_meta.get('parse_error'),
+        'verification_raw_text': verification_meta.get('raw_text'), 'verification_parsed_json': verification_meta.get('parsed_json') or verification_meta.get('data'),
+        'verification_parse_error': verification_meta.get('parse_error'),
+        'gemini_metadata': {'discovery': discovery_meta.get('response_metadata', {}), 'verification': verification_meta.get('response_metadata', {})},
+    }
+    _append_output_record(raw_paths['gemini_raw_runs'], raw_run_record)
 
     vv = ver.get('variant_verifications') or []
     mapping = {item.get('candidate_index'): item for item in vv if isinstance(item, dict) and item.get('candidate_index') is not None}
@@ -180,6 +212,13 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         'field_verifications': field_verifications,
         'final_decision': {'classification': 'partial', 'reason': 'Candidate values preserved but not sufficiently verified.', 'possible_under_split': (ye-ys)>8 and len(unique)==1},
         'stopped_by_call_limit': trace['gemini_calls_count'] > max_gemini_calls_per_model_run or trace['grounded_calls_count'] > max_grounded_calls_per_model_run,
+        'raw_discovery_saved': True, 'raw_verification_saved': True, 'raw_run_record_id': run_id,
+        'discovery_raw_text_available': bool(raw_run_record.get('discovery_raw_text')),
+        'verification_raw_text_available': bool(raw_run_record.get('verification_raw_text')),
+        'discovery_parse_error': raw_run_record.get('discovery_parse_error'),
+        'verification_parse_error': raw_run_record.get('verification_parse_error'),
+        'discovery_parsed_top_level_keys': list((raw_run_record.get('discovery_parsed_json') or {}).keys()) if isinstance(raw_run_record.get('discovery_parsed_json'), dict) else [],
+        'verification_parsed_top_level_keys': list((raw_run_record.get('verification_parsed_json') or {}).keys()) if isinstance(raw_run_record.get('verification_parsed_json'), dict) else [],
     })
     add_run_history(trace)
     return {'status': 'completed', 'variants_created': len(unique), 'trace': trace}
