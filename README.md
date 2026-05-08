@@ -1,15 +1,15 @@
 # Yeda Vehicle Variant Agent
 
-## What this tool does
-Builds/validates vehicle variants from `data/input/car_models_dict.py` into JSON outputs and provides a Streamlit dashboard.
+## 1. What this tool does
+This tool ingests a vehicle model dictionary, runs an agent pipeline (Gemini-backed or mock mode), classifies output variants, tracks trace history, and provides a Streamlit dashboard for inspection/export.
 
-## Why it exists
-To support internal Yeda Rechev variant curation with auditable evidence and mock-first operation.
+## 2. Why it exists
+It supports Yeda Rechev vehicle-variant data curation with auditable JSON outputs, strict verification rules, and safe mock operation when no API key is configured.
 
-## Input file
+## 3. Input
 - `data/input/car_models_dict.py`
 
-## Output files
+## 4. Output files
 - `data/output/vehicle_variants_verified.json`
 - `data/output/vehicle_variants_partial.json`
 - `data/output/vehicle_conflicts.json`
@@ -17,30 +17,35 @@ To support internal Yeda Rechev variant curation with auditable evidence and moc
 - `data/output/unresolved_models.json`
 - `data/output/run_history.json`
 
-## Local setup
+## 5. Local setup
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Environment variables
-- `GEMINI_API_KEY`
-- `GEMINI_MODEL_FAST`
-- `GEMINI_MODEL_STRONG`
-
-## Streamlit Cloud deployment
-1. Push repo to GitHub.
+## 6. Streamlit Community Cloud deployment
+1. Push this repository to GitHub.
 2. Open Streamlit Community Cloud.
-3. Create app and select this repo.
-4. Main file: `app.py`.
-5. Add secret: `GEMINI_API_KEY = "..."`.
-6. Deploy.
+3. Click **New app**.
+4. Select your repository.
+5. Choose branch **main**.
+6. Set main file path to **app.py**.
+7. Click **Deploy**.
 
-## Mock mode
-App works without Gemini key and can run mock Kia Sportage generation.
+## 7. Secrets
+Add the following in Streamlit app settings → **Secrets**:
 
-## How to export to Yeda Rechev
-Use Export tab and download lightweight Yeda JSON.
+```toml
+GEMINI_API_KEY = "your_key_here"
+GEMINI_MODEL_FAST = "gemini-3-flash-preview"
+GEMINI_MODEL_STRONG = "gemini-3-pro-preview"
+```
 
-## Important warning
-Gemini is not source of truth. Review output before production; only verified fields should drive compare scoring.
+## 8. Mock mode
+The app works without a Gemini key. If `GEMINI_API_KEY` is missing, mock mode can still run and produce output files.
+
+## 9. How to export to Yeda Rechev
+Open the **Export** tab, click **Download Yeda Rechev Export JSON**, and copy the file into the destination app data folder.
+
+## 10. Warning
+Gemini is not source of truth. Review data before production. Only verified fields should enter compare scoring.
