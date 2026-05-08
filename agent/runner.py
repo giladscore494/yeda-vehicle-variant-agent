@@ -17,9 +17,23 @@ def _now():
 def _mock_variant(make='Kia', model='Sportage', year_start=2016, year_end=2021, market='IL'):
     sid = 'source_mock_kia_sportage'
     mk = lambda v, s, c, sc, u, r: VerifiedField(value=v, status=s, confidence=c, sources_count=sc, source_ids=[sid] if sc else [], used_in_compare=u, reason=r)
-    var = VehicleVariant(variant_id=generate_variant_id(make, model, year_start, year_end, market, '1.6 Turbo', 'automatic', 'suv'), make=make, model=model, aliases=[], year_start=year_start, year_end=year_end, market=Market(market), generation='QL', body_type=mk('suv', VerificationStatus.verified, Confidence.high, 1, True, 'mock'), seats=mk(5, VerificationStatus.verified, Confidence.high, 1, True, 'mock'), engine=mk('1.6 Turbo', VerificationStatus.partial, Confidence.medium, 1, True, 'mock'), transmission=mk('automatic', VerificationStatus.partial, Confidence.medium, 1, True, 'mock'), fuel_type=mk('petrol', VerificationStatus.partial, Confidence.medium, 1, True, 'mock'), drivetrain=mk('FWD', VerificationStatus.unknown, Confidence.low, 0, False, 'unknown'), verification_status=VerificationStatus.partial, confidence=Confidence.medium, sources_count=1, created_at=_now(), updated_at=_now(), notes=['mock mode'])
+    var = VehicleVariant(variant_id=generate_variant_id(make, model, year_start, year_end, market, '1.6 Turbo', 'automatic', 'suv'), make=make, model=model, aliases=[], year_start=year_start, year_end=year_end, market=Market(market), generation='QL', body_type=mk('suv', VerificationStatus.verified, Confidence.high, 1, True, 'mock'), seats=mk(5, VerificationStatus.verified, Confidence.high, 1, True, 'mock'), engine=mk('1.6 Turbo', VerificationStatus.partial, Confidence.medium, 1, True, 'mock'), transmission=mk('automatic', VerificationStatus.partial, Confidence.medium, 1, True, 'mock'), fuel_type=mk('petrol', VerificationStatus.partial, Confidence.medium, 1, True, 'mock'), drivetrain=mk('FWD', VerificationStatus.inferred, Confidence.medium, 0, False, 'Drivetrain inferred from known model configuration; no conflicting source found.'), verification_status=VerificationStatus.partial, confidence=Confidence.medium, sources_count=1, created_at=_now(), updated_at=_now(), notes=['mock mode'])
     src = EvidenceSource(source_id=sid, source_name='Mock Source', url='https://example.com/mock-kia-sportage', source_type='mock', market_scope=Market.IL, title='Mock Kia Sportage', retrieved_at=_now(), evidence_snippet='mock evidence', reliability_score=3, fields_supported=['body_type', 'seats', 'engine', 'transmission'])
     return var, src
+
+
+def _blocked_fields_for_variant(variant: VehicleVariant) -> list[str]:
+    blocked = []
+    for field_name in ("body_type", "seats", "engine", "transmission", "fuel_type", "drivetrain"):
+        field = getattr(variant, field_name)
+        if field.status == VerificationStatus.conflict:
+            blocked.append(field_name)
+            continue
+        if field_name == "drivetrain" and field.status == VerificationStatus.inferred:
+            continue
+        if field.status in {VerificationStatus.unknown, VerificationStatus.unverified}:
+            blocked.append(field_name)
+    return blocked
 
 
 def run_single_model(make, model, year_start=None, year_end=None, market='IL', force_mock=False, allow_mock_fallback=True) -> dict:
@@ -136,8 +150,9 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         'partial_count': 1 if cls == 'partial' else 0,
         'conflict_count': len(conflicts),
         'unresolved_count': 0,
-        'blocked_fields': ['drivetrain'],
+        'blocked_fields': _blocked_fields_for_variant(variant),
         'final_decision': {'classification': cls},
+        'field_verifications': {'drivetrain': variant.drivetrain.model_dump(mode='json')},
         'error': None,
     }
     add_run_history(trace)
