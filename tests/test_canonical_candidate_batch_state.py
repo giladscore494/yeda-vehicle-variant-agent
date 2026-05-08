@@ -146,7 +146,9 @@ def test_push_merged_final_export_as_canonical(monkeypatch):
             "audit": {"accumulation_counts": {"final_merged_variants": 273, "latest_batch_full_variants": 0}},
         },
     )
-    # Intentionally invalid reset-like state; candidate builder should reject it and preserve canonical progress.
+    # Intentionally invalid reset-like state:
+    # empty processed_seed_ids plus first-seed next pointer would reset progress from 59 back to 0.
+    # Candidate builder must reject this and preserve canonical progress.
     monkeypatch.setattr(batch_runner, "load_batch_state", lambda market="IL": {"processed_seed_ids": [], "next_seed_id": "abarth__124_spider__2016__2020__il"})
     monkeypatch.setattr(batch_runner, "save_local_canonical_backup", lambda package: None)
     monkeypatch.setattr(batch_runner, "save_local_canonical_resume_package", lambda package: pushed.setdefault("saved", package))

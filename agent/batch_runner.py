@@ -1440,7 +1440,10 @@ def build_canonical_candidate(
     selected_set = set(selected_processed)
     selected_next = selected_state.get("next_seed_id")
     if selected_next in selected_set:
-        selected_state["next_seed_id"] = next_unprocessed_seed_id(ordered_seed_ids, selected_set)
+        resolved_next = next_unprocessed_seed_id(ordered_seed_ids, selected_set)
+        if resolved_next is None and len(selected_set) < len(ordered_seed_ids):
+            resolved_next = previous_next_seed
+        selected_state["next_seed_id"] = resolved_next
 
     candidate_acc = candidate.get("accumulated_clean_export")
     if not isinstance(candidate_acc, dict):
