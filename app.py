@@ -15,12 +15,12 @@ try:
 except (ImportError, ModuleNotFoundError) as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
-    def _batch_runner_error_result():
+    def _get_batch_runner_error_result():
         """Return a consistent error payload when batch_runner features are unavailable."""
         return {"ok": False, "error": f"Batch runner module unavailable: {_BATCH_RUNNER_IMPORT_ERROR}"}
 
     def run_next_batch(*args, **kwargs):
-        return {"results": [], **_batch_runner_error_result()}
+        return {"results": [], **_get_batch_runner_error_result()}
 
     def get_batch_progress(*args, **kwargs):
         return {
@@ -31,17 +31,17 @@ except (ImportError, ModuleNotFoundError) as exc:
             "next_seed": {},
             "coverage_by_make": [],
             "coverage_audit": {"last_completed_seed_id": None, "scanned_count": 0, "holes_count": 0, "missing_seeds": []},
-            **_batch_runner_error_result(),
+            **_get_batch_runner_error_result(),
         }
 
     def load_batch_state(*args, **kwargs):
-        return {}
+        return _get_batch_runner_error_result()
 
     def rebuild_batch_state_from_outputs(*args, **kwargs):
-        return _batch_runner_error_result()
+        return _get_batch_runner_error_result()
 
     def build_final_export(*args, **kwargs):
-        return {"counts": {}, "audit": {}, "quality_gate": {"passed": False}, "variants": [], **_batch_runner_error_result()}
+        return {"counts": {}, "audit": {}, "quality_gate": {"passed": False}, "variants": [], **_get_batch_runner_error_result()}
 
     def build_resume_package(*args, **kwargs):
         return {}
@@ -50,31 +50,31 @@ except (ImportError, ModuleNotFoundError) as exc:
         return "unknown"
 
     def import_progress_json(*args, **kwargs):
-        return {"imported_variants": 0, **_batch_runner_error_result()}
+        return {"imported_variants": 0, **_get_batch_runner_error_result()}
 
     def repair_coverage_until_clean(*args, **kwargs):
-        return _batch_runner_error_result()
+        return _get_batch_runner_error_result()
 
     def cleanup_retryable_schema_errors(*args, **kwargs):
-        return _batch_runner_error_result()
+        return _get_batch_runner_error_result()
 
     def persist_canonical_resume_package(*args, **kwargs):
-        return _batch_runner_error_result()
+        return _get_batch_runner_error_result()
 
     def push_local_canonical_to_github(*args, **kwargs):
-        return _batch_runner_error_result()
+        return _get_batch_runner_error_result()
 
     def pull_canonical_from_github(*args, **kwargs):
-        return _batch_runner_error_result()
+        return _get_batch_runner_error_result()
 
     def canonical_integrity_report(*args, **kwargs):
-        return {"sync_status": "unavailable", "guard_issues": [_BATCH_RUNNER_IMPORT_ERROR], **_batch_runner_error_result()}
+        return {"sync_status": "unavailable", "guard_issues": [_BATCH_RUNNER_IMPORT_ERROR], **_get_batch_runner_error_result()}
 
     def load_local_canonical_resume_package(*args, **kwargs):
         return {}
 
     def save_local_canonical_resume_package(*args, **kwargs):
-        return _batch_runner_error_result()
+        return _get_batch_runner_error_result()
 
     def diagnose_canonical_github_sync(*args, **kwargs):
         return {
@@ -84,7 +84,7 @@ except (ImportError, ModuleNotFoundError) as exc:
             "safe_to_continue_batch": False,
             "ruled_out": [],
             "checks": {},
-            **_batch_runner_error_result(),
+            **_get_batch_runner_error_result(),
         }
 from tools.gemini_client import GeminiClient
 
