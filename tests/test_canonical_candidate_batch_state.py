@@ -1,3 +1,4 @@
+import importlib
 from agent import batch_runner
 
 
@@ -170,3 +171,34 @@ def test_push_merged_final_export_as_canonical(monkeypatch):
     assert pushed_state.get("processed_seed_ids", []) != []
     assert pushed_state.get("last_completed_seed_id") == "audi__rs5__2010__2026__il"
     assert pushed_state.get("next_seed_id") == "audi__rs6__2008__2026__il"
+
+
+def test_build_canonical_candidate_importable():
+    mod = importlib.import_module("agent.batch_runner")
+    fn = getattr(mod, "build_canonical_candidate", None)
+    assert callable(fn), "build_canonical_candidate must be importable from agent.batch_runner"
+
+
+def test_build_canonical_candidate_preserves_batch_state(monkeypatch):
+    monkeypatch.setattr(batch_runner, "get_ordered_seed_list", lambda market="IL": _ordered_seeds())
+    previous = _previous_package(variant_count=263)
+    merged_variants = [_variant(i) for i in range(273)]
+
+    candidate = batch_runner.build_canonical_candidate(previous, merged_variants, new_batch_state=None)
+
+    assert len((candidate.get("accumulated_clean_export") or {}).get("variants", [])) == 273
+    assert len((candidate.get("batch_state") or {}).get("processed_seed_ids", [])) == 59
+    assert candidate["batch_state"]["last_completed_seed_id"] == "audi__rs5__2010__2026__il"
+    assert candidate["batch_state"]["next_seed_id"] == "audi__rs6__2008__2026__il"
+
+
+def test_build_canonical_candidate_does_not_reset_to_first_seed(monkeypatch):
+    monkeypatch.setattr(batch_runner, "get_ordered_seed_list", lambda market="IL": _ordered_seeds())
+    previous = _previous_package(variant_count=263)
+    merged_variants = [_variant(i) for i in range(273)]
+
+    candidate = batch_runner.build_canonical_candidate(previous, merged_variants, new_batch_state=None)
+
+    assert candidate["batch_state"]["next_seed_id"] != "abarth__124_spider__2016__2020__il"
+    assert candidate["batch_state"]["next_seed_id"] == "audi__rs6__2008__2026__il"
+    assert len(candidate["batch_state"]["processed_seed_ids"]) > 0
