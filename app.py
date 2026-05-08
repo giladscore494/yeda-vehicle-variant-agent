@@ -4,7 +4,7 @@ try:
 except Exception as exc:
     raise RuntimeError("Streamlit is required to run app.py") from exc
 import pandas as pd
-from storage.json_store import ensure_output_files, load_outputs_summary, get_output_paths, load_json_list
+from storage.json_store import ensure_output_files, load_outputs_summary, get_output_paths, load_json_list, safe_get
 from storage.export import export_verified_for_yeda
 from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model, run_batch
@@ -16,11 +16,16 @@ client = GeminiClient()
 paths = get_output_paths()
 summary = load_outputs_summary()
 
+
+def is_malformed_run_record(record):
+    return not isinstance(record, dict) or "status" not in record
+
+
 st.sidebar.header("Settings")
 cfg=client.get_config_status()
-st.sidebar.write(f"Gemini API status: {'✅ found' if cfg['has_api_key'] else '⚠️ missing'}")
+st.sidebar.write(f"Gemini API status: {'✅ found' if safe_get(cfg, 'has_api_key', False) else '⚠️ missing'}")
 st.sidebar.subheader('Gemini config status')
-st.sidebar.write({'api_key': 'found' if cfg['has_api_key'] else 'missing', 'api_key_source': cfg['api_key_source'], 'google_genai_import_ok': cfg['client_import_ok'], 'client_ready': cfg['client_ready'], 'import_error': cfg['import_error'], 'fast_model': cfg['fast_model'], 'strong_model': cfg['strong_model']})
+st.sidebar.write({'api_key': 'found' if safe_get(cfg, 'has_api_key', False) else 'missing', 'api_key_source': safe_get(cfg, 'api_key_source'), 'google_genai_import_ok': safe_get(cfg, 'client_import_ok'), 'client_ready': safe_get(cfg, 'client_ready'), 'import_error': safe_get(cfg, 'import_error'), 'fast_model': safe_get(cfg, 'fast_model'), 'strong_model': safe_get(cfg, 'strong_model')})
 market = st.sidebar.selectbox("Market", ["IL", "EU", "GLOBAL"], index=0)
 model_policy = st.sidebar.selectbox("Model policy", ["Pro only", "Mock only", "Advanced"], index=0)
 model_mode='pro_only'
@@ -31,7 +36,7 @@ elif model_policy=="Advanced":
     with st.sidebar.expander("Advanced model settings"):
         adv = st.selectbox("Advanced mode", ["fast", "auto", "strong"], index=1)
         model_mode=adv
-st.sidebar.write({"model_policy": model_policy, "model_mode": model_mode, "fast_model": cfg["fast_model"], "strong_model": cfg["strong_model"]})
+st.sidebar.write({"model_policy": model_policy, "model_mode": model_mode, "fast_model": safe_get(cfg, "fast_model"), "strong_model": safe_get(cfg, "strong_model")})
 batch_limit = st.sidebar.selectbox("Batch limit", [1, 5, 10, 20], index=1)
 make_filter = st.sidebar.selectbox("Make filter", [""] + get_makes())
 
@@ -42,6 +47,10 @@ with tabs[0]:
     cols[0].metric("Total makes", count_makes())
     cols[1].metric("Total model seeds", count_models())
     cols[2].metric("Runs count", summary.get("run_history", 0))
+    run_history = load_json_list(paths["run_history"])
+    last_run = run_history[-1] if run_history else {}
+    last_run_status = safe_get(last_run, "status", "n/a")
+    last_run_id = safe_get(last_run, "run_id", "n/a")
     st.write(
         {
             "verified variants count": summary.get("vehicle_variants_verified", 0),
@@ -49,10 +58,13 @@ with tabs[0]:
             "conflicts count": summary.get("vehicle_conflicts", 0),
             "sources count": summary.get("vehicle_sources", 0),
             "unresolved count": summary.get("unresolved_models", 0),
-            "last run status": (load_json_list(paths["run_history"])[-1]["status"] if load_json_list(paths["run_history"]) else "n/a"),
+            "last run status": last_run_status,
+            "last run id": last_run_id,
             "Gemini API key status": "present" if client.has_api_key() else "missing",
         }
     )
+    if any(is_malformed_run_record(r) for r in run_history):
+        st.warning("Some run history records use an older schema.")
     if not client.has_api_key():
         st.warning("Gemini key missing — Gemini runs will fail unless fallback is enabled.")
 
@@ -118,10 +130,10 @@ with tabs[2]:
 
 with tabs[3]:
     runs = load_json_list(paths["run_history"])
-    ids = [r.get("run_id") for r in runs if r.get("run_id")]
+    ids = [safe_get(r, "run_id") for r in runs if safe_get(r, "run_id", None)]
     if ids:
         rid = st.selectbox("run_id", ids)
-        run = next(r for r in runs if r.get("run_id") == rid)
+        run = next((r for r in runs if safe_get(r, "run_id") == rid), {})
         keys = ['input','execution_mode','model_mode','discovery_model_used','verification_model_used','escalated_to_strong','escalation_reason','sources_required_min','gemini_attempted','gemini_error','grounding_requested','grounding_supported','search_queries','sources_found','candidate_variants_count','variants_created','verified_count','partial_count','conflict_count','blocked_fields','field_verifications','range_collapsed','range_collapse_reason','discovery_candidates_preview','final_decision','error']
         st.json({k: run.get(k) for k in keys})
 

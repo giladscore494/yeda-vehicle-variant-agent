@@ -14,6 +14,8 @@ def load_json_list(path:Path)->list:
     if not path.exists(): return []
     d=json.loads(path.read_text(encoding='utf-8') or '[]')
     return d if isinstance(d,list) else []
+def safe_get(d, key, default='n/a'):
+    return d.get(key, default) if isinstance(d, dict) else default
 def load_json_object(path:Path)->dict:
     if not path.exists(): return {}
     d=json.loads(path.read_text(encoding='utf-8') or '{}')
