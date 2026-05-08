@@ -48,7 +48,10 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     if not seed: return {'status':'error','error':'seed not found'}
     ys=year_start or seed.year_start or 2016; ye=year_end or seed.year_end or 2021
     client=GeminiClient(); cfg=client.get_config_status()
-    selected = client.fast_model if model_mode=='fast' else client.strong_model if model_mode=='strong' else client.fast_model
+    model_mode = str(model_mode).lower() if model_mode else 'auto'
+    if model_mode not in {'fast','strong','auto'}:
+        model_mode='auto'
+    selected = client.fast_model if model_mode in {'fast','auto'} else client.strong_model
     escalated=False; escalation_reason=None
     if force_mock: execution_mode='mock'; discovery_result={'ok':False,'data':{}}
     else:
@@ -72,13 +75,13 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     cls=classify_variant(variant)
     paths=get_output_paths(); append_unique(paths['vehicle_variants_partial'],[variant.model_dump(mode='json')],'variant_id'); append_unique(paths['vehicle_sources'],[source.model_dump(mode='json')],'source_id')
     conflicts=[c.model_dump(mode='json') for c in detect_conflicts([variant])]
-    trace={'run_id':run_id,'input':{'make':make,'model':model},'started_at':started,'finished_at':_now(),'execution_mode':execution_mode,'status':'completed','model_mode':model_mode,'discovery_model_used':selected,'verification_model_used':selected,'escalated_to_strong':escalated,'escalation_reason':escalation_reason,'sources_required_min':2,'gemini_attempted': bool((discovery_result.get('gemini_metadata') or {}).get('request_attempted')),'gemini_error':discovery_result.get('error'),'grounding_requested': bool((discovery_result.get('gemini_metadata') or {}).get('grounding_requested')),'search_queries':discovery_result.get('data',{}).get('search_queries',[]),'sources_found':len(discovery_result.get('data',{}).get('sources',[])) if isinstance(discovery_result,dict) else 0,'variants_created':1,'verified_count':0,'partial_count':1,'conflict_count':len(conflicts),'unresolved_count':0,'blocked_fields':_blocked_fields_for_variant(variant),'final_decision':{'classification':cls},'field_verifications':{'drivetrain':variant.drivetrain.model_dump(mode='json')}}
+    trace={'run_id':run_id,'input':{'make':make,'model':model},'started_at':started,'finished_at':_now(),'execution_mode':execution_mode,'status':'completed','model_mode':model_mode,'discovery_model_used':(None if execution_mode=='mock' else selected),'verification_model_used':(None if execution_mode=='mock' else selected),'escalated_to_strong':escalated,'escalation_reason':escalation_reason,'sources_required_min':2,'gemini_attempted': bool((discovery_result.get('gemini_metadata') or {}).get('request_attempted')),'gemini_error':discovery_result.get('error'),'grounding_requested': bool((discovery_result.get('gemini_metadata') or {}).get('grounding_requested')),'search_queries':discovery_result.get('data',{}).get('search_queries',[]),'sources_found':len(discovery_result.get('data',{}).get('sources',[])) if isinstance(discovery_result,dict) else 0,'variants_created':1,'verified_count':0,'partial_count':1,'conflict_count':len(conflicts),'unresolved_count':0,'blocked_fields':_blocked_fields_for_variant(variant),'final_decision':{'classification':cls},'field_verifications':{'drivetrain':variant.drivetrain.model_dump(mode='json')}}
     add_run_history(trace)
     return {'status':'completed','run_id':run_id,'variants_created':1,'verified_count':0,'partial_count':1,'conflict_count':len(conflicts),'unresolved_count':0,'blocked_fields':trace['blocked_fields'],'final_decision':trace['final_decision'],'trace':trace}
 
-def run_batch(limit=5, make_filter=None, market='IL', force_mock=False, allow_mock_fallback=True):
+def run_batch(limit=5, make_filter=None, market='IL', force_mock=False, allow_mock_fallback=True, model_mode='auto'):
     seeds=load_model_seeds();
     if make_filter: seeds=[s for s in seeds if s.make.lower()==make_filter.lower()]
     seen={(r.get('input') or {}).get('make','')+'|'+(r.get('input') or {}).get('model','') for r in load_json_list(get_output_paths()['run_history'])}
     chosen=[s for s in seeds if f'{s.make}|{s.model}' not in seen][:limit]
-    return {'status':'completed','processed':len(chosen),'results':[run_single_model(s.make,s.model,s.year_start,s.year_end,market,force_mock,allow_mock_fallback) for s in chosen]}
+    return {'status':'completed','processed':len(chosen),'results':[run_single_model(make=s.make, model=s.model, year_start=s.year_start, year_end=s.year_end, market=market, force_mock=force_mock, allow_mock_fallback=allow_mock_fallback, model_mode=model_mode) for s in chosen]}
