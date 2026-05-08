@@ -9,7 +9,7 @@ from storage.json_store import ensure_output_files, load_outputs_summary, get_ou
 from storage.export import export_verified_for_yeda
 from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
-from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync
+from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -369,7 +369,7 @@ with tabs[7]:
             "shrink_guard_status": integrity.get("shrink_guard_status"),
         }
     )
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
     if c1.button("Pull canonical from GitHub"):
         pull_res = pull_canonical_from_github()
         if pull_res.get("ok"):
@@ -383,19 +383,25 @@ with tabs[7]:
             st.success("Uploaded package saved as local canonical.")
         else:
             st.error("No uploaded resume package found in current session.")
-    if c3.button("Push canonical to GitHub"):
+    if c3.button("Push local canonical to GitHub"):
+        push_res = push_local_canonical_to_github(market=market)
+        if push_res.get("ok"):
+            st.success("Local canonical pushed to GitHub.")
+        else:
+            st.error("Canonical resume package update blocked: shrink or invalid state detected.")
+    if c4.button("Build merged canonical and push"):
         push_res = persist_canonical_resume_package(push_to_github=True, market=market)
         if push_res.get("ok"):
-            st.success("Canonical pushed to GitHub.")
+            st.success("Merged canonical built and pushed to GitHub.")
         else:
             st.error("Canonical resume package update blocked: shrink or invalid state detected.")
     local_canonical = load_local_canonical_resume_package()
-    c4.download_button(
+    c5.download_button(
         "Export canonical locally",
         json.dumps(local_canonical or {}, ensure_ascii=False, indent=2).encode("utf-8"),
         file_name="resume_package_canonical.json",
     )
-    if c5.button("Run canonical integrity check"):
+    if c6.button("Run canonical integrity check"):
         if integrity.get("guard_issues"):
             st.error("Canonical resume package update blocked: shrink or invalid state detected.")
             st.write({"guard_issues": integrity.get("guard_issues")})

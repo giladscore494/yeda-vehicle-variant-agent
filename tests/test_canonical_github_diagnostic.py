@@ -5,9 +5,10 @@ from agent import batch_runner
 
 
 class _Resp:
-    def __init__(self, status_code: int, payload: dict | None = None):
+    def __init__(self, status_code: int, payload: dict | None = None, text: str = ""):
         self.status_code = status_code
         self._payload = payload or {}
+        self.text = text
 
     def json(self):
         return self._payload
@@ -30,6 +31,8 @@ def _mock_github(monkeypatch, repo_status=200, branch_status=200, contents_statu
     encoded = base64.b64encode(json.dumps(github_pkg).encode("utf-8")).decode("utf-8")
 
     def _get(url, headers=None, timeout=30):
+        if url == "https://example.com/file.json":
+            return _Resp(200, {}, json.dumps(github_pkg))
         if "/branches/" in url:
             payload = {"name": "main"} if branch_status == 200 else {"message": "Not Found"}
             return _Resp(branch_status, payload)
@@ -123,8 +126,10 @@ def test_diagnose_manual_push_rebuild_shrink(monkeypatch, tmp_path):
 
     monkeypatch.setattr(batch_runner, "build_resume_package", _raise_shrink)
     result = batch_runner.diagnose_canonical_github_sync()
-    assert result["final_diagnosis"] == "Manual push rebuilds from incomplete local outputs instead of pushing the valid local canonical."
+    assert result["final_diagnosis"] == "Shrink guard correctly blocked a smaller candidate package."
     assert result["checks"]["shrink_guard_diagnosis"]["shrink_detected"] is True
+    assert result["checks"]["push_behavior"]["manual_push_uses_local_canonical"] is True
+    assert result["checks"]["push_behavior"]["manual_push_rebuilds_package"] is False
 
 
 def test_diagnose_valid_github_canonical_263(monkeypatch, tmp_path):
@@ -153,3 +158,43 @@ def test_local_canonical_valid_is_safe_to_continue_batch(monkeypatch, tmp_path):
     result = batch_runner.diagnose_canonical_github_sync()
     assert result["checks"]["local_canonical"]["local_expected_file"] is True
     assert result["safe_to_continue_batch"] is True
+
+
+def test_github_file_exists_but_json_parse_fails_is_blocking(monkeypatch, tmp_path):
+    _setup_common(monkeypatch, tmp_path)
+    _write_local_canonical(tmp_path, _make_pkg(263, 59, "audi__rs6__2008__2026__il"))
+
+    def _get(url, headers=None, timeout=30):
+        if "/branches/" in url:
+            return _Resp(200, {"name": "main"})
+        if "/contents/" in url:
+            return _Resp(
+                200,
+                {
+                    "content": "not-base64",
+                    "encoding": "base64",
+                    "sha": "abc123",
+                    "size": 2220403,
+                    "download_url": "",
+                },
+            )
+        return _Resp(200, {"private": True, "default_branch": "main"})
+
+    monkeypatch.setattr(batch_runner.requests, "get", _get)
+    result = batch_runner.diagnose_canonical_github_sync()
+    assert result["checks"]["github_contents_check"]["contents_status_code"] == 200
+    assert result["checks"]["github_contents_check"]["github_file_exists"] is True
+    assert result["checks"]["github_contents_check"]["github_is_valid_json"] is False
+    assert result["safe_to_continue_batch"] is False
+    assert "JSON" in result["final_diagnosis"]
+
+
+def test_no_false_pass_when_github_count_zero(monkeypatch, tmp_path):
+    _setup_common(monkeypatch, tmp_path)
+    _write_local_canonical(tmp_path, _make_pkg(263, 59, "audi__rs6__2008__2026__il"))
+    _mock_github(monkeypatch, repo_status=200, branch_status=200, contents_status=200, github_pkg=_make_pkg(0, 0, None))
+    result = batch_runner.diagnose_canonical_github_sync()
+    assert result["checks"]["github_contents_check"]["github_file_exists"] is True
+    assert result["checks"]["github_contents_check"]["github_variant_count"] == 0
+    assert result["single_root_cause"] != "No blocking root cause detected."
+    assert result["safe_to_continue_batch"] is False

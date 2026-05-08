@@ -46,6 +46,14 @@ def _headers(token: str) -> dict:
     }
 
 
+def _parse_json_text(raw_text: str) -> dict | None:
+    try:
+        payload = json.loads(raw_text)
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
 def _get_file_payload(path: str) -> tuple[dict | None, str | None, str | None]:
     cfg = get_github_config()
     token = cfg.get("token")
@@ -67,14 +75,36 @@ def _get_file_payload(path: str) -> tuple[dict | None, str | None, str | None]:
         return None, None, f"Failed to fetch file from GitHub (HTTP {resp.status_code})."
     body = resp.json() if resp.content else {}
     encoded = body.get("content")
+    encoding = body.get("encoding")
     sha = body.get("sha")
-    if not isinstance(encoded, str):
-        return None, sha, "GitHub file payload is malformed."
-    try:
-        data = json.loads(base64.b64decode(encoded).decode("utf-8"))
-    except Exception:
-        return None, sha, "GitHub file content is not valid JSON."
-    return data, sha, None
+    download_url = body.get("download_url")
+    parse_error = None
+
+    if isinstance(encoded, str) and encoded.strip() and str(encoding or "").lower() == "base64":
+        try:
+            decoded_text = base64.b64decode(encoded).decode("utf-8")
+        except Exception:
+            decoded_text = ""
+        data = _parse_json_text(decoded_text) if decoded_text else None
+        if isinstance(data, dict):
+            return data, sha, None
+        parse_error = "GitHub file content is not valid JSON."
+    else:
+        parse_error = "GitHub file payload content is missing or unusable."
+
+    if isinstance(download_url, str) and download_url.strip():
+        try:
+            raw_resp = requests.get(download_url, headers=_headers(token), timeout=30)
+        except Exception as exc:
+            return None, sha, f"Failed to fetch GitHub file download URL: {type(exc).__name__}"
+        if raw_resp.status_code >= 400:
+            return None, sha, f"Failed to fetch GitHub file download URL (HTTP {raw_resp.status_code})."
+        data = _parse_json_text(raw_resp.text if isinstance(raw_resp.text, str) else "")
+        if isinstance(data, dict):
+            return data, sha, None
+        return None, sha, "GitHub file content from download_url is not valid JSON."
+
+    return None, sha, parse_error
 
 
 def fetch_file_from_github(path: str) -> dict | None:
