@@ -7,6 +7,7 @@ from core.validators import classify_variant
 from core.conflict_detector import detect_conflicts
 from storage.json_store import ensure_output_files, get_output_paths, append_unique, add_run_history, load_json_list
 from tools.gemini_client import GeminiClient
+from agent.discovery import run_discovery
 
 
 def _now():
@@ -39,17 +40,20 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     gemini_attempted = False
     gemini_error = None
     gemini_model_used = None
+    search_queries = []
 
     if force_mock:
         execution_mode = 'mock'
     else:
-        gem = client.generate_json(prompt={'make': make, 'model': model})
-        gemini_attempted = bool(gem.get('request_attempted'))
+        gem = run_discovery(seed, market)
+        meta = gem.get('gemini_metadata', gem)
+        gemini_attempted = bool(meta.get('request_attempted'))
         gemini_error = gem.get('error')
-        gemini_model_used = gem.get('model')
-        grounding_requested = bool(gem.get('grounding_requested'))
+        gemini_model_used = meta.get('model')
+        grounding_requested = bool(meta.get('grounding_requested', True))
+        search_queries = gem.get('search_queries', [])
 
-        if gem.get('ok'):
+        if gem.get('ok', True) and not gem.get('error'):
             execution_mode = 'gemini'
         elif allow_mock_fallback:
             execution_mode = 'gemini_failed_fallback_to_mock'
@@ -65,9 +69,9 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
                 'gemini_attempted': gemini_attempted,
                 'gemini_error': gemini_error,
                 'gemini_model_used': gemini_model_used,
-                'grounding_requested': grounding_requested,
+                'grounding_requested': True,
                 'grounding_supported': grounding_supported,
-                'search_queries': [],
+                'search_queries': search_queries,
                 'sources_found': 0,
                 'facts_extracted': 0,
                 'variants_created': 0,
@@ -101,10 +105,10 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         'gemini_attempted': gemini_attempted,
         'gemini_error': gemini_error,
         'gemini_model_used': gemini_model_used,
-        'grounding_requested': grounding_requested,
+        'grounding_requested': True if execution_mode != 'mock' else grounding_requested,
         'grounding_supported': grounding_supported,
         'status': 'completed' if execution_mode in ['mock', 'gemini', 'gemini_failed_fallback_to_mock'] else 'error',
-        'search_queries': [],
+        'search_queries': search_queries,
         'sources_found': 1,
         'facts_extracted': 6,
         'variants_created': 1,
