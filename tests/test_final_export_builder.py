@@ -14,9 +14,11 @@ def _variant(trim="Base", status="partial"):
 def test_mock_removed_and_no_mock_in_export():
     bad = _variant(); bad["source_ids"]=["source_mock_kia_sportage"]; bad["notes"]= ["mock mode"]
     good = _variant("Premium")
-    out = build_clean_final_export([good], [bad])
+    out = build_clean_final_export([good], [bad], sources=[{"source_id": "source_mock_kia_sportage", "source_type": "mock"}, {"source_id": "src_real"}])
     assert out["counts"]["mock_removed"] == 1
+    assert out["counts"]["mock_sources_removed"] == 1
     assert all("source_mock_" not in str(v) for v in out["variants"])
+    assert all("source_mock_" not in str(s) for s in out["sources"])
 
 
 def test_rebuild_status_verified_and_partial_and_compare_flag():
@@ -57,3 +59,9 @@ def test_quality_grades_and_assert_no_mock():
     clean = build_clean_final_export([_variant()], [])
     assert clean["quality_gate"]["grade"] in {"A", "B", "C", "D"}
     assert_no_mock_in_final_export(clean)
+
+
+def test_zero_variants_is_fail():
+    out = build_clean_final_export([], [])
+    assert out["quality_gate"]["grade"] == "FAIL"
+    assert "No variants in final export." in out["quality_gate"]["blocking_issues"]

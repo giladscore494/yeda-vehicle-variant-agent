@@ -48,8 +48,9 @@ def _field_to_verified(field_obj, candidate=None, field_name=None):
         field_sources = fs if isinstance(fs, list) else []
     source_ids_raw = f.get("source_ids") or f.get("source_urls") or []
     source_ids = source_ids_raw if isinstance(source_ids_raw, list) else []
-    if not source_ids and field_sources:
-        source_ids = [x for x in field_sources if isinstance(x, str)]
+    if field_sources:
+        fs_ids = [x for x in field_sources if isinstance(x, str)]
+        source_ids = list(dict.fromkeys((source_ids or []) + fs_ids))
     sources_count = max(explicit_sources_count, len(source_ids), len(field_sources))
     has_value = value not in (None, "")
 
