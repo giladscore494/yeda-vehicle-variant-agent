@@ -12,7 +12,7 @@ from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
     from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync
-except (ImportError, ModuleNotFoundError) as exc:
+except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
     def _get_batch_runner_error_result():
@@ -20,6 +20,7 @@ except (ImportError, ModuleNotFoundError) as exc:
         return {"ok": False, "error": f"Batch runner module unavailable: {_BATCH_RUNNER_IMPORT_ERROR}"}
 
     def run_next_batch(*args, **kwargs):
+        """Drop-in fallback signature when batch_runner cannot be imported."""
         return {"results": [], **_get_batch_runner_error_result()}
 
     def get_batch_progress(*args, **kwargs):
