@@ -3,6 +3,7 @@ from core.schemas import VehicleVariant, VerificationStatus, BodyType
 
 CRITICAL_FIELDS = ("body_type", "seats", "fuel_type", "engine", "transmission", "drivetrain")
 ALL_FIELDS = ("body_type", "seats", "engine", "transmission", "fuel_type", "drivetrain")
+IDENTITY_FIELDS = ("engine", "transmission", "fuel_type", "body_type", "generation")
 
 
 def _fields(variant: VehicleVariant):
@@ -54,58 +55,50 @@ def validate_variant(variant: VehicleVariant):
 
 
 def classify_variant(variant: VehicleVariant) -> str:
+    if variant.year_start > variant.year_end:
+        return "unresolved"
     fields = {name: getattr(variant, name) for name in ALL_FIELDS}
 
     if any(fields[name].status == VerificationStatus.conflict for name in CRITICAL_FIELDS):
         return "conflict"
 
-    if variant.confidence.value not in {"high", "medium"}:
-        verified_ready = False
-    else:
-        verified_ready = (
-            fields["body_type"].status == VerificationStatus.verified
-            and fields["seats"].status == VerificationStatus.verified
-            and fields["fuel_type"].status == VerificationStatus.verified
-            and (
-                fields["engine"].status == VerificationStatus.verified
-                or fields["transmission"].status == VerificationStatus.verified
-            )
+    if any(f.used_in_compare and f.sources_count == 0 for f in fields.values()):
+        return "unresolved"
+
+    sourced_critical = sum(1 for n in CRITICAL_FIELDS if fields[n].sources_count >= 1)
+    multi_sourced_critical = sum(1 for n in CRITICAL_FIELDS if fields[n].sources_count >= 2)
+
+    verified_ready = (
+        fields["body_type"].status in {VerificationStatus.verified, VerificationStatus.partial}
+        and fields["seats"].status in {VerificationStatus.verified, VerificationStatus.partial}
+        and fields["fuel_type"].status in {VerificationStatus.verified, VerificationStatus.partial}
+        and (
+            fields["engine"].status == VerificationStatus.verified
+            or fields["transmission"].status == VerificationStatus.verified
         )
-
-    # critical verified fields should generally have >=2 sources unless official source exception is encoded in reason
-    if verified_ready:
-        per_field_valid = True
-        for f in fields.values():
-            if f.status == VerificationStatus.verified and f.sources_count < 1:
-                per_field_valid = False
-                break
-            if f.status == VerificationStatus.verified and f.sources_count < 2 and (not (f.reason or "").lower().find("official") >= 0):
-                per_field_valid = False
-                break
-            if f.status in {
-                VerificationStatus.unknown,
-                VerificationStatus.unverified,
-                VerificationStatus.conflict,
-            } and f.used_in_compare:
-                per_field_valid = False
-                break
-        if per_field_valid:
-            return "verified"
-
-    important_statuses = [
-        fields["fuel_type"].status,
-        fields["engine"].status,
-        fields["transmission"].status,
-        fields["drivetrain"].status,
-    ]
-    has_partial_or_unknown = any(
-        s in {VerificationStatus.partial, VerificationStatus.unknown, VerificationStatus.unverified}
-        for s in important_statuses
+        and sourced_critical >= 4
+        and multi_sourced_critical >= 2
     )
-    if (
-        fields["body_type"].status == VerificationStatus.verified
-        or fields["seats"].status == VerificationStatus.verified
-    ) and has_partial_or_unknown:
+    if verified_ready:
+        return "verified"
+
+    identity_values = {
+        "engine": fields["engine"].value,
+        "transmission": fields["transmission"].value,
+        "fuel_type": fields["fuel_type"].value,
+        "body_type": fields["body_type"].value,
+        "generation": variant.generation,
+    }
+    has_usable_identity = any(v not in (None, "") for v in identity_values.values())
+    non_null_critical = sum(1 for n in CRITICAL_FIELDS if fields[n].value not in (None, ""))
+
+    if has_usable_identity and non_null_critical >= 2 and sourced_critical >= 1 and (variant.variant_id or "").strip():
         return "partial"
+
+    if not has_usable_identity:
+        return "unresolved"
+
+    if all(fields[n].sources_count == 0 and fields[n].status in {VerificationStatus.unknown, VerificationStatus.unverified} for n in CRITICAL_FIELDS):
+        return "unresolved"
 
     return "unverified"
