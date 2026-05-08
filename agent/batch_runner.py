@@ -10,6 +10,7 @@ from storage.json_store import get_output_paths, load_json_list, load_json_objec
 from core.final_export_builder import build_clean_final_export, assert_no_mock_in_final_export
 
 BATCH_STATE_SCHEMA = "batch_state_v1"
+RETRYABLE_SCHEMA_ERROR_TOKENS = ["'market'", "missing market", "keyerror: market", "missing required seed field"]
 
 
 def _now() -> str:
@@ -29,6 +30,17 @@ def get_ordered_seed_list(market: str = "IL") -> list[dict]:
     seeds = load_model_seeds()
     ordered = sorted(seeds, key=lambda s: ((s.make or "").lower(), (s.model or "").lower(), int(s.year_start or 0), int(s.year_end or 0)))
     return [{"make": s.make, "model": s.model, "year_start": int(s.year_start or 0), "year_end": int(s.year_end or 0), "market": market, "seed_id": build_seed_id(s.make, s.model, int(s.year_start or 0), int(s.year_end or 0), market)} for s in ordered]
+
+
+def seed_to_dict(seed: dict) -> dict:
+    return {
+        "seed_id": seed["seed_id"],
+        "make": seed["make"],
+        "model": seed["model"],
+        "year_start": seed["year_start"],
+        "year_end": seed["year_end"],
+        "market": seed.get("market", "IL"),
+    }
 
 
 def _batch_state_path():
@@ -106,7 +118,7 @@ def audit_coverage_until_last_completed(ordered_seeds: list[dict], batch_state: 
     missing = []
     for seed in ordered_seeds[: last_idx + 1]:
         if not is_seed_completed(seed["seed_id"], outputs, batch_state):
-            missing.append({k: seed[k] for k in ["seed_id", "make", "model", "year_start", "year_end"]})
+            missing.append(seed_to_dict(seed))
     return {"last_completed_seed_id": last_completed_seed_id, "last_completed_index": last_idx, "scanned_count": max(last_idx + 1, 0), "missing_seed_ids": [m["seed_id"] for m in missing], "missing_seeds": missing, "holes_count": len(missing), "coverage_complete_until_last_completed": len(missing) == 0}
 
 
@@ -134,6 +146,8 @@ def _refresh_coverage(state: dict, ordered_seeds: list[dict]):
 def _process_seeds(seed_queue: list[dict], state: dict, ordered: list[dict], limit: int, force_refresh=False, use_cache=True, progress_callback: Callable | None = None):
     results = []
     for idx, seed in enumerate(seed_queue[:limit], start=1):
+        market = seed.get("market") or state.get("market") or "IL"
+        seed["market"] = market
         sid = seed["seed_id"]
         state["in_progress_seed_id"] = sid
         _save_state(state)
@@ -148,6 +162,7 @@ def _process_seeds(seed_queue: list[dict], state: dict, ordered: list[dict], lim
             state["processed_seed_ids"].append(sid)
         if status == "error" and sid not in state["failed_seed_ids"]:
             state["failed_seed_ids"].append(sid)
+            state.setdefault("failed_details", []).append({"seed_id": sid, "reason": str(result.get("error", "")), "created_at": _now()})
         if status in {"completed", "partial"}:
             state["last_completed_seed_id"] = sid
         state["in_progress_seed_id"] = None
@@ -166,9 +181,9 @@ def run_next_batch(limit=5, market="IL", make_filter=None, force_refresh=False, 
         state["in_progress_seed_id"] = None
     candidates = [s for s in ordered if not make_filter or s["make"].lower() == make_filter.lower()]
     coverage = audit_coverage_until_last_completed(candidates, state, outputs)
-    holes = coverage["missing_seeds"]
+    holes = [seed_to_dict(s) for s in coverage["missing_seeds"]]
     batch_mode = "fill_coverage_holes" if holes else "resume_forward"
-    queue = holes if holes else [s for s in candidates if s["seed_id"] not in state.get("processed_seed_ids", []) and (include_failed or s["seed_id"] not in state.get("failed_seed_ids", []))]
+    queue = holes if holes else [seed_to_dict(s) for s in candidates if s["seed_id"] not in state.get("processed_seed_ids", []) and (include_failed or s["seed_id"] not in state.get("failed_seed_ids", []))]
     if not queue:
         _refresh_coverage(state, ordered)
         _save_state(state)
@@ -202,7 +217,7 @@ def get_batch_progress(market="IL") -> dict:
     state = load_batch_state(market)
     _refresh_coverage(state, ordered)
     audit = audit_coverage_until_last_completed(ordered, state, _load_outputs())
-    next_seed = next((s for s in ordered if s["seed_id"] == state.get("next_seed_id")), None)
+    next_seed = next((seed_to_dict(s) for s in ordered if s["seed_id"] == state.get("next_seed_id")), None)
     total = len(ordered); processed = len(state.get("processed_seed_ids", [])); failed = len(state.get("failed_seed_ids", []))
     coverage_rows = sorted([{"make": m, **c, "remaining": max(c.get("total", 0)-c.get("processed", 0),0)} for m,c in state.get("coverage_by_make", {}).items()], key=lambda r:r["make"].lower())
     return {"total_seeds": total, "processed": processed, "remaining": max(total-processed, 0), "failed": failed, "percent_complete": round((processed/total)*100, 1) if total else 0.0, "current_make": (next_seed or {}).get("make"), "next_seed": next_seed, "coverage_by_make": coverage_rows, "coverage_audit": audit}
@@ -246,6 +261,29 @@ def rebuild_batch_state_from_outputs(market="IL") -> dict:
     remaining = [s for s in ordered if s["seed_id"] not in state["processed_seed_ids"]]
     state["next_seed_id"] = remaining[0]["seed_id"] if remaining else None
     _refresh_coverage(state, ordered); _save_state(state); return state
+
+
+def cleanup_retryable_schema_errors(market: str = "IL") -> dict:
+    state = load_batch_state(market)
+    failed_details = state.get("failed_details", [])
+    retryable_seed_ids = set()
+    kept_failed_details = []
+    for detail in failed_details:
+        reason = str(detail.get("reason", "")).lower()
+        if any(token in reason for token in RETRYABLE_SCHEMA_ERROR_TOKENS):
+            retryable_seed_ids.add(detail.get("seed_id"))
+            continue
+        kept_failed_details.append(detail)
+    state["failed_details"] = kept_failed_details
+    before_failed = set(state.get("failed_seed_ids", []))
+    cleaned_ids = [sid for sid in before_failed if sid in retryable_seed_ids]
+    state["failed_seed_ids"] = [sid for sid in state.get("failed_seed_ids", []) if sid not in retryable_seed_ids]
+    state["processed_seed_ids"] = [sid for sid in state.get("processed_seed_ids", []) if sid not in retryable_seed_ids]
+    if state.get("last_completed_seed_id") in retryable_seed_ids:
+        state["last_completed_seed_id"] = None
+    _refresh_coverage(state, get_ordered_seed_list(market))
+    _save_state(state)
+    return {"status": "ok", "cleaned_seed_ids": cleaned_ids, "cleaned_count": len(cleaned_ids)}
 
 
 def detect_import_file_type(uploaded_json) -> str:
