@@ -29,7 +29,7 @@ except Exception as exc:
     cfg = {"api_key": "unknown", "api_key_source": "unknown", "google_genai_import_ok": False, "client_ready": False, "import_error": str(exc), "fast_model": None, "strong_model": None, "grounding_supported": None}
 st.sidebar.write(f"Gemini API status: {'✅ found' if safe_get(cfg, 'api_key', 'missing') == 'found' else '⚠️ missing'}")
 st.sidebar.subheader('Gemini config status')
-st.sidebar.write({'api_key': 'found' if safe_get(cfg, 'has_api_key', False) else 'missing', 'api_key_source': safe_get(cfg, 'api_key_source'), 'google_genai_import_ok': safe_get(cfg, 'client_import_ok'), 'client_ready': safe_get(cfg, 'client_ready'), 'import_error': safe_get(cfg, 'import_error'), 'fast_model': safe_get(cfg, 'fast_model'), 'strong_model': safe_get(cfg, 'strong_model')})
+st.sidebar.write({'api_key': safe_get(cfg, 'api_key', 'missing'), 'api_key_source': safe_get(cfg, 'api_key_source'), 'google_genai_import_ok': safe_get(cfg, 'client_import_ok'), 'client_ready': safe_get(cfg, 'client_ready'), 'import_error': safe_get(cfg, 'import_error'), 'fast_model': safe_get(cfg, 'fast_model'), 'strong_model': safe_get(cfg, 'strong_model')})
 use_cache = st.sidebar.checkbox("Use cache", value=True)
 force_refresh = st.sidebar.checkbox("Force refresh", value=False)
 market = st.sidebar.selectbox("Market", ["IL", "EU", "GLOBAL"], index=0)
@@ -203,9 +203,21 @@ with tabs[2]:
     if uploaded is not None:
         payload = json.loads(uploaded.read().decode("utf-8"))
         detected = detect_import_file_type(payload)
-        st.write({"detected_file_type": detected})
+        meta={"detected_file_type": detected, "schema_version": payload.get("schema_version") if isinstance(payload, dict) else None}
+        if detected == "resume_package" and isinstance(payload, dict):
+            if isinstance(payload.get("final_export"), dict):
+                fe=payload.get("final_export", {}); bs=payload.get("batch_state", {})
+                meta.update({"variants_found": len(fe.get("variants", []) if isinstance(fe.get("variants", []), list) else []), "processed_seed_ids_found": len(bs.get("processed_seed_ids", []) if isinstance(bs.get("processed_seed_ids", []), list) else []), "makes_count": (fe.get("counts", {}) or {}).get("makes_count"), "models_count": (fe.get("counts", {}) or {}).get("models_count")})
+            else:
+                acc=payload.get("accumulated_clean_export", {})
+                meta.update({"variants_found": len(acc.get("variants", []) if isinstance(acc.get("variants", []), list) else []), "processed_seed_ids_found": len((payload.get("batch_state", {}) or {}).get("processed_seed_ids", []) if isinstance((payload.get("batch_state", {}) or {}).get("processed_seed_ids", []), list) else []), "makes_count": (acc.get("counts", {}) or {}).get("makes_count"), "models_count": (acc.get("counts", {}) or {}).get("models_count")})
+        st.write(meta)
         if st.button("Import and rebuild progress") and confirm_import:
-            st.json(import_progress_json(payload, overwrite=overwrite_import, market=market))
+            imp=import_progress_json(payload, overwrite=overwrite_import, market=market)
+            st.success("Imported accumulated dataset and rebuilt progress.")
+            st.json(imp)
+            p2=get_batch_progress(market=market)
+            st.write({"total_variants": imp.get("imported_variants"), "processed_seeds": p2.get("processed"), "next_seed": p2.get("next_seed"), "holes_count": (p2.get("coverage_audit", {}) or {}).get("holes_count")})
 
     if st.button("Run hole repair batch"):
         st.json(run_next_batch(limit=batch_limit_ui, market=market, resume=True))
