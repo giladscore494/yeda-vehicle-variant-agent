@@ -31,7 +31,7 @@ def run_single_model(make,model,year_start=None,year_end=None,market='IL',force_
     if conflicts: append_unique(paths['vehicle_conflicts'],conflicts,'conflict_id')
     trace={'run_id':run_id,'input':{'make':make,'model':model,'year_start':ys,'year_end':ye,'market':market,'force_mock':force_mock},'started_at':started,'finished_at':_now(),'status':'mock_completed' if use_mock else 'completed','search_queries':[],'sources_found':1,'facts_extracted':6,'variants_created':1,'verified_count':1 if cls=='verified' else 0,'partial_count':1 if cls=='partial' else 0,'conflict_count':len(conflicts),'unresolved_count':0,'blocked_fields':['drivetrain'],'final_decision':{'classification':cls},'error':None}
     add_run_history(trace)
-    return {'status':trace['status'],'run_id':run_id,'variants_created':1,'verified_count':trace['verified_count'],'partial_count':trace['partial_count'],'conflict_count':trace['conflict_count'],'blocked_fields':trace['blocked_fields'],'trace':trace}
+    return {'status':trace['status'],'run_id':run_id,'variants_created':1,'verified_count':trace['verified_count'],'partial_count':trace['partial_count'],'conflict_count':trace['conflict_count'],'unresolved_count':trace['unresolved_count'],'blocked_fields':trace['blocked_fields'],'final_decision':trace['final_decision'],'trace':trace}
 
 def run_batch(limit=5,make_filter=None,market='IL',force_mock=False)->dict:
     seeds=load_model_seeds();
