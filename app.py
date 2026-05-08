@@ -63,7 +63,16 @@ with tabs[1]:
         st.warning("GEMINI_API_KEY is missing. Run will report Gemini failure and may fallback to mock based on setting.")
     if st.button("Run Agent"):
         try:
-            r = run_single_model(mk, m, seed.year_start if seed else None, seed.year_end if seed else None, market, fm, allow_fallback, model_mode=model_mode)
+            r = run_single_model(
+                make=mk,
+                model=m,
+                year_start=seed.year_start if seed else None,
+                year_end=seed.year_end if seed else None,
+                market=market,
+                force_mock=fm,
+                allow_mock_fallback=allow_fallback,
+                model_mode=model_mode,
+            )
         except Exception as exc:
             st.error(f"Run failed: {type(exc).__name__}: {exc}")
             st.exception(exc)
@@ -86,7 +95,7 @@ with tabs[2]:
         if batch_limit > 10 and not confirm:
             st.error("Please confirm before running more than 10 models.")
         else:
-            st.json(run_batch(batch_limit, make_filter or None, market, force_mock=not client.has_api_key(), allow_mock_fallback=True))
+            st.json(run_batch(limit=batch_limit, make_filter=make_filter or None, market=market, force_mock=not client.has_api_key(), allow_mock_fallback=True, model_mode=model_mode))
 
 with tabs[3]:
     runs = load_json_list(paths["run_history"])
