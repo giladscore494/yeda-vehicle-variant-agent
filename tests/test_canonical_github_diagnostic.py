@@ -13,14 +13,14 @@ class _Resp:
         return self._payload
 
 
-def _make_pkg(variants_count: int = 263, processed_count: int = 59, next_seed: str = "audi__rs6__2008__2026__il"):
+def _make_pkg(variants_count: int = 263, processed_count: int = 59, next_seed_id: str = "audi__rs6__2008__2026__il"):
     return {
         "schema_version": "resume_package_v1",
         "variants": [{"variant_id": f"v-{i}"} for i in range(variants_count)],
         "batch_state": {
             "processed_seed_ids": [f"s-{i}" for i in range(processed_count)],
             "last_completed_seed_id": "audi__rs5__2010__2026__il",
-            "next_seed_id": next_seed,
+            "next_seed_id": next_seed_id,
         },
     }
 

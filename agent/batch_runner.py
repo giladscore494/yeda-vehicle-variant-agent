@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 from datetime import datetime, timezone
 import copy
@@ -26,6 +27,7 @@ EXPECTED_LOCAL_MIN_PROCESSED = 59
 
 
 def _token_prefix_type(token: str | None) -> str:
+    """Classify GitHub token format as missing/github_pat/ghp/unknown without exposing token content."""
     value = str(token or "").strip()
     if not value:
         return "missing"
@@ -204,7 +206,7 @@ def diagnose_canonical_github_sync() -> dict:
             encoded = content_body.get("content")
             if isinstance(encoded, str):
                 try:
-                    github_payload = json.loads(base64_decode(encoded))
+                    github_payload = json.loads(base64.b64decode(encoded).decode("utf-8"))
                 except Exception:
                     github_payload = None
         github_fields = _extract_package_fields(github_payload if isinstance(github_payload, dict) else {})
@@ -387,12 +389,6 @@ def diagnose_canonical_github_sync() -> dict:
         "recommended_action": recommended_action,
         "safe_to_continue_batch": safe_to_continue_batch,
     }
-
-
-def base64_decode(content: str) -> str:
-    import base64
-
-    return base64.b64decode(content).decode("utf-8")
 
 
 def _now() -> str:
