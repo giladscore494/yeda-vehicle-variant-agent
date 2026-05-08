@@ -125,7 +125,7 @@ def backup_canonical_on_github(current_canonical) -> dict:
     return push_file_to_github(
         cfg.get("backup_path", "data/canonical/resume_package_backup_previous.json"),
         current_canonical,
-        "Update canonical vehicle resume package after batch ",
+        "Update canonical vehicle resume package after batch (backup)",
     )
 
 
@@ -136,10 +136,13 @@ def push_canonical_resume_package(package, previous_package=None, batch_id=None)
         backup_result = backup_canonical_on_github(previous_package)
         if not backup_result.get("ok"):
             return {"ok": False, "error": backup_result.get("error"), "backup": backup_result}
+    commit_message = "Update canonical vehicle resume package after batch "
+    if batch_id:
+        commit_message = f"{commit_message}{batch_id}"
     canonical_result = push_file_to_github(
         cfg.get("canonical_path", "data/canonical/resume_package_canonical.json"),
         package,
-        "Update canonical vehicle resume package after batch ",
+        commit_message,
     )
     if not canonical_result.get("ok"):
         return {"ok": False, "error": canonical_result.get("error"), "backup": backup_result, "canonical": canonical_result}

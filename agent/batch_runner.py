@@ -71,13 +71,19 @@ def load_local_canonical_resume_package() -> dict | None:
 
 def save_local_canonical_resume_package(package: dict):
     path = _canonical_resume_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
     save_json(path, package)
 
 
 def save_local_canonical_backup(package: dict):
     path = _canonical_backup_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
     save_json(path, package)
 
 
@@ -697,8 +703,6 @@ def build_resume_package() -> dict:
     new_count = int(shrink.get("shrink_guard_new_count", len(variants)) or 0)
     if previous_count > 0 and new_count < previous_count:
         raise ValueError("Accumulated export shrink detected. Refusing to generate resume package.")
-    if len(variants) == 0:
-        raise ValueError("No canonical variants found. Cannot generate resume package.")
     makes = {str(v.get("make", "")).strip().lower() for v in variants if isinstance(v, dict) and v.get("make")}
     models = {f"{str(v.get('make','')).strip().lower()}::{str(v.get('model','')).strip().lower()}" for v in variants if isinstance(v, dict) and v.get("make") and v.get("model")}
     normalized_state = normalize_batch_state_for_resume(load_batch_state(), get_ordered_seed_list("IL"), variants=variants, market="IL")

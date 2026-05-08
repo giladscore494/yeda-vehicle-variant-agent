@@ -1,0 +1,810 @@
+{
+  "schema_version": "batch_state_v1",
+  "market": "IL",
+  "created_at": "2026-05-08T18:30:38.352732+00:00",
+  "updated_at": "2026-05-08T18:30:38.352732+00:00",
+  "last_batch_id": null,
+  "total_seeds": 993,
+  "processed_seed_ids": [],
+  "failed_seed_ids": [],
+  "skipped_seed_ids": [],
+  "in_progress_seed_id": null,
+  "last_completed_seed_id": null,
+  "next_seed_id": "abarth__124_spider__2016__2020__il",
+  "coverage_by_make": {
+    "Abarth": {
+      "total": 5,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Aiways": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Alfa Romeo": {
+      "total": 21,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Alpine": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Aston Martin": {
+      "total": 7,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Audi": {
+      "total": 31,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Bentley": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "BMW": {
+      "total": 114,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "BYD": {
+      "total": 8,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Cadillac": {
+      "total": 8,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Chery": {
+      "total": 5,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Chevrolet": {
+      "total": 17,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Chrysler": {
+      "total": 6,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Citroen": {
+      "total": 30,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Cupra": {
+      "total": 5,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Dacia": {
+      "total": 8,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Daewoo": {
+      "total": 10,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Daihatsu": {
+      "total": 9,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Dodge": {
+      "total": 7,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Dongfeng": {
+      "total": 1,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "DS Automobiles": {
+      "total": 5,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Ferrari": {
+      "total": 11,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Fiat": {
+      "total": 26,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Ford": {
+      "total": 19,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "GAC / Aion": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Geely": {
+      "total": 4,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Genesis": {
+      "total": 6,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "GMC": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Haval": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Honda": {
+      "total": 16,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Hongqi": {
+      "total": 1,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Hummer": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Hyundai": {
+      "total": 33,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Infiniti": {
+      "total": 10,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Isuzu": {
+      "total": 4,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Jaecoo": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Jaguar": {
+      "total": 9,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Jeep": {
+      "total": 9,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "KGM / SsangYong": {
+      "total": 9,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Kia": {
+      "total": 28,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Lamborghini": {
+      "total": 5,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Lancia": {
+      "total": 10,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Land Rover": {
+      "total": 9,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Leapmotor": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Lexus": {
+      "total": 16,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Lincoln": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Lotus": {
+      "total": 5,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Lynk & Co": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Mahindra": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Maserati": {
+      "total": 8,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Maxus": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Mazda": {
+      "total": 23,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "McLaren": {
+      "total": 4,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Mercedes-Benz": {
+      "total": 37,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "MG": {
+      "total": 9,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "MG (British era)": {
+      "total": 4,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Mini": {
+      "total": 10,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Mitsubishi": {
+      "total": 18,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "NIO": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Nissan": {
+      "total": 24,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Omoda": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Opel": {
+      "total": 20,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Ora": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Peugeot": {
+      "total": 32,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Polestar": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Porsche": {
+      "total": 10,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Proton": {
+      "total": 4,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "RAM": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Renault": {
+      "total": 29,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Rolls-Royce": {
+      "total": 6,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Rover": {
+      "total": 5,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Saab": {
+      "total": 4,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Seat": {
+      "total": 11,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Seres": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Skoda": {
+      "total": 15,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Skywell": {
+      "total": 1,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Smart": {
+      "total": 5,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Subaru": {
+      "total": 12,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Suzuki": {
+      "total": 21,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Tata": {
+      "total": 4,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Tesla": {
+      "total": 5,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Toyota": {
+      "total": 34,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Volkswagen": {
+      "total": 36,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Volvo": {
+      "total": 19,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Voyah": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Wey": {
+      "total": 2,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "XPeng": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    },
+    "Zeekr": {
+      "total": 3,
+      "processed": 0,
+      "verified_variants": 0,
+      "partial_variants": 0,
+      "unresolved": 0,
+      "failed": 0,
+      "completed": false
+    }
+  },
+  "run_history": [],
+  "failed_details": []
+}
