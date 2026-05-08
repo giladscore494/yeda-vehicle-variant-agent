@@ -15,6 +15,18 @@ def test_discovery_style_field_object_converts_to_verified_field():
     assert out['used_in_compare'] is True
 
 
+def test_field_to_verified_downgrades_verified_without_sources():
+    out = _field_to_verified({'value': '1.8 Hybrid', 'status': 'verified', 'sources_count': 0})
+    assert out['status'] == 'unverified'
+    assert out['confidence'] == 'low'
+
+
+def test_field_to_verified_partial_with_single_source():
+    out = _field_to_verified({'value': '1.8 Hybrid', 'status': 'partial', 'sources_count': 1})
+    assert out['status'] == 'partial'
+    assert out['confidence'] == 'medium'
+
+
 def test_candidate_values_produce_variant(monkeypatch):
     cands=[{'engine': _mk('1.8'), 'transmission': _mk('e_cvt'), 'body_type': _mk('crossover', 'partial')}]
     monkeypatch.setattr('agent.runner.run_discovery', lambda *a, **k: {'ok': True, 'data': {'sources': [], 'candidate_variants': cands}})

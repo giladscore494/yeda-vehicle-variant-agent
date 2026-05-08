@@ -72,6 +72,82 @@ def parse_json_from_gemini_text(raw_text: str) -> tuple[dict | list | None, str 
     return None, f"failed to parse raw text: {direct_err}"
 
 
+def salvage_candidate_variants_from_raw(raw_text: str) -> dict | None:
+    if not raw_text or '"candidate_variants"' not in raw_text:
+        return None
+
+    decoder = json.JSONDecoder()
+    text = str(raw_text)
+    salvage_sources = []
+
+    def _skip_ws(i: int) -> int:
+        while i < len(text) and text[i] in " \t\r\n":
+            i += 1
+        return i
+
+    cand_key = text.find('"candidate_variants"')
+    if cand_key == -1:
+        return None
+
+    # Best-effort sources salvage from text region before candidate_variants key.
+    src_key = text.find('"sources"')
+    if src_key != -1 and src_key < cand_key:
+        src_colon = text.find(":", src_key)
+        if src_colon != -1:
+            src_start = _skip_ws(src_colon + 1)
+            if src_start < len(text) and text[src_start] == "[":
+                try:
+                    parsed_sources, _end = decoder.raw_decode(text, src_start)
+                    if isinstance(parsed_sources, list):
+                        salvage_sources = parsed_sources
+                except Exception:
+                    salvage_sources = []
+
+    colon = text.find(":", cand_key)
+    if colon == -1:
+        return None
+    arr_start = _skip_ws(colon + 1)
+    if arr_start >= len(text) or text[arr_start] != "[":
+        return None
+
+    idx = arr_start + 1
+    complete = []
+    dropped_incomplete = False
+    while idx < len(text):
+        idx = _skip_ws(idx)
+        if idx >= len(text):
+            break
+        if text[idx] == "]":
+            break
+        if text[idx] == ",":
+            idx += 1
+            continue
+        try:
+            obj, next_idx = decoder.raw_decode(text, idx)
+            if isinstance(obj, dict):
+                complete.append(obj)
+            idx = next_idx
+        except Exception:
+            dropped_incomplete = True
+            break
+
+    if not complete:
+        return None
+
+    return {
+        "search_queries": [],
+        "sources": salvage_sources,
+        "candidate_variants": complete,
+        "conflicts": [],
+        "unresolved": False,
+        "_salvage": {
+            "json_salvage_used": True,
+            "dropped_incomplete_candidate": dropped_incomplete,
+            "salvaged_candidate_count": len(complete),
+        },
+    }
+
+
 class GeminiClient:
     def __init__(self):
         secrets = getattr(st, "secrets", None) if st else None
@@ -170,11 +246,17 @@ class GeminiClient:
             repair_success = False
             repaired_raw_text = None
             if parsed_json is None and parse_error is not None:
+                salvage = salvage_candidate_variants_from_raw(raw_text)
+                if salvage and len(salvage.get("candidate_variants", [])) > 0:
+                    parsed_json = salvage
+                    parse_error = None
+            if parsed_json is None and parse_error is not None:
                 repair_attempted = True
                 parsed_json, parse_error, repaired_raw_text = self._attempt_repair_json(raw_text)
                 repair_success = parsed_json is not None and parse_error is None
             ok = parsed_json is not None and parse_error is None
-            return self._response(model=model, grounding_requested=False, request_attempted=True, ok=ok, error=(None if ok else parse_error_original), data=(parsed_json if ok else None), raw_text=raw_text, parsed_json=(parsed_json if ok else None), parse_error=(None if ok else parse_error_original), parse_error_original=parse_error_original, repair_attempted=repair_attempted, repair_success=repair_success, repaired_raw_text=repaired_raw_text)
+            salvage_meta = (parsed_json or {}).get("_salvage", {}) if isinstance(parsed_json, dict) else {}
+            return self._response(model=model, grounding_requested=False, request_attempted=True, ok=ok, error=(None if ok else parse_error_original), data=(parsed_json if ok else None), raw_text=raw_text, parsed_json=(parsed_json if ok else None), parse_error=(None if ok else parse_error_original), parse_error_original=parse_error_original, repair_attempted=repair_attempted, repair_success=repair_success, repaired_raw_text=repaired_raw_text, json_salvage_used=bool(salvage_meta.get("json_salvage_used", False)), dropped_incomplete_candidate=bool(salvage_meta.get("dropped_incomplete_candidate", False)))
         except Exception as exc:
             return self._response(model=model, grounding_requested=False, request_attempted=True, ok=False, error=f"Gemini call failed: {exc}")
 
@@ -193,10 +275,16 @@ class GeminiClient:
             repair_success = False
             repaired_raw_text = None
             if parsed_json is None and parse_error is not None:
+                salvage = salvage_candidate_variants_from_raw(raw_text)
+                if salvage and len(salvage.get("candidate_variants", [])) > 0:
+                    parsed_json = salvage
+                    parse_error = None
+            if parsed_json is None and parse_error is not None:
                 repair_attempted = True
                 parsed_json, parse_error, repaired_raw_text = self._attempt_repair_json(raw_text)
                 repair_success = parsed_json is not None and parse_error is None
             ok = parsed_json is not None and parse_error is None
-            return self._response(model=model, grounding_requested=True, request_attempted=True, ok=ok, error=(None if ok else parse_error_original), data=(parsed_json if ok else None), raw_text=raw_text, parsed_json=(parsed_json if ok else None), parse_error=(None if ok else parse_error_original), parse_error_original=parse_error_original, repair_attempted=repair_attempted, repair_success=repair_success, repaired_raw_text=repaired_raw_text)
+            salvage_meta = (parsed_json or {}).get("_salvage", {}) if isinstance(parsed_json, dict) else {}
+            return self._response(model=model, grounding_requested=True, request_attempted=True, ok=ok, error=(None if ok else parse_error_original), data=(parsed_json if ok else None), raw_text=raw_text, parsed_json=(parsed_json if ok else None), parse_error=(None if ok else parse_error_original), parse_error_original=parse_error_original, repair_attempted=repair_attempted, repair_success=repair_success, repaired_raw_text=repaired_raw_text, json_salvage_used=bool(salvage_meta.get("json_salvage_used", False)), dropped_incomplete_candidate=bool(salvage_meta.get("dropped_incomplete_candidate", False)))
         except Exception as exc:
             return self._response(model=model, grounding_requested=True, request_attempted=True, ok=False, error=f"Gemini grounding/search call failed: {exc}")

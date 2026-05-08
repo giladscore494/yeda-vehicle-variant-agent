@@ -33,19 +33,33 @@ def _field_to_verified(field_obj, candidate=None, field_name=None):
     value = f.get("value") if isinstance(f, dict) else f
     if isinstance(value, dict):
         value = value.get('value')
-    field_sources = []
-    if isinstance(candidate, dict) and field_name:
-        fs = (candidate.get('field_sources') or {}).get(field_name, []) if isinstance(candidate.get('field_sources'), dict) else []
-        field_sources = fs if isinstance(fs, list) else []
-    source_ids = f.get("source_ids") or f.get("source_urls") or field_sources or []
+    explicit_status_raw = f.get("status")
+    has_explicit_status = explicit_status_raw is not None and str(explicit_status_raw).strip() != ""
+    explicit_status = _normalize_status(explicit_status_raw)
     explicit_sources_count = int(f.get("sources_count", 0) or 0)
-    if not source_ids and explicit_sources_count:
-        source_ids = [f"derived_{i}" for i in range(explicit_sources_count)]
-    sources_count = len(source_ids) if source_ids else explicit_sources_count
-    status = "verified" if sources_count >= 2 else ("partial" if sources_count == 1 else ("unverified" if value not in (None,"") else "unknown"))
-    conf = Confidence.high.value if sources_count >= 2 else (Confidence.medium.value if sources_count == 1 else Confidence.low.value)
-    used = sources_count >= 1 and status in {"verified", "partial"}
-    return {"value": value, "status": status, "confidence": conf, "sources_count": sources_count, "source_ids": list(source_ids), "used_in_compare": used, "reason": ""}
+    field_sources = []
+    if isinstance(candidate, dict) and field_name and isinstance(candidate.get('field_sources'), dict):
+        fs = candidate.get('field_sources', {}).get(field_name, [])
+        field_sources = fs if isinstance(fs, list) else []
+    source_ids_raw = f.get("source_ids") or f.get("source_urls") or []
+    source_ids = source_ids_raw if isinstance(source_ids_raw, list) else []
+    sources_count = max(explicit_sources_count, len(source_ids), len(field_sources))
+    has_value = value not in (None, "")
+
+    if has_explicit_status and explicit_status in {"verified", "partial", "conflict", "unverified", "unknown"}:
+        if explicit_status == "verified":
+            status = "verified" if sources_count >= 2 else ("unverified" if has_value else "unknown")
+        elif explicit_status == "partial":
+            status = "partial" if sources_count >= 1 else ("unverified" if has_value else "unknown")
+        else:
+            status = explicit_status
+    else:
+        status = "verified" if sources_count >= 2 else ("partial" if sources_count == 1 else ("unverified" if has_value else "unknown"))
+
+    conf = Confidence.high.value if (status == "verified" and sources_count >= 2) else (Confidence.medium.value if (status == "partial" and sources_count >= 1) else Confidence.low.value)
+    used = status in {"verified", "partial"} and sources_count >= 1
+    reason = f"{status} from {sources_count} source(s)"
+    return {"value": value, "status": status, "confidence": conf, "sources_count": sources_count, "source_ids": list(source_ids), "used_in_compare": used, "reason": reason}
 
 def _build_field(field_data):
     return VerifiedField(value=field_data.get('value'), status=VerificationStatus(field_data.get('status', 'unknown')), confidence=Confidence(field_data.get('confidence', 'low')), sources_count=int(field_data.get('sources_count', 0)), source_ids=list(field_data.get('source_ids', [])), used_in_compare=bool(field_data.get('used_in_compare', False)), reason=(field_data.get('reason') or '')[:160])
