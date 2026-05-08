@@ -290,10 +290,30 @@ with tabs[7]:
     q = final_payload.get("quality_gate", {})
     c = final_payload.get("counts", {})
     a = final_payload.get("audit", {})
+    accumulation_counts = a.get("accumulation_counts", {}) if isinstance(a, dict) else {}
+    imported_count = int(accumulation_counts.get("imported_accumulated_dataset", 0) or 0)
+    verified_count = int(accumulation_counts.get("verified_output", 0) or 0)
+    partial_count = int(accumulation_counts.get("partial_output", 0) or 0)
+    final_count = int(accumulation_counts.get("final_merged_variants", c.get("total_variants", 0)) or 0)
+    shrink_prev = int(accumulation_counts.get("shrink_guard_previous_count", imported_count) or 0)
+    shrink_new = int(accumulation_counts.get("shrink_guard_new_count", final_count) or 0)
+    shrink_detected = shrink_prev > 0 and shrink_new < shrink_prev
     st.write({"quality_score": q.get("score"), "grade": q.get("grade"), "passed": q.get("passed")})
     st.write({"counts": c, "source_id_coverage_ratio": a.get("source_id_coverage_ratio"), "verified_ratio": a.get("verified_ratio"), "partial_ratio": a.get("partial_ratio")})
+    st.write(
+        {
+            "imported_accumulated_dataset_count": imported_count,
+            "verified_output_count": verified_count,
+            "partial_output_count": partial_count,
+            "final_merged_variant_count": final_count,
+            "shrink_guard_previous_count": shrink_prev,
+            "shrink_guard_new_count": shrink_new,
+        }
+    )
     if not q.get("passed", False):
         st.error("Final export failed quality gate. Do not use this file in Yeda Rechev.")
+    if shrink_detected:
+        st.error("Accumulated export shrink detected. Refusing to generate resume package.")
     if c.get("mock_removed", 0) > 0:
         st.error("Mock contaminated records were found and removed.")
     if q.get("blocking_issues"):
@@ -303,8 +323,18 @@ with tabs[7]:
 
     st.download_button("Full accumulated export", json.dumps(final_payload, ensure_ascii=False, indent=2).encode("utf-8"), file_name="combined_vehicle_variants_final_clean.json")
     st.download_button("Download quality report", json.dumps(final_payload.get("quality_gate", {}), ensure_ascii=False, indent=2).encode("utf-8"), file_name="final_export_quality_report.json")
-    resume_pkg = build_resume_package()
-    st.download_button("Resume package export", json.dumps(resume_pkg, ensure_ascii=False, indent=2).encode("utf-8"), file_name="resume_package.json")
+    resume_pkg = None
+    if not shrink_detected:
+        try:
+            resume_pkg = build_resume_package()
+        except ValueError as exc:
+            st.error(str(exc))
+    st.download_button(
+        "Resume package export",
+        json.dumps(resume_pkg, ensure_ascii=False, indent=2).encode("utf-8") if resume_pkg is not None else b"",
+        file_name="resume_package.json",
+        disabled=resume_pkg is None,
+    )
     out_dir = get_output_paths()["run_history"].parents[0]
     for name in ["latest_batch_result.json", "batch_state.json", "run_history.json"]:
         path = out_dir / name

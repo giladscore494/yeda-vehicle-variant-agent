@@ -170,6 +170,26 @@ def _tkey(v: dict) -> str:
     return "|".join(str(t).strip().lower() for t in tokens)
 
 
+def _status_rank(v: dict) -> int:
+    status = str(v.get("verification_status") or v.get("classification") or v.get("status") or "").strip().lower()
+    if status == "verified":
+        return 2
+    if status == "partial":
+        return 1
+    return 0
+
+
+def _variant_merge_key(v: dict) -> str:
+    variant_id = str(v.get("variant_id") or "").strip().lower()
+    if variant_id:
+        return f"id:{variant_id}"
+    return f"identity:{_tkey(v)}"
+
+
+def _effective_status_rank(v: dict) -> int:
+    return max(_status_rank(v), int(v.get("_source_status_rank", 0) or 0))
+
+
 def build_clean_final_export(verified_variants, partial_variants, sources=None, conflicts=None, unresolved=None, include_partial=True, include_verified=True, include_conflicts=False, include_unresolved=False, merge_trim_options=True, strict_no_mock=True) -> dict:
     items = []
     if include_partial: items.extend(copy.deepcopy(partial_variants or []))
@@ -183,22 +203,26 @@ def build_clean_final_export(verified_variants, partial_variants, sources=None, 
         filtered.append(repair_field_source_ids(v))
     by_key = {}
     trim_merged = 0
-    rank = {"verified": 3, "partial": 2, "unresolved": 1, "conflict": 0}
     for v in filtered:
+        source_rank = _status_rank(v)
         st, conf = rebuild_variant_status(v)
-        v["verification_status"] = st; v["confidence"] = conf
-        key = _tkey(v) if merge_trim_options else (v.get("variant_id") or _tkey(v))
+        v["verification_status"] = st; v["confidence"] = conf; v["_source_status_rank"] = source_rank
+        key = _variant_merge_key(v) if merge_trim_options else (v.get("variant_id") or _tkey(v))
         if key not in by_key:
             by_key[key] = v; by_key[key]["trim_options"] = []
         else:
             trim_merged += 1
-            if rank.get(st, 0) > rank.get(by_key[key].get("verification_status", "unresolved"), 0):
+            existing = by_key[key]
+            existing_rank = _effective_status_rank(existing)
+            incoming_rank = _effective_status_rank(v)
+            if incoming_rank > existing_rank:
                 base = by_key[key]; by_key[key] = v; by_key[key]["trim_options"] = base.get("trim_options", [])
         trim = _as_field_obj(v.get("trim", {}))
         if trim.get("value") not in (None, ""):
             by_key[key].setdefault("trim_options", []).append({"value": trim.get("value"), "source_ids": trim.get("source_ids", []), "status": trim.get("status", "unknown"), "sources_count": int(trim.get("sources_count", 0) or 0)})
     variants = list(by_key.values())
     for v in variants:
+        v.pop("_source_status_rank", None)
         opts = v.get("trim_options", [])
         v["trim_options"] = [dict(t) for t in {json.dumps(o, sort_keys=True): o for o in opts}.values()]
 
