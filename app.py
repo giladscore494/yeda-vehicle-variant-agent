@@ -11,7 +11,7 @@ from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
-    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count
 except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -96,6 +96,9 @@ except ImportError as exc:
 
     def evaluate_continue_guard(*args, **kwargs):
         return {"passed": False, "issues": [_BATCH_RUNNER_IMPORT_ERROR], "coverage_audit": {"holes_count": 1}}
+    
+    def canonical_variant_count(*args, **kwargs):
+        return 0
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -264,7 +267,6 @@ with tabs[2]:
     st.caption("No run-all button by design.")
     continue_guard = evaluate_continue_guard(market=market)
     local_checkpoint = load_local_canonical_resume_package() or {}
-    local_checkpoint_variants = _extract_resume_variants_for_ui(local_checkpoint)
     local_checkpoint_state = local_checkpoint.get("batch_state", {}) if isinstance(local_checkpoint.get("batch_state"), dict) else {}
     checkpoint_source = "Local canonical" if isinstance(local_checkpoint, dict) and local_checkpoint else "Missing"
     if st.session_state.get("last_import_source"):
@@ -272,14 +274,14 @@ with tabs[2]:
     total_seed_count = int(continue_guard.get("total_seed_count", 0) or 0)
     local_processed_seed_ids = local_checkpoint_state.get("processed_seed_ids", []) if isinstance(local_checkpoint_state.get("processed_seed_ids"), list) else []
     processed_seed_count = int(continue_guard.get("processed_seed_count", len(local_processed_seed_ids)) or 0)
-    stopped_at = local_checkpoint_state.get("last_completed_seed_id")
-    next_seed_checkpoint = local_checkpoint_state.get("next_seed_id")
+    stopped_at = continue_guard.get("last_completed_seed_id", local_checkpoint_state.get("last_completed_seed_id"))
+    next_seed_checkpoint = continue_guard.get("next_seed_id", local_checkpoint_state.get("next_seed_id"))
     checkpoint_status = "Ready" if continue_guard.get("passed") else "Blocked"
     st.subheader("Current canonical checkpoint")
     st.write(
         {
             "source": checkpoint_source,
-            "variants": len([v for v in local_checkpoint_variants if isinstance(v, dict)]),
+            "variants": int(continue_guard.get("canonical_variant_count", canonical_variant_count(local_checkpoint)) or 0),
             "processed_seeds": f"{processed_seed_count} / {total_seed_count}",
             "stopped_at": stopped_at,
             "next_seed": next_seed_checkpoint,
