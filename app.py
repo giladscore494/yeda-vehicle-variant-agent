@@ -17,7 +17,10 @@ paths = get_output_paths()
 summary = load_outputs_summary()
 
 st.sidebar.header("Settings")
-st.sidebar.write(f"Gemini API status: {'✅ found' if client.has_api_key() else '⚠️ missing'}")
+cfg=client.get_config_status()
+st.sidebar.write(f"Gemini API status: {'✅ found' if cfg['has_api_key'] else '⚠️ missing'}")
+st.sidebar.subheader('Gemini config status')
+st.sidebar.write({'api_key': 'found' if cfg['has_api_key'] else 'missing', 'key_source': cfg['api_key_source'], 'fast_model': cfg['fast_model'], 'strong_model': cfg['strong_model']})
 market = st.sidebar.selectbox("Market", ["IL", "EU", "GLOBAL"], index=0)
 batch_limit = st.sidebar.selectbox("Batch limit", [1, 5, 10, 20], index=1)
 make_filter = st.sidebar.selectbox("Make filter", [""] + get_makes())
@@ -41,7 +44,7 @@ with tabs[0]:
         }
     )
     if not client.has_api_key():
-        st.warning("Gemini key missing — app runs in mock mode automatically.")
+        st.warning("Gemini key missing — Gemini runs will fail unless fallback is enabled.")
 
 with tabs[1]:
     makes = get_makes()
@@ -52,12 +55,16 @@ with tabs[1]:
     seed = next((x for x in models if x.model == m), None)
     st.write(f"Parsed year range: {seed.year_start}-{seed.year_end}" if seed else "No seed")
     fm = st.checkbox("Force mock mode", value=not client.has_api_key())
-    effective_mock = fm or not client.has_api_key()
+    allow_fallback = st.checkbox('Allow fallback to mock when Gemini fails', value=True)
     if not client.has_api_key() and not fm:
-        st.warning("GEMINI_API_KEY is missing, forcing mock mode for this run.")
+        st.warning("GEMINI_API_KEY is missing. Run will report Gemini failure and may fallback to mock based on setting.")
     if st.button("Run Agent"):
-        r = run_single_model(mk, m, seed.year_start if seed else None, seed.year_end if seed else None, market, effective_mock)
+        r = run_single_model(mk, m, seed.year_start if seed else None, seed.year_end if seed else None, market, fm, allow_fallback)
         st.subheader("Run result")
+        trace = r.get('trace', {})
+        st.info(f"Execution mode: {trace.get('execution_mode')}\nGemini attempted: {trace.get('gemini_attempted')}\nGemini model: {trace.get('gemini_model_used')}\nGrounding requested: {trace.get('grounding_requested')}\nGemini error: {trace.get('gemini_error')}")
+        if trace.get('execution_mode') != 'gemini':
+            st.warning('This result did not come from a real Gemini run.')
         st.json(r)
         with st.expander("Trace JSON"):
             st.json(r.get("trace", {}))
@@ -69,7 +76,7 @@ with tabs[2]:
         if batch_limit > 10 and not confirm:
             st.error("Please confirm before running more than 10 models.")
         else:
-            st.json(run_batch(batch_limit, make_filter or None, market, force_mock=not client.has_api_key()))
+            st.json(run_batch(batch_limit, make_filter or None, market, force_mock=not client.has_api_key(), allow_mock_fallback=True))
 
 with tabs[3]:
     runs = load_json_list(paths["run_history"])
@@ -77,7 +84,7 @@ with tabs[3]:
     if ids:
         rid = st.selectbox("run_id", ids)
         run = next(r for r in runs if r.get("run_id") == rid)
-        keys = ["input", "search_queries", "sources_found", "facts_extracted", "variants_created", "verified_count", "partial_count", "conflict_count", "blocked_fields", "final_decision", "error"]
+        keys = ['input', 'execution_mode', 'gemini_attempted', 'gemini_error', 'gemini_model_used', 'grounding_requested', 'grounding_supported', 'search_queries', 'sources_found', 'facts_extracted', 'variants_created', 'verified_count', 'partial_count', 'conflict_count', 'blocked_fields', 'final_decision', 'error']
         st.json({k: run.get(k) for k in keys})
 
 with tabs[4]:
