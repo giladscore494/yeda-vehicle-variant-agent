@@ -1385,6 +1385,7 @@ def build_canonical_candidate(
     merged_variants: list[dict] | None,
     new_batch_state: dict | None = None,
     source: str = CANDIDATE_SOURCE_MERGED,
+    market: str = "IL",
 ) -> dict:
     previous = previous_package if isinstance(previous_package, dict) else {}
     candidate = copy.deepcopy(previous) if isinstance(previous, dict) else {}
@@ -1395,7 +1396,7 @@ def build_canonical_candidate(
     previous_state_raw = previous.get("batch_state") if isinstance(previous.get("batch_state"), dict) else {}
     previous_market = str(previous_state_raw.get("market") or "").strip()
     new_market = str((new_batch_state or {}).get("market") or "").strip() if isinstance(new_batch_state, dict) else ""
-    market = previous_market or new_market or "IL"
+    market = previous_market or new_market or market or "IL"
     ordered_seeds = get_ordered_seed_list(market)
     ordered_seed_ids = [s["seed_id"] for s in ordered_seeds]
 
