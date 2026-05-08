@@ -332,6 +332,16 @@ def diagnose_canonical_github_sync() -> dict:
         "repo_403_permission_or_rate_limit": repo_result.get("status_code") == 403,
         "contents_403_lacks_contents_permission": contents_result.get("status_code") == 403,
     }
+    github_exists = bool(contents_api.get("github_file_exists"))
+    github_valid = bool(contents_api.get("github_is_valid_json"))
+    github_counts_ok = bool(
+        (not github_exists)
+        or (
+            int(contents_api.get("github_variant_count", 0) or 0) >= EXPECTED_LOCAL_MIN_VARIANTS
+            and int(contents_api.get("github_processed_count", 0) or 0) >= EXPECTED_LOCAL_MIN_PROCESSED
+            and bool(contents_api.get("github_next_seed_id"))
+        )
+    )
 
     ruled_out: list[str] = []
     if token_present and token_length_gt_20:
@@ -393,6 +403,10 @@ def diagnose_canonical_github_sync() -> dict:
         root_cause = "GitHub canonical exists but JSON parsing failed."
         final_diagnosis = "GitHub canonical file exists but could not be parsed as JSON. The GitHub Contents API metadata/download handling is broken."
         recommended_action = "Fix GitHub canonical loading to decode base64 content or use download_url raw JSON; do not continue batch until parsing is valid."
+    elif contents_api.get("github_file_exists") and contents_api.get("github_is_valid_json") and not github_counts_ok:
+        root_cause = "GitHub canonical exists but failed minimum integrity thresholds."
+        final_diagnosis = "GitHub canonical exists but its counters/state are incomplete (variants/processed/next_seed_id)."
+        recommended_action = "Push a valid canonical package with minimum counts and a non-null next_seed_id before continuing batch."
     elif manual_push_rebuilds_package and local_check.get("local_expected_file") and isinstance(build_final_export_count, int) and build_final_export_count < int(local_check.get("local_variant_count", 0) or 0):
         root_cause = "Manual push rebuilds from incomplete local outputs instead of pushing the valid local canonical."
         final_diagnosis = root_cause
@@ -410,16 +424,6 @@ def diagnose_canonical_github_sync() -> dict:
         final_diagnosis = "Canonical GitHub sync checks passed with no blocking root cause detected."
         recommended_action = "Continue batch processing and keep canonical in sync after each successful batch."
 
-    github_exists = bool(contents_api.get("github_file_exists"))
-    github_valid = bool(contents_api.get("github_is_valid_json"))
-    github_counts_ok = bool(
-        (not github_exists)
-        or (
-            int(contents_api.get("github_variant_count", 0) or 0) >= EXPECTED_LOCAL_MIN_VARIANTS
-            and int(contents_api.get("github_processed_count", 0) or 0) >= EXPECTED_LOCAL_MIN_PROCESSED
-            and bool(contents_api.get("github_next_seed_id"))
-        )
-    )
     github_source_ok = bool((github_valid and github_counts_ok) or local_fallback_mode_active)
     manual_push_safe = bool(manual_push_uses_local_canonical and not manual_push_rebuilds_package)
     safe_to_continue_batch = bool(
