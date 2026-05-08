@@ -143,3 +143,37 @@ def test_import_vehicle_variant_resume_package_restores_progress(monkeypatch):
     assert saved["batch_state.json"]["next_seed_id"] != "abarth__124_spider__2016__2020__il"
     assert len(saved["vehicle_variants_verified"]) + len(saved["vehicle_variants_partial"]) == 90
     assert "imported_accumulated_dataset.json" in " ".join(saved.keys())
+
+
+def test_normalize_batch_state_recomputes_next_seed_and_shapes_processed_seeds():
+    ordered = [
+        {"seed_id": "abarth__500__2008__2026__il", "make": "Abarth", "model": "500", "year_start": 2008, "year_end": 2026, "market": "IL"},
+        {"seed_id": "abarth__500e__2023__2026__il", "make": "Abarth", "model": "500e", "year_start": 2023, "year_end": 2026, "market": "IL"},
+        {"seed_id": "aston_martin__db9__2004__2016__il", "make": "Aston Martin", "model": "DB9", "year_start": 2004, "year_end": 2016, "market": "IL"},
+    ]
+    dirty = {
+        "processed_seed_ids": ["abarth__500__2008__2026__il"],
+        "processed_seeds": [{"seed_id": "abarth__500__2008__2016__il"}],
+        "next_seed_id": "abarth__500__2008__2026__il",
+        "failed_seed_ids": ["abarth__500__2008__2026__il", "aston_martin__db9__2004__2016__il"],
+        "failed_details": [{"seed_id": "abarth__500__2008__2026__il", "reason": "x"}],
+    }
+    out = batch_runner.normalize_batch_state_for_resume(dirty, ordered, market="IL")
+    assert out["next_seed_id"] == "abarth__500e__2023__2026__il"
+    assert out["next_seed_id"] not in out["processed_seed_ids"]
+    assert len(out["processed_seeds"]) == len(out["processed_seed_ids"])
+    assert out["processed_seeds"][0]["seed_id"] == out["processed_seed_ids"][0]
+    assert "abarth__500__2008__2026__il" not in out["failed_seed_ids"]
+    assert out["failed_details"] == []
+
+
+def test_normalize_batch_state_maps_legacy_split_with_variants():
+    ordered = [
+        {"seed_id": "abarth__500__2008__2026__il", "make": "Abarth", "model": "500", "year_start": 2008, "year_end": 2026, "market": "IL"},
+        {"seed_id": "abarth__500e__2023__2026__il", "make": "Abarth", "model": "500e", "year_start": 2023, "year_end": 2026, "market": "IL"},
+    ]
+    dirty = {"processed_seeds": [{"seed_id": "abarth__500__2008__2016__il"}, {"seed_id": "abarth__500__2024__2026__il"}]}
+    variants = [{"variant_id": "v1", "make": "Abarth", "model": "500", "year_start": 2014, "year_end": 2016}]
+    out = batch_runner.normalize_batch_state_for_resume(dirty, ordered, variants=variants, market="IL")
+    assert out["processed_seed_ids"] == ["abarth__500__2008__2026__il"]
+    assert out["processed_seeds"][0]["seed_id"] == "abarth__500__2008__2026__il"
