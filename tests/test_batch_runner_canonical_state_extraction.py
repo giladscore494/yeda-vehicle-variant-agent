@@ -102,6 +102,8 @@ def test_next_seed_not_reset_to_abarth(monkeypatch):
 
 def test_variant_count_no_double_count():
     package = _canonical_package()
+    package["final_export"] = {"variants": [{"variant_id": f"fe-{i}"} for i in range(50)]}
+    package["variants"] = [{"variant_id": f"root-{i}"} for i in range(50)]
     assert batch_runner.canonical_variant_count(package) == 273
 
 
