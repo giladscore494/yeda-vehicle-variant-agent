@@ -84,6 +84,12 @@ with tabs[1]:
         st.info(f"Execution mode: {trace.get('execution_mode')}\nModel mode: {trace.get('model_mode')}\nDiscovery model: {trace.get('discovery_model_used')}\nVerification model: {trace.get('verification_model_used')}\nEscalated: {trace.get('escalated_to_strong')}\nEscalation reason: {trace.get('escalation_reason')}\nSources required min: {trace.get('sources_required_min')}\nGemini attempted: {trace.get('gemini_attempted')}\nGrounding requested: {trace.get('grounding_requested')}\nGemini error: {trace.get('gemini_error')}")
         if trace.get('execution_mode') != 'gemini':
             st.warning('This result did not come from a real Gemini run.')
+        warnings=[]
+        if trace.get('final_decision',{}).get('possible_under_split'): warnings.append('possible_under_split')
+        if trace.get('range_collapsed'): warnings.append('range_collapsed')
+        omitted=[k for k,v in (trace.get('field_verifications') or {}).items() if v.get('reason','').startswith('Field omitted by model')]
+        if omitted: warnings.append(f'fields omitted/defaulted to unknown: {omitted}')
+        if warnings: st.warning('Warnings: ' + '; '.join(warnings))
         st.json(r)
         with st.expander("Trace JSON"):
             st.json(r.get("trace", {}))
@@ -103,7 +109,7 @@ with tabs[3]:
     if ids:
         rid = st.selectbox("run_id", ids)
         run = next(r for r in runs if r.get("run_id") == rid)
-        keys = ['input','execution_mode','model_mode','discovery_model_used','verification_model_used','escalated_to_strong','escalation_reason','sources_required_min','gemini_attempted','gemini_error','grounding_requested','grounding_supported','search_queries','sources_found','facts_extracted','variants_created','verified_count','partial_count','conflict_count','blocked_fields','final_decision','error']
+        keys = ['input','execution_mode','model_mode','discovery_model_used','verification_model_used','escalated_to_strong','escalation_reason','sources_required_min','gemini_attempted','gemini_error','grounding_requested','grounding_supported','search_queries','sources_found','candidate_variants_count','variants_created','verified_count','partial_count','conflict_count','blocked_fields','field_verifications','range_collapsed','range_collapse_reason','final_decision','error']
         st.json({k: run.get(k) for k in keys})
 
 with tabs[4]:

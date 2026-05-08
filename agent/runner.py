@@ -10,7 +10,7 @@ from storage.json_store import ensure_output_files, get_output_paths, append_uni
 from tools.gemini_client import GeminiClient
 from agent.discovery import run_discovery
 
-CRITICAL_FIELDS=("body_type","seats","engine","transmission","fuel_type","drivetrain","generation")
+CRITICAL_FIELDS=("body_type","seats","engine","transmission","fuel_type","drivetrain","generation","year_start","year_end")
 INFERENCE_STATUSES={"inferred","assumed","likely","typical","common","estimated","guessed"}
 
 def _now(): return datetime.now(timezone.utc).isoformat()
@@ -75,7 +75,15 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     cls=classify_variant(variant)
     paths=get_output_paths(); append_unique(paths['vehicle_variants_partial'],[variant.model_dump(mode='json')],'variant_id'); append_unique(paths['vehicle_sources'],[source.model_dump(mode='json')],'source_id')
     conflicts=[c.model_dump(mode='json') for c in detect_conflicts([variant])]
-    trace={'run_id':run_id,'input':{'make':make,'model':model},'started_at':started,'finished_at':_now(),'execution_mode':execution_mode,'status':'completed','model_mode':model_mode,'discovery_model_used':(None if execution_mode=='mock' else selected),'verification_model_used':(None if execution_mode=='mock' else selected),'escalated_to_strong':escalated,'escalation_reason':escalation_reason,'sources_required_min':2,'gemini_attempted': bool((discovery_result.get('gemini_metadata') or {}).get('request_attempted')),'gemini_error':discovery_result.get('error'),'grounding_requested': bool((discovery_result.get('gemini_metadata') or {}).get('grounding_requested')),'search_queries':discovery_result.get('data',{}).get('search_queries',[]),'sources_found':len(discovery_result.get('data',{}).get('sources',[])) if isinstance(discovery_result,dict) else 0,'variants_created':1,'verified_count':0,'partial_count':1,'conflict_count':len(conflicts),'unresolved_count':0,'blocked_fields':_blocked_fields_for_variant(variant),'final_decision':{'classification':cls},'field_verifications':{'drivetrain':variant.drivetrain.model_dump(mode='json')}}
+    trace={'run_id':run_id,'input':{'make':make,'model':model,'year_start':ys,'year_end':ye,'market':market,'force_mock':force_mock,'allow_mock_fallback':allow_mock_fallback,'model_mode':model_mode},'started_at':started,'finished_at':_now(),'execution_mode':execution_mode,'status':'completed','model_mode':model_mode,'discovery_model_used':(None if execution_mode=='mock' else selected),'verification_model_used':(None if execution_mode=='mock' else selected),'escalated_to_strong':escalated,'escalation_reason':escalation_reason,'sources_required_min':2,'gemini_attempted': bool((discovery_result.get('gemini_metadata') or {}).get('request_attempted')),'gemini_error':discovery_result.get('error'),'grounding_requested': bool((discovery_result.get('gemini_metadata') or {}).get('grounding_requested')),'search_queries':discovery_result.get('data',{}).get('search_queries',[]),'sources_found':len(discovery_result.get('data',{}).get('sources',[])) if isinstance(discovery_result,dict) else 0,'variants_created':1,'verified_count':0,'partial_count':1,'conflict_count':len(conflicts),'unresolved_count':0,'blocked_fields':_blocked_fields_for_variant(variant),'final_decision':{'classification':cls},'field_verifications':{fn:getattr(variant,fn).model_dump(mode='json') for fn in ('body_type','seats','engine','transmission','fuel_type','drivetrain')},'candidate_variants_count':len(discovery_result.get('data',{}).get('candidate_variants',[])) if isinstance(discovery_result,dict) else 0,'range_collapsed':discovery_result.get('data',{}).get('range_collapsed') if isinstance(discovery_result,dict) else None,'range_collapse_reason':discovery_result.get('data',{}).get('range_collapse_reason') if isinstance(discovery_result,dict) else None}
+
+    if (ye-ys)>8 and trace.get('variants_created')==1:
+        trace['final_decision']['possible_under_split']=True
+        if model_mode=='auto' and not escalated:
+            trace['escalated_to_strong']=True
+            trace['escalation_reason']='possible_under_split long range with one variant'
+        elif model_mode=='strong':
+            trace['final_decision']['warning']='Strong model still returned one generic variant for long range.'
     add_run_history(trace)
     return {'status':'completed','run_id':run_id,'variants_created':1,'verified_count':0,'partial_count':1,'conflict_count':len(conflicts),'unresolved_count':0,'blocked_fields':trace['blocked_fields'],'final_decision':trace['final_decision'],'trace':trace}
 
