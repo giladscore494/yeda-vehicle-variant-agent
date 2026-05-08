@@ -225,9 +225,9 @@ def _merge_variant_pair(current: dict, incoming: dict) -> dict:
     trims = _merge_trim_options(secondary, primary)
     if trims:
         merged["trim_options"] = trims
-    if _variant_status_rank(current) == 2 or _variant_status_rank(incoming) == 2:
+    if current_rank == 2 or incoming_rank == 2:
         merged["verification_status"] = "verified"
-    elif _variant_status_rank(current) == 1 or _variant_status_rank(incoming) == 1:
+    elif current_rank == 1 or incoming_rank == 1:
         merged["verification_status"] = merged.get("verification_status") or merged.get("classification") or "partial"
     return merged
 

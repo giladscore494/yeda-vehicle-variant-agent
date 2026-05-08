@@ -41,6 +41,7 @@ def test_repair_field_source_ids_from_field_sources_and_runner_preserves():
 def test_trim_merge_and_verified_wins_and_counts_match():
     verified = _variant("Standard", "verified")
     partial = _variant("Premium", "partial")
+    partial["variant_id"] = verified["variant_id"]
     out = build_clean_final_export([verified], [partial])
     assert out["counts"]["total_variants"] == len(out["variants"])
     assert len(out["variants"]) == 1
