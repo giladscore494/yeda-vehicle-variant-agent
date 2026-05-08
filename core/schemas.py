@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field, model_validator
 
 class VerificationStatus(str, Enum):
     verified = "verified"
-    inferred = "inferred"
     partial = "partial"
     conflict = "conflict"
     unverified = "unverified"

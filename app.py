@@ -22,10 +22,15 @@ def is_malformed_run_record(record):
 
 
 st.sidebar.header("Settings")
-cfg=client.get_config_status()
-st.sidebar.write(f"Gemini API status: {'✅ found' if safe_get(cfg, 'has_api_key', False) else '⚠️ missing'}")
+try:
+    cfg = client.get_config_status()
+except Exception as exc:
+    cfg = {"api_key": "unknown", "api_key_source": "unknown", "google_genai_import_ok": False, "client_ready": False, "import_error": str(exc), "fast_model": None, "strong_model": None, "grounding_supported": None}
+st.sidebar.write(f"Gemini API status: {'✅ found' if safe_get(cfg, 'api_key', 'missing') == 'found' else '⚠️ missing'}")
 st.sidebar.subheader('Gemini config status')
 st.sidebar.write({'api_key': 'found' if safe_get(cfg, 'has_api_key', False) else 'missing', 'api_key_source': safe_get(cfg, 'api_key_source'), 'google_genai_import_ok': safe_get(cfg, 'client_import_ok'), 'client_ready': safe_get(cfg, 'client_ready'), 'import_error': safe_get(cfg, 'import_error'), 'fast_model': safe_get(cfg, 'fast_model'), 'strong_model': safe_get(cfg, 'strong_model')})
+use_cache = st.sidebar.checkbox("Use cache", value=True)
+force_refresh = st.sidebar.checkbox("Force refresh", value=False)
 market = st.sidebar.selectbox("Market", ["IL", "EU", "GLOBAL"], index=0)
 model_policy = st.sidebar.selectbox("Model policy", ["Pro only", "Mock only", "Advanced"], index=0)
 model_mode='pro_only'
@@ -91,6 +96,8 @@ with tabs[1]:
                 force_mock=fm,
                 allow_mock_fallback=allow_fallback,
                 model_mode=model_mode,
+                use_cache=use_cache,
+                force_refresh=force_refresh,
             )
         except Exception as exc:
             st.error(f"Run failed: {type(exc).__name__}: {exc}")
@@ -125,6 +132,11 @@ with tabs[1]:
                 st.code(trace_json.get('discovery_raw_text'))
             st.write('discovery_parse_error', trace_json.get('discovery_parse_error'))
             st.write('discovery_parsed_top_level_keys', trace_json.get('discovery_parsed_top_level_keys'))
+            st.write('candidate_extraction_path', trace_json.get('candidate_extraction_path'))
+            st.write('candidate_variants_count', trace_json.get('candidate_variants_count'))
+            st.write('raw_text_parsed_in_runner', trace_json.get('raw_text_parsed_in_runner', False))
+            st.write('variants_saved_to_verified', trace_json.get('variants_saved_to_verified', 0))
+            st.write('variants_saved_to_partial', trace_json.get('variants_saved_to_partial', 0))
             st.write('discovery_parsed_json_debug')
             st.json(trace_json.get('discovery_parsed_json_debug'))
             if trace_json.get('discovery_raw_text') and not trace_json.get('discovery_parsed_json_debug'):

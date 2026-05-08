@@ -99,6 +99,18 @@ class GeminiClient:
             return "env"
         return "missing"
 
+    def get_config_status(self) -> dict:
+        return {
+            "api_key": "found" if self.has_api_key() else "missing",
+            "api_key_source": self.get_api_key_source() if hasattr(self, "get_api_key_source") else "unknown",
+            "google_genai_import_ok": bool(genai is not None),
+            "client_ready": bool(getattr(self, "client", None) is not None),
+            "import_error": IMPORT_ERROR if "IMPORT_ERROR" in globals() else None,
+            "fast_model": getattr(self, "fast_model", None),
+            "strong_model": getattr(self, "strong_model", None),
+            "grounding_supported": True,
+        }
+
     def _response(self, *, model: str, grounding_requested: bool, request_attempted: bool, ok: bool, error: str = None, data: Any = None, raw_text: str = None, parsed_json: Any = None, parse_error: str = None):
         return {
             "ok": ok,
