@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone
 import copy
 import uuid
+from threading import Lock
 from typing import Callable
 from urllib.parse import quote
 
@@ -24,6 +25,41 @@ EXPECTED_LOCAL_LAST_COMPLETED_SEED_ID = "audi__rs5__2010__2026__il"
 EXPECTED_LOCAL_NEXT_SEED_ID = "audi__rs6__2008__2026__il"
 EXPECTED_LOCAL_MIN_VARIANTS = 263
 EXPECTED_LOCAL_MIN_PROCESSED = 59
+_LAST_CANONICAL_UPDATE_ATTEMPT = {
+    "failed": False,
+    "guard_issues": [],
+    "candidate_variant_count": 0,
+    "previous_variant_count": 0,
+    "candidate_processed_count": 0,
+    "previous_processed_count": 0,
+    "candidate_source": None,
+}
+_LAST_CANONICAL_UPDATE_ATTEMPT_LOCK = Lock()
+
+
+def _set_last_canonical_update_attempt(
+    failed: bool,
+    validate_result: dict | None = None,
+    candidate_source: str | None = None,
+):
+    result = validate_result if isinstance(validate_result, dict) else {}
+    with _LAST_CANONICAL_UPDATE_ATTEMPT_LOCK:
+        _LAST_CANONICAL_UPDATE_ATTEMPT.update(
+            {
+                "failed": bool(failed),
+                "guard_issues": list(result.get("issues") or []),
+                "candidate_variant_count": int(result.get("candidate_variant_count", 0) or 0),
+                "previous_variant_count": int(result.get("previous_variant_count", 0) or 0),
+                "candidate_processed_count": int(result.get("candidate_processed_count", 0) or 0),
+                "previous_processed_count": int(result.get("previous_processed_count", 0) or 0),
+                "candidate_source": candidate_source or result.get("candidate_source"),
+            }
+        )
+
+
+def get_last_canonical_update_attempt() -> dict:
+    with _LAST_CANONICAL_UPDATE_ATTEMPT_LOCK:
+        return copy.deepcopy(_LAST_CANONICAL_UPDATE_ATTEMPT)
 
 
 def _token_prefix_type(token: str | None) -> str:
@@ -363,6 +399,9 @@ def diagnose_canonical_github_sync() -> dict:
     if not shrink_detected:
         ruled_out.append("Shrink guard condition is not active: candidate package is not smaller than previous.")
 
+    last_attempt = get_last_canonical_update_attempt()
+    last_update_attempt_failed = bool(last_attempt.get("failed"))
+    last_update_guard_issues = list(last_attempt.get("guard_issues") or [])
     root_cause = ""
     final_diagnosis = ""
     recommended_action = ""
@@ -415,6 +454,35 @@ def diagnose_canonical_github_sync() -> dict:
         root_cause = "Shrink guard correctly blocked because candidate package is smaller than canonical."
         final_diagnosis = "Shrink guard correctly blocked a smaller candidate package."
         recommended_action = "Use local/GitHub canonical as source of truth and merge new batch variants into it."
+    elif last_update_attempt_failed and last_update_guard_issues:
+        if "candidate_variant_count < previous_variant_count" in last_update_guard_issues:
+            root_cause = "Canonical update was blocked because candidate package is smaller than previous canonical."
+            final_diagnosis = root_cause
+            recommended_action = "Use local/GitHub canonical as source of truth and merge new output into canonical without shrinking."
+        elif "candidate package has final_merged_count > canonical_count but batch_state did not advance" in last_update_guard_issues:
+            root_cause = "Canonical update was blocked because local temporary variants exist without batch_state advancement."
+            final_diagnosis = root_cause
+            recommended_action = "Advance batch_state with canonical progression or remove untracked temporary output variants before pushing."
+        elif any(
+            issue in last_update_guard_issues
+            for issue in [
+                "candidate package missing batch_state.processed_seed_ids",
+                "candidate_processed_count < previous_processed_count",
+                "candidate_next_seed_id is already processed",
+                "candidate_last_completed_seed_id moved backward",
+            ]
+        ):
+            root_cause = "Canonical update was blocked because candidate batch_state is invalid."
+            final_diagnosis = root_cause
+            recommended_action = "Fix candidate batch_state fields (processed_seed_ids, last_completed_seed_id, next_seed_id) and retry."
+        elif "manual push attempted to rebuild from incomplete local outputs instead of using local canonical" in last_update_guard_issues:
+            root_cause = "Canonical update was blocked because manual push rebuilt an invalid package instead of pushing local canonical."
+            final_diagnosis = root_cause
+            recommended_action = "Push local canonical directly or merge into local canonical first."
+        else:
+            root_cause = "GitHub sync is reachable, but canonical update candidate failed validation."
+            final_diagnosis = root_cause
+            recommended_action = "Inspect last_update_guard_issues and fix candidate package before retrying push/update."
     elif not (local_check.get("local_exists") and local_check.get("local_is_valid_json")):
         root_cause = "Local canonical invalid/missing."
         final_diagnosis = root_cause
@@ -433,6 +501,7 @@ def diagnose_canonical_github_sync() -> dict:
         and github_counts_ok
         and manual_push_safe
         and not shrink_detected
+        and not last_update_attempt_failed
     )
 
     checks = {
@@ -481,6 +550,12 @@ def diagnose_canonical_github_sync() -> dict:
         "checks": checks,
         "recommended_action": recommended_action,
         "safe_to_continue_batch": safe_to_continue_batch,
+        "last_update_attempt_failed": last_update_attempt_failed,
+        "last_update_guard_issues": last_update_guard_issues,
+        "last_candidate_variant_count": int(last_attempt.get("candidate_variant_count", 0) or 0),
+        "last_previous_variant_count": int(last_attempt.get("previous_variant_count", 0) or 0),
+        "last_candidate_processed_count": int(last_attempt.get("candidate_processed_count", 0) or 0),
+        "last_previous_processed_count": int(last_attempt.get("previous_processed_count", 0) or 0),
     }
 
 
@@ -1002,7 +1077,59 @@ def _process_seeds(seed_queue: list[dict], state: dict, ordered: list[dict], lim
     return results
 
 
+def evaluate_continue_guard(market: str = "IL") -> dict:
+    issues: list[str] = []
+    ordered = get_ordered_seed_list(market)
+    local_canonical = load_local_canonical_resume_package()
+    if not isinstance(local_canonical, dict):
+        issues.append("canonical package missing")
+        canonical_variants = []
+    else:
+        canonical_variants = _extract_resume_variants(local_canonical)
+    batch_state_exists = _batch_state_path().exists()
+    state = load_batch_state(market)
+    processed = list(state.get("processed_seed_ids") or [])
+    next_seed_id = state.get("next_seed_id")
+    if not batch_state_exists:
+        issues.append("batch_state missing")
+    if len(canonical_variants) == 0:
+        issues.append("variants_found == 0")
+    if len(processed) == 0:
+        issues.append("processed_seed_ids_found == 0")
+    if not next_seed_id and len(processed) < len(ordered):
+        issues.append("next_seed_id is null while not all seeds are processed")
+    if next_seed_id and next_seed_id in set(processed):
+        issues.append("next_seed_id is already in processed_seed_ids")
+    coverage = audit_coverage_until_last_completed(ordered, state, _load_outputs())
+    if int(coverage.get("holes_count", 0) or 0) > 0:
+        issues.append("holes exist before last_completed_seed_id")
+    github = fetch_file_from_github(get_github_config().get("canonical_path") or CANONICAL_RESUME_PATH_DEFAULT)
+    github_count = len(_extract_resume_variants(github if isinstance(github, dict) else {}))
+    local_count = len(canonical_variants)
+    if github_count > 0 and local_count > 0 and local_count < github_count:
+        issues.append("canonical variant count is smaller than last known GitHub/local canonical")
+        issues.append("GitHub canonical is newer/larger and local import would overwrite it without merge")
+    return {
+        "passed": len(issues) == 0,
+        "issues": issues,
+        "canonical_variant_count": local_count,
+        "github_canonical_variant_count": github_count,
+        "processed_seed_count": len(processed),
+        "total_seed_count": len(ordered),
+        "next_seed_id": next_seed_id,
+        "coverage_audit": coverage,
+    }
+
+
 def run_next_batch(limit=5, market="IL", make_filter=None, force_refresh=False, use_cache=True, resume=True, include_failed=False, progress_callback: Callable | None = None, auto_push_canonical: bool = False):
+    guard = evaluate_continue_guard(market=market)
+    if not guard.get("passed", False):
+        return {
+            "status": "blocked",
+            "error": "Batch start blocked by canonical/batch_state guard.",
+            "guard": guard,
+            "results": [],
+        }
     ordered = get_ordered_seed_list(market)
     state = load_batch_state(market) if resume else _default_state(market, ordered)
     outputs = _load_outputs()
@@ -1126,39 +1253,103 @@ def _contains_mock_payload(variants: list[dict]) -> bool:
     return False
 
 
-def validate_canonical_resume_package_update(new_package: dict, previous_package: dict | None = None, market: str = "IL") -> list[str]:
+def validate_canonical_update(previous_package: dict | None, candidate_package: dict | None, market: str = "IL") -> dict:
+    previous = previous_package if isinstance(previous_package, dict) else {}
+    candidate = candidate_package if isinstance(candidate_package, dict) else {}
     issues: list[str] = []
-    previous_package = previous_package if isinstance(previous_package, dict) else {}
-    new_acc = new_package.get("accumulated_clean_export", {}) if isinstance(new_package, dict) else {}
-    prev_acc = previous_package.get("accumulated_clean_export", {}) if isinstance(previous_package, dict) else {}
-    new_variants = [v for v in new_acc.get("variants", []) if isinstance(v, dict)] if isinstance(new_acc, dict) else []
-    prev_variants = [v for v in prev_acc.get("variants", []) if isinstance(v, dict)] if isinstance(prev_acc, dict) else []
-    new_state = new_package.get("batch_state", {}) if isinstance(new_package, dict) else {}
-    prev_state = previous_package.get("batch_state", {}) if isinstance(previous_package, dict) else {}
-    new_processed = list(new_state.get("processed_seed_ids") or [])
-    prev_processed = list(prev_state.get("processed_seed_ids") or [])
     ordered_seed_ids = [s["seed_id"] for s in get_ordered_seed_list(market)]
 
-    if len(new_variants) < len(prev_variants):
-        issues.append("new_variant_count < previous_canonical_variant_count")
-    if len(new_processed) < len(prev_processed):
-        issues.append("new_processed_seed_ids_count < previous_processed_seed_ids_count")
-    if new_state.get("next_seed_id") and new_state.get("next_seed_id") in set(new_processed):
-        issues.append("next_seed_id is already in processed_seed_ids")
-    if _seed_index(new_state.get("last_completed_seed_id"), ordered_seed_ids) < _seed_index(prev_state.get("last_completed_seed_id"), ordered_seed_ids):
-        issues.append("last_completed_seed_id moves backward")
-    if _duplicate_variant_ids(new_variants):
-        issues.append("duplicate variant_id exists")
-    if _contains_mock_payload(new_variants):
-        issues.append("mock data exists inside variants")
-    quality_gate = new_acc.get("quality_gate", {}) if isinstance(new_acc, dict) else {}
-    if isinstance(quality_gate, dict) and quality_gate and not quality_gate.get("passed", False):
-        issues.append("quality gate fails")
-    if len(new_variants) == 0:
-        issues.append("accumulated_clean_export.variants is empty")
-    if previous_package and len(new_processed) == 0:
-        issues.append("processed_seed_ids is empty after import")
-    return issues
+    candidate_acc = candidate.get("accumulated_clean_export") if isinstance(candidate.get("accumulated_clean_export"), dict) else {}
+    previous_acc = previous.get("accumulated_clean_export") if isinstance(previous.get("accumulated_clean_export"), dict) else {}
+    candidate_state = candidate.get("batch_state") if isinstance(candidate.get("batch_state"), dict) else {}
+    previous_state = previous.get("batch_state") if isinstance(previous.get("batch_state"), dict) else {}
+
+    candidate_has_acc_variants = isinstance(candidate_acc.get("variants"), list) if isinstance(candidate_acc, dict) else False
+    candidate_has_processed = isinstance(candidate_state.get("processed_seed_ids"), list) if isinstance(candidate_state, dict) else False
+    if not candidate_has_acc_variants:
+        issues.append("candidate package missing accumulated_clean_export.variants")
+    if not candidate_has_processed:
+        issues.append("candidate package missing batch_state.processed_seed_ids")
+
+    candidate_variants = [v for v in (candidate_acc.get("variants") or []) if isinstance(v, dict)] if candidate_has_acc_variants else _extract_resume_variants(candidate)
+    previous_variants = [v for v in (previous_acc.get("variants") or []) if isinstance(v, dict)] if isinstance(previous_acc, dict) and isinstance(previous_acc.get("variants"), list) else _extract_resume_variants(previous)
+    candidate_processed = list(candidate_state.get("processed_seed_ids") or []) if candidate_has_processed else []
+    previous_processed = list(previous_state.get("processed_seed_ids") or []) if isinstance(previous_state, dict) else []
+    candidate_last_completed = candidate_state.get("last_completed_seed_id") if isinstance(candidate_state, dict) else None
+    previous_last_completed = previous_state.get("last_completed_seed_id") if isinstance(previous_state, dict) else None
+    candidate_next_seed = candidate_state.get("next_seed_id") if isinstance(candidate_state, dict) else None
+    previous_next_seed = previous_state.get("next_seed_id") if isinstance(previous_state, dict) else None
+    candidate_variant_count = len(candidate_variants)
+    previous_variant_count = len(previous_variants)
+    candidate_processed_count = len(candidate_processed)
+    previous_processed_count = len(previous_processed)
+    next_seed_is_processed = bool(candidate_next_seed and candidate_next_seed in set(candidate_processed))
+    candidate_last_idx = _seed_index(candidate_last_completed, ordered_seed_ids)
+    previous_last_idx = _seed_index(previous_last_completed, ordered_seed_ids)
+    last_completed_moved_backward = bool(candidate_last_idx >= 0 and previous_last_idx >= 0 and candidate_last_idx < previous_last_idx)
+    duplicate_variant_ids = _duplicate_variant_ids(candidate_variants)
+    mock_hits = sorted(
+        {
+            str(v.get("variant_id") or "").strip()
+            for v in candidate_variants
+            if is_mock_contaminated_variant(v)
+        }
+    )
+    if not mock_hits and _contains_mock_payload(candidate_variants):
+        mock_hits = ["<non_id_mock_variant>"]
+    quality_gate = candidate_acc.get("quality_gate", {}) if isinstance(candidate_acc, dict) else {}
+    quality_gate_passed = not (isinstance(quality_gate, dict) and quality_gate and not quality_gate.get("passed", False))
+
+    if candidate_variant_count < previous_variant_count:
+        issues.append("candidate_variant_count < previous_variant_count")
+    if candidate_processed_count < previous_processed_count:
+        issues.append("candidate_processed_count < previous_processed_count")
+    if next_seed_is_processed:
+        issues.append("candidate_next_seed_id is already processed")
+    if last_completed_moved_backward:
+        issues.append("candidate_last_completed_seed_id moved backward")
+    if duplicate_variant_ids:
+        issues.append("duplicate variant_id found")
+    if mock_hits:
+        issues.append("mock contamination found")
+    if not quality_gate_passed:
+        issues.append("quality gate failed")
+
+    candidate_audit = candidate_acc.get("audit", {}) if isinstance(candidate_acc, dict) else {}
+    accumulation_counts = candidate_audit.get("accumulation_counts", {}) if isinstance(candidate_audit, dict) else {}
+    final_merged_count = int(accumulation_counts.get("final_merged_variants", candidate_variant_count) or candidate_variant_count)
+    latest_batch_full_variants = int(accumulation_counts.get("latest_batch_full_variants", 0) or 0)
+    canonical_count = previous_variant_count
+    batch_state_advanced = (
+        candidate_processed_count > previous_processed_count
+        or candidate_last_completed != previous_last_completed
+        or candidate_next_seed != previous_next_seed
+    )
+    if final_merged_count > canonical_count and latest_batch_full_variants > 0 and not batch_state_advanced:
+        issues.append("candidate package has final_merged_count > canonical_count but batch_state did not advance")
+
+    return {
+        "passed": len(issues) == 0,
+        "issues": issues,
+        "previous_variant_count": previous_variant_count,
+        "candidate_variant_count": candidate_variant_count,
+        "previous_processed_count": previous_processed_count,
+        "candidate_processed_count": candidate_processed_count,
+        "previous_last_completed_seed_id": previous_last_completed,
+        "candidate_last_completed_seed_id": candidate_last_completed,
+        "previous_next_seed_id": previous_next_seed,
+        "candidate_next_seed_id": candidate_next_seed,
+        "duplicate_variant_ids": duplicate_variant_ids,
+        "mock_hits": mock_hits,
+        "quality_gate_passed": quality_gate_passed,
+        "next_seed_is_processed": next_seed_is_processed,
+        "last_completed_moved_backward": last_completed_moved_backward,
+        "candidate_source": candidate.get("_candidate_source"),
+    }
+
+
+def validate_canonical_resume_package_update(new_package: dict, previous_package: dict | None = None, market: str = "IL") -> list[str]:
+    return list(validate_canonical_update(previous_package, new_package, market=market).get("issues") or [])
 
 
 def build_resume_package() -> dict:
@@ -1216,12 +1407,16 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
     previous_github = fetch_file_from_github(get_github_config().get("canonical_path") or CANONICAL_RESUME_PATH_DEFAULT)
     previous = previous_local if isinstance(previous_local, dict) else previous_github
     package = build_resume_package()
-    issues = validate_canonical_resume_package_update(package, previous, market=market)
+    package["_candidate_source"] = "merged_candidate"
+    validate_result = validate_canonical_update(previous, package, market=market)
+    issues = list(validate_result.get("issues") or [])
     if issues:
+        _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source="merged_candidate")
         return {
             "ok": False,
             "error": "Canonical resume package update blocked: shrink or invalid state detected.",
             "issues": issues,
+            "validate_result": validate_result,
             "package": package,
         }
     if isinstance(previous, dict):
@@ -1231,10 +1426,12 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
     if push_to_github:
         pushed = push_canonical_resume_package(package, previous_package=previous, batch_id=batch_id)
         if not pushed.get("ok"):
+            _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source="merged_candidate")
             return {
                 "ok": False,
                 "error": pushed.get("error") or "Failed to push canonical package to GitHub.",
                 "issues": [],
+                "validate_result": validate_result,
                 "package": package,
                 "push_result": pushed,
             }
@@ -1244,9 +1441,11 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
         package["merge_metadata"]["last_push_commit_sha"] = ((pushed.get("canonical") or {}).get("commit_sha"))
     if push_to_github and pushed and pushed.get("ok"):
         save_local_canonical_resume_package(package)
+    _set_last_canonical_update_attempt(failed=False, validate_result=validate_result, candidate_source="merged_candidate")
     return {
         "ok": True,
         "issues": [],
+        "validate_result": validate_result,
         "package": package,
         "push_result": pushed,
         "commit_sha": ((pushed or {}).get("canonical") or {}).get("commit_sha"),
@@ -1265,21 +1464,45 @@ def push_local_canonical_to_github(batch_id: str | None = None, market: str = "I
             "package": local_package,
         }
     previous_github = fetch_file_from_github(get_github_config().get("canonical_path") or CANONICAL_RESUME_PATH_DEFAULT)
+    candidate = {
+        "schema_version": local_package.get("schema_version"),
+        "batch_state": copy.deepcopy(local_package.get("batch_state") if isinstance(local_package.get("batch_state"), dict) else {}),
+        "accumulated_clean_export": {
+            "variants": _extract_resume_variants(local_package),
+            "quality_gate": ((local_package.get("accumulated_clean_export") or {}).get("quality_gate") if isinstance(local_package.get("accumulated_clean_export"), dict) else None),
+            "audit": ((local_package.get("accumulated_clean_export") or {}).get("audit") if isinstance(local_package.get("accumulated_clean_export"), dict) else None),
+        },
+        "_candidate_source": "local_canonical",
+    }
+    validate_result = validate_canonical_update(previous_github if isinstance(previous_github, dict) else {}, candidate, market=market)
+    if not validate_result.get("passed", False):
+        _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source="local_canonical")
+        return {
+            "ok": False,
+            "error": "Canonical resume package update blocked: shrink or invalid state detected.",
+            "issues": list(validate_result.get("issues") or []),
+            "validate_result": validate_result,
+            "package": local_package,
+        }
     pushed = push_canonical_resume_package(local_package, previous_package=previous_github, batch_id=batch_id)
     if not pushed.get("ok"):
+        _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source="local_canonical")
         return {
             "ok": False,
             "error": pushed.get("error") or "Failed to push local canonical package to GitHub.",
             "package": local_package,
+            "validate_result": validate_result,
             "push_result": pushed,
         }
     local_package.setdefault("merge_metadata", {})
     local_package["merge_metadata"]["pushed_to_github"] = True
     local_package["merge_metadata"]["last_push_commit_sha"] = ((pushed.get("canonical") or {}).get("commit_sha"))
     save_local_canonical_resume_package(local_package)
+    _set_last_canonical_update_attempt(failed=False, validate_result=validate_result, candidate_source="local_canonical")
     return {
         "ok": True,
         "issues": [],
+        "validate_result": validate_result,
         "package": local_package,
         "push_result": pushed,
         "commit_sha": ((pushed.get("canonical") or {}).get("commit_sha")),
@@ -1312,11 +1535,9 @@ def canonical_integrity_report(market: str = "IL") -> dict:
     github_variants = _extract_resume_variants(github)
     final_variants = [v for v in final_export.get("variants", []) if isinstance(v, dict)]
     local_state = normalize_batch_state_for_resume(local.get("batch_state", {}), get_ordered_seed_list(market), variants=local_variants, market=market)
-    guards = validate_canonical_resume_package_update(
-        {"accumulated_clean_export": {"variants": final_variants, "quality_gate": final_export.get("quality_gate")}, "batch_state": local_state},
-        local,
-        market=market,
-    )
+    candidate = {"accumulated_clean_export": {"variants": final_variants, "quality_gate": final_export.get("quality_gate"), "audit": final_export.get("audit")}, "batch_state": local_state, "_candidate_source": "build_final_export"}
+    validate_result = validate_canonical_update(local, candidate, market=market)
+    guards = list(validate_result.get("issues") or [])
     return {
         "local_canonical_count": len(local_variants),
         "github_canonical_count": len(github_variants),
@@ -1330,6 +1551,7 @@ def canonical_integrity_report(market: str = "IL") -> dict:
         "last_push_commit_sha": ((local.get("merge_metadata") or {}).get("last_push_commit_sha") if isinstance(local.get("merge_metadata"), dict) else None),
         "shrink_guard_status": "blocked" if guards else "pass",
         "guard_issues": guards,
+        "validate_result": validate_result,
     }
 
 
@@ -1379,7 +1601,11 @@ def detect_import_file_type(uploaded_json) -> str:
         return "unknown"
     if uploaded_json.get("schema_version") in {"resume_package_v1", "vehicle_variant_resume_package_v1"}:
         return "resume_package"
+    if isinstance(uploaded_json.get("batch_state"), dict) and isinstance(uploaded_json.get("accumulated_clean_export"), dict) and isinstance(uploaded_json.get("accumulated_clean_export", {}).get("variants"), list):
+        return "resume_package"
     if isinstance(uploaded_json.get("batch_state"), dict) and isinstance(uploaded_json.get("final_export"), dict) and isinstance(uploaded_json.get("final_export", {}).get("variants"), list):
+        return "resume_package"
+    if isinstance(uploaded_json.get("batch_state"), dict) and isinstance(uploaded_json.get("verified_variants"), list) and isinstance(uploaded_json.get("partial_variants"), list):
         return "resume_package"
     if uploaded_json.get("schema_version") == BATCH_STATE_SCHEMA or "processed_seed_ids" in uploaded_json:
         return "batch_state"
@@ -1574,24 +1800,31 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
                 save_json(paths["run_history"], load_json_list(paths["run_history"]) + pkg.get("run_history", []))
             save_json(paths["unresolved_models"], pkg.get("unresolved", []))
             save_json(paths["vehicle_conflicts"], pkg.get("conflicts", []))
+        ordered = get_ordered_seed_list(market)
         imported_state = pkg.get("batch_state", state) if isinstance(pkg.get("batch_state"), dict) else state
-        normalized_state = normalize_batch_state_for_resume(imported_state, get_ordered_seed_list(market), variants=variants, market=market)
+        normalized_state = normalize_batch_state_for_resume(imported_state, ordered, variants=variants, market=market)
         save_json(_batch_state_path(), normalized_state)
         imported_pkg = copy.deepcopy(pkg)
         imported_pkg["schema_version"] = "resume_package_v1"
         imported_pkg["batch_state"] = normalized_state
         imported_pkg["accumulated_clean_export"] = {"variants": imported_variants}
-        guard_issues = validate_canonical_resume_package_update(imported_pkg, load_local_canonical_resume_package(), market=market)
+        imported_pkg["_candidate_source"] = "uploaded_resume"
+        validate_result = validate_canonical_update(load_local_canonical_resume_package(), imported_pkg, market=market)
+        guard_issues = list(validate_result.get("issues") or [])
         if len(normalized_state.get("processed_seed_ids", [])) == 0:
             guard_issues.append("processed_seed_ids is empty after import")
         if guard_issues:
             result["warnings"].append("Canonical resume package update blocked: shrink or invalid state detected.")
             result["warnings"].extend(guard_issues)
+            validate_result["issues"] = guard_issues
+            validate_result["passed"] = False
+            _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source="uploaded_resume")
         else:
             previous_local = load_local_canonical_resume_package()
             if isinstance(previous_local, dict):
                 save_local_canonical_backup(previous_local)
             save_local_canonical_resume_package(imported_pkg)
+            _set_last_canonical_update_attempt(failed=False, validate_result=validate_result, candidate_source="uploaded_resume")
         result["processed_added"] = max(0, len(set(normalized_state.get("processed_seed_ids", [])) - set(state.get("processed_seed_ids", []))))
         result["variants_verified_added"] = max(0, len(merged_verified) - len(verified))
         result["variants_partial_added"] = max(0, len(merged_partial) - len(partial))
@@ -1599,6 +1832,45 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
         result["imported_variants"] = len(imported_variants)
         result["imported_makes"] = c.get("makes_count")
         result["imported_models"] = c.get("models_count")
+        verified_count = len([v for v in imported_variants if _is_verified_variant(v)])
+        partial_count = max(0, len(imported_variants) - verified_count)
+        next_seed_id = normalized_state.get("next_seed_id")
+        next_seed = next((s for s in ordered if s.get("seed_id") == next_seed_id), None)
+        next_seed_human = (
+            f"{next_seed.get('make')} {next_seed.get('model')} {next_seed.get('year_start')}–{next_seed.get('year_end')}"
+            if isinstance(next_seed, dict)
+            else None
+        )
+        coverage = audit_coverage_until_last_completed(ordered, normalized_state, _load_outputs())
+        guard_issues_for_continue = []
+        if len(imported_variants) == 0:
+            guard_issues_for_continue.append("variants_found == 0")
+        if len(normalized_state.get("processed_seed_ids", [])) == 0:
+            guard_issues_for_continue.append("processed_seed_ids_found == 0")
+        if not next_seed_id and len(normalized_state.get("processed_seed_ids", [])) < len(ordered):
+            guard_issues_for_continue.append("next_seed_id is null while seeds remain")
+        if next_seed_id and next_seed_id in set(normalized_state.get("processed_seed_ids", [])):
+            guard_issues_for_continue.append("next_seed_id is already in processed_seed_ids")
+        if int(coverage.get("holes_count", 0) or 0) > 0:
+            guard_issues_for_continue.append("holes exist before last_completed_seed_id")
+        result.update(
+            {
+                "detected_file_type": file_type,
+                "variants_found": len(imported_variants),
+                "verified_count": verified_count,
+                "partial_count": partial_count,
+                "processed_seed_ids_found": len(normalized_state.get("processed_seed_ids", [])),
+                "total_seeds": len(ordered),
+                "last_completed_seed_id": normalized_state.get("last_completed_seed_id"),
+                "next_seed_id": next_seed_id,
+                "next_seed_human_readable": next_seed_human,
+                "coverage_audit_status": "pass" if int(coverage.get("holes_count", 0) or 0) == 0 else "blocked",
+                "holes_count": int(coverage.get("holes_count", 0) or 0),
+                "safe_to_continue": len(guard_issues_for_continue) == 0 and len(guard_issues) == 0,
+                "continue_guard_issues": guard_issues_for_continue,
+                "validate_result": validate_result,
+            }
+        )
     else:
         result["import_status"] = "skipped"
         result["warnings"].append("Unknown import file type")

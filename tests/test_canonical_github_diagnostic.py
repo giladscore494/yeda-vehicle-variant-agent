@@ -74,6 +74,7 @@ def _setup_common(monkeypatch, tmp_path, token="github_pat_123456789012345678901
     monkeypatch.setattr(batch_runner, "load_imported_accumulated_variants", lambda: [])
     monkeypatch.setattr(batch_runner, "build_final_export", lambda: {"variants": [{"variant_id": f"x-{i}"} for i in range(263)]})
     monkeypatch.setattr(batch_runner, "build_resume_package", lambda: _make_pkg(variants_count=263))
+    batch_runner._set_last_canonical_update_attempt(failed=False, validate_result={"issues": []}, candidate_source="test")
 
 
 def _write_local_canonical(tmp_path, pkg=None):
@@ -198,3 +199,25 @@ def test_no_false_pass_when_github_count_zero(monkeypatch, tmp_path):
     assert result["checks"]["github_contents_check"]["github_variant_count"] == 0
     assert result["single_root_cause"] != "No blocking root cause detected."
     assert result["safe_to_continue_batch"] is False
+
+
+def test_last_failed_update_blocks_safe_continue(monkeypatch, tmp_path):
+    _setup_common(monkeypatch, tmp_path)
+    _write_local_canonical(tmp_path, _make_pkg(263, 59, "audi__rs6__2008__2026__il"))
+    _mock_github(monkeypatch, repo_status=200, branch_status=200, contents_status=200, github_pkg=_make_pkg(263, 59, "audi__rs6__2008__2026__il"))
+    batch_runner._set_last_canonical_update_attempt(
+        failed=True,
+        validate_result={
+            "issues": ["candidate_variant_count < previous_variant_count"],
+            "candidate_variant_count": 116,
+            "previous_variant_count": 263,
+            "candidate_processed_count": 59,
+            "previous_processed_count": 59,
+        },
+        candidate_source="merged_candidate",
+    )
+    result = batch_runner.diagnose_canonical_github_sync()
+    assert result["last_update_attempt_failed"] is True
+    assert "candidate_variant_count < previous_variant_count" in result["last_update_guard_issues"]
+    assert result["safe_to_continue_batch"] is False
+    assert result["single_root_cause"] != "No blocking root cause detected."

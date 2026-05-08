@@ -11,7 +11,7 @@ from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
-    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard
 except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -87,6 +87,12 @@ except ImportError as exc:
             "checks": {},
             **_get_batch_runner_error_result(),
         }
+
+    def validate_canonical_update(*args, **kwargs):
+        return {"passed": False, "issues": [_BATCH_RUNNER_IMPORT_ERROR]}
+
+    def evaluate_continue_guard(*args, **kwargs):
+        return {"passed": False, "issues": [_BATCH_RUNNER_IMPORT_ERROR], "coverage_audit": {"holes_count": 1}}
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -99,6 +105,25 @@ logger = logging.getLogger(__name__)
 
 def is_malformed_run_record(record):
     return not isinstance(record, dict) or "status" not in record
+
+
+def _extract_resume_variants_for_ui(payload):
+    if not isinstance(payload, dict):
+        return []
+    variants = []
+    accumulated = payload.get("accumulated_clean_export")
+    final_export = payload.get("final_export")
+    buckets = [
+        accumulated.get("variants") if isinstance(accumulated, dict) else None,
+        final_export.get("variants") if isinstance(final_export, dict) else None,
+        payload.get("variants"),
+        payload.get("verified_variants"),
+        payload.get("partial_variants"),
+    ]
+    for bucket in buckets:
+        if isinstance(bucket, list):
+            variants.extend([v for v in bucket if isinstance(v, dict)])
+    return variants
 
 
 st.sidebar.header("Settings")
@@ -234,6 +259,32 @@ with tabs[1]:
 
 with tabs[2]:
     st.caption("No run-all button by design.")
+    continue_guard = evaluate_continue_guard(market=market)
+    local_checkpoint = load_local_canonical_resume_package() or {}
+    local_checkpoint_variants = _extract_resume_variants_for_ui(local_checkpoint)
+    local_checkpoint_state = local_checkpoint.get("batch_state", {}) if isinstance(local_checkpoint.get("batch_state"), dict) else {}
+    checkpoint_source = "Local canonical" if isinstance(local_checkpoint, dict) and local_checkpoint else "Missing"
+    if st.session_state.get("last_import_source"):
+        checkpoint_source = st.session_state.get("last_import_source")
+    total_seed_count = int(continue_guard.get("total_seed_count", 0) or 0)
+    local_processed_seed_ids = local_checkpoint_state.get("processed_seed_ids", []) if isinstance(local_checkpoint_state.get("processed_seed_ids"), list) else []
+    processed_seed_count = int(continue_guard.get("processed_seed_count", len(local_processed_seed_ids)) or 0)
+    stopped_at = local_checkpoint_state.get("last_completed_seed_id")
+    next_seed_checkpoint = local_checkpoint_state.get("next_seed_id")
+    checkpoint_status = "Ready" if continue_guard.get("passed") else "Blocked"
+    st.subheader("Current canonical checkpoint")
+    st.write(
+        {
+            "source": checkpoint_source,
+            "variants": len([v for v in local_checkpoint_variants if isinstance(v, dict)]),
+            "processed_seeds": f"{processed_seed_count} / {total_seed_count}",
+            "stopped_at": stopped_at,
+            "next_seed": next_seed_checkpoint,
+            "safe_to_continue": bool(continue_guard.get("passed")),
+            "status": checkpoint_status,
+        }
+    )
+
     progress = get_batch_progress(market=market)
     st.progress((progress.get("percent_complete", 0.0))/100.0)
     st.write(f"Processed {progress.get('processed', 0)} / {progress.get('total_seeds', 0)} ({progress.get('percent_complete', 0)}%)")
@@ -246,6 +297,7 @@ with tabs[2]:
     if audit.get("holes_count",0) > 0:
         st.warning("Coverage holes detected. Next batch will repair these before continuing.")
     st.dataframe(pd.DataFrame(audit.get("missing_seeds", [])))
+    st.write({"continue_guard_passed": continue_guard.get("passed"), "continue_guard_issues": continue_guard.get("issues", [])})
 
     batch_limit_ui = st.selectbox("Batch limit", [1,3,5,10,20], index=2, key='batch_limit_ui')
     resume_ui = st.checkbox("Resume from last position", value=True)
@@ -267,6 +319,98 @@ with tabs[2]:
         current_seed_text.write(f"Running {idx} / {total} — Current: {seed.get('make')} {seed.get('model')} {seed.get('year_start')}–{seed.get('year_end')}")
         results_placeholder.dataframe(pd.DataFrame(run_rows) if run_rows else pd.DataFrame())
 
+    st.subheader("Resume / Canonical Import")
+    uploaded = st.file_uploader("Upload resume package JSON", type=["json"], key="batch_runner_resume_upload")
+    overwrite_import = st.checkbox("Overwrite local state/files", value=False, key="batch_runner_overwrite_import")
+    if uploaded is not None:
+        payload = json.loads(uploaded.read().decode("utf-8"))
+        st.session_state["uploaded_resume_package_payload"] = payload
+        detected = detect_import_file_type(payload)
+        variants_found = len(_extract_resume_variants_for_ui(payload))
+        st.write({"detected_file_type": detected, "variants_found": variants_found})
+    import_col1, import_col2, import_col3, import_col4, import_col5 = st.columns(5)
+    if import_col1.button("Import into Batch Runner"):
+        uploaded_payload = st.session_state.get("uploaded_resume_package_payload")
+        if isinstance(uploaded_payload, dict):
+            imp = import_progress_json(uploaded_payload, overwrite=overwrite_import, market=market)
+            st.session_state["last_import_status"] = imp
+            st.session_state["last_import_source"] = "uploaded"
+            st.json(imp)
+        else:
+            st.error("No uploaded resume package found in current session.")
+    if import_col2.button("Pull canonical from GitHub", key="batch_runner_pull_canonical"):
+        pull_res = pull_canonical_from_github()
+        st.session_state["last_import_source"] = "GitHub canonical" if pull_res.get("ok") else st.session_state.get("last_import_source")
+        if pull_res.get("ok"):
+            st.success("Canonical pulled from GitHub.")
+        else:
+            st.error(pull_res.get("error", "Failed pulling canonical from GitHub."))
+    if import_col3.button("Use local canonical"):
+        local_pkg = load_local_canonical_resume_package()
+        if isinstance(local_pkg, dict):
+            imp = import_progress_json(local_pkg, overwrite=False, market=market)
+            st.session_state["last_import_status"] = imp
+            st.session_state["last_import_source"] = "local canonical"
+            st.json(imp)
+        else:
+            st.error("Local canonical package is missing.")
+    if import_col4.button("Run coverage audit before continue"):
+        refreshed = get_batch_progress(market=market)
+        st.json(refreshed.get("coverage_audit", {}))
+    if import_col5.button("Continue next batch"):
+        guard_now = evaluate_continue_guard(market=market)
+        holes_now = int(((guard_now.get("coverage_audit") or {}).get("holes_count", 0) or 0))
+        if not guard_now.get("passed"):
+            st.error("Batch start blocked by canonical/batch_state guard.")
+            st.json(guard_now)
+        elif holes_now > 0:
+            st.error("Coverage audit failed. Process holes first.")
+            st.json(guard_now.get("coverage_audit", {}))
+        else:
+            result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=include_failed_ui, progress_callback=_on_progress, auto_push_canonical=auto_push_canonical_ui)
+            st.json(result)
+
+    candidate_rows = []
+    for source_name in ["local_canonical", "build_final_export", "uploaded_resume", "merged_candidate"]:
+        prev_pkg = load_local_canonical_resume_package() or {}
+        candidate_pkg = None
+        quality_score = None
+        if source_name == "local_canonical":
+            candidate_pkg = prev_pkg
+        elif source_name == "build_final_export":
+            fe = build_final_export()
+            candidate_pkg = {"schema_version": "resume_package_v1", "accumulated_clean_export": {"variants": fe.get("variants", []), "quality_gate": fe.get("quality_gate"), "audit": fe.get("audit")}, "batch_state": load_batch_state(market), "_candidate_source": source_name}
+            quality_score = ((fe.get("quality_gate") or {}).get("score") if isinstance(fe, dict) else None)
+        elif source_name == "uploaded_resume":
+            uploaded_pkg = st.session_state.get("uploaded_resume_package_payload")
+            if isinstance(uploaded_pkg, dict):
+                candidate_pkg = dict(uploaded_pkg)
+                candidate_pkg["_candidate_source"] = source_name
+        elif source_name == "merged_candidate":
+            try:
+                candidate_pkg = build_resume_package()
+                candidate_pkg["_candidate_source"] = source_name
+                quality_score = (((candidate_pkg.get("accumulated_clean_export") or {}).get("quality_gate") or {}).get("score"))
+            except Exception:
+                candidate_pkg = None
+        if not isinstance(candidate_pkg, dict):
+            continue
+        v = validate_canonical_update(prev_pkg, candidate_pkg, market=market)
+        candidate_rows.append(
+            {
+                "source": source_name,
+                "variant_count": v.get("candidate_variant_count"),
+                "processed_seed_count": v.get("candidate_processed_count"),
+                "last_completed_seed_id": v.get("candidate_last_completed_seed_id"),
+                "next_seed_id": v.get("candidate_next_seed_id"),
+                "quality_score": quality_score,
+                "passed": v.get("passed"),
+                "issues": ", ".join(v.get("issues", [])),
+            }
+        )
+    st.subheader("Canonical Update Candidate")
+    st.dataframe(pd.DataFrame(candidate_rows))
+
     if st.button("Run next batch"):
         result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=resume_ui, include_failed=include_failed_ui, progress_callback=_on_progress, auto_push_canonical=auto_push_canonical_ui)
         for item in result.get("results", []):
@@ -279,34 +423,11 @@ with tabs[2]:
             if canonical_persist.get("ok"):
                 st.success("Canonical resume package updated and pushed.")
             else:
-                st.error("Canonical resume package update blocked: shrink or invalid state detected.")
+                st.error("Canonical resume package update blocked")
+                st.json(canonical_persist.get("validate_result") or canonical_persist)
 
     if st.button("Retry failed only"):
         st.json(run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=True))
-
-    st.subheader("Resume from file")
-    uploaded = st.file_uploader("Import resume package", type=["json"], key="resume_upload")
-    overwrite_import = st.checkbox("Overwrite local state/files", value=False)
-    confirm_import = st.checkbox("I confirm importing this progress file", value=False)
-    if uploaded is not None:
-        payload = json.loads(uploaded.read().decode("utf-8"))
-        st.session_state["uploaded_resume_package_payload"] = payload
-        detected = detect_import_file_type(payload)
-        meta={"detected_file_type": detected, "schema_version": payload.get("schema_version") if isinstance(payload, dict) else None}
-        if detected == "resume_package" and isinstance(payload, dict):
-            if isinstance(payload.get("final_export"), dict):
-                fe=payload.get("final_export", {}); bs=payload.get("batch_state", {})
-                meta.update({"variants_found": len(fe.get("variants", []) if isinstance(fe.get("variants", []), list) else []), "processed_seed_ids_found": len(bs.get("processed_seed_ids", []) if isinstance(bs.get("processed_seed_ids", []), list) else []), "makes_count": (fe.get("counts", {}) or {}).get("makes_count"), "models_count": (fe.get("counts", {}) or {}).get("models_count")})
-            else:
-                acc=payload.get("accumulated_clean_export", {})
-                meta.update({"variants_found": len(acc.get("variants", []) if isinstance(acc.get("variants", []), list) else []), "processed_seed_ids_found": len((payload.get("batch_state", {}) or {}).get("processed_seed_ids", []) if isinstance((payload.get("batch_state", {}) or {}).get("processed_seed_ids", []), list) else []), "makes_count": (acc.get("counts", {}) or {}).get("makes_count"), "models_count": (acc.get("counts", {}) or {}).get("models_count")})
-        st.write(meta)
-        if st.button("Import and rebuild progress") and confirm_import:
-            imp=import_progress_json(payload, overwrite=overwrite_import, market=market)
-            st.success("Imported accumulated dataset and rebuilt progress.")
-            st.json(imp)
-            p2=get_batch_progress(market=market)
-            st.write({"total_variants": imp.get("imported_variants"), "processed_seeds": p2.get("processed"), "next_seed": p2.get("next_seed"), "holes_count": (p2.get("coverage_audit", {}) or {}).get("holes_count")})
 
     if st.button("Run hole repair batch"):
         st.json(run_next_batch(limit=batch_limit_ui, market=market, resume=True))
@@ -467,13 +588,15 @@ with tabs[7]:
         if push_res.get("ok"):
             st.success("Local canonical pushed to GitHub.")
         else:
-            st.error("Canonical resume package update blocked: shrink or invalid state detected.")
+            st.error("Canonical resume package update blocked")
+            st.json(push_res.get("validate_result") or push_res)
     if c4.button("Build merged canonical and push"):
         push_res = persist_canonical_resume_package(push_to_github=True, market=market)
         if push_res.get("ok"):
             st.success("Merged canonical built and pushed to GitHub.")
         else:
-            st.error("Canonical resume package update blocked: shrink or invalid state detected.")
+            st.error("Canonical resume package update blocked")
+            st.json(push_res.get("validate_result") or push_res)
     local_canonical = load_local_canonical_resume_package()
     c5.download_button(
         "Export canonical locally",
@@ -482,17 +605,25 @@ with tabs[7]:
     )
     if c6.button("Run canonical integrity check"):
         if integrity.get("guard_issues"):
-            st.error("Canonical resume package update blocked: shrink or invalid state detected.")
-            st.write({"guard_issues": integrity.get("guard_issues")})
+            st.error("Canonical resume package update blocked")
+            st.json(integrity.get("validate_result") or {"issues": integrity.get("guard_issues")})
         else:
             st.success("Canonical integrity check passed.")
-    st.subheader("Canonical GitHub Diagnostic")
+    st.subheader("Candidate update validation")
+    st.json(integrity.get("validate_result") or {"issues": integrity.get("guard_issues", [])})
+    st.subheader("GitHub connectivity/read diagnostic")
     canonical_diag = diagnose_canonical_github_sync()
     diag_summary = {
         "final_diagnosis": canonical_diag.get("final_diagnosis"),
         "single_root_cause": canonical_diag.get("single_root_cause"),
         "recommended_action": canonical_diag.get("recommended_action"),
         "safe_to_continue_batch": canonical_diag.get("safe_to_continue_batch"),
+        "last_update_attempt_failed": canonical_diag.get("last_update_attempt_failed"),
+        "last_update_guard_issues": canonical_diag.get("last_update_guard_issues"),
+        "last_candidate_variant_count": canonical_diag.get("last_candidate_variant_count"),
+        "last_previous_variant_count": canonical_diag.get("last_previous_variant_count"),
+        "last_candidate_processed_count": canonical_diag.get("last_candidate_processed_count"),
+        "last_previous_processed_count": canonical_diag.get("last_previous_processed_count"),
         "ruled_out_count": len(canonical_diag.get("ruled_out", [])),
     }
     st.json(diag_summary)

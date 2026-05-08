@@ -36,8 +36,8 @@ def test_validate_canonical_resume_package_update_blocks_shrink(monkeypatch):
     prev = {"accumulated_clean_export": {"variants": [_variant(1), _variant(2)]}, "batch_state": {"processed_seed_ids": ["a"], "last_completed_seed_id": "a"}}
     new = {"accumulated_clean_export": {"variants": [_variant(1)], "quality_gate": {"passed": True}}, "batch_state": {"processed_seed_ids": ["a"], "last_completed_seed_id": "a", "next_seed_id": "a"}}
     issues = batch_runner.validate_canonical_resume_package_update(new, prev, market="IL")
-    assert "new_variant_count < previous_canonical_variant_count" in issues
-    assert "next_seed_id is already in processed_seed_ids" in issues
+    assert "candidate_variant_count < previous_variant_count" in issues
+    assert "candidate_next_seed_id is already processed" in issues
 
 
 def test_import_resume_package_saves_local_canonical(monkeypatch):
