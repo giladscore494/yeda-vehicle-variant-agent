@@ -12,3 +12,17 @@ Default enrichment uses **Gemini Pro only** (`GEMINI_MODEL_STRONG=gemini-3-pro-p
 - `GEMINI_API_KEY="..."`
 - `GEMINI_MODEL_STRONG="gemini-3-pro-preview"`
 - `GEMINI_MODEL_FAST="gemini-3-flash-preview"`
+
+## Batch Runner Resume Pipeline
+
+- Batch Runner uses deterministic alphabetical ordering by make/model/year.
+- Resume is persisted in `data/output/batch_state.json`.
+- Use **Run next batch** to continue from last completed seed.
+- No run-all button by design.
+- If state is lost, use **Rebuild progress from output files**.
+
+## Export
+
+- Final dataset export defaults to verified + partial variants.
+- Latest batch result export contains only last batch summary and results.
+- Raw debug exports are optional.

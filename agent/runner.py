@@ -16,6 +16,11 @@ MOCK_MARKERS = ["source_mock_", "kia sportage", "1.6 turbo", "ql"]
 FIELD_NAMES = ("generation", "year_start", "year_end", "body_type", "seats", "engine", "transmission", "fuel_type", "drivetrain", "trim")
 FORBIDDEN_STATUSES = {"forbidden", "inferred", "assumed", "likely", "typical", "common", "estimated", "guessed"}
 
+
+
+def _seed_id(make, model, year_start, year_end, market):
+    norm=lambda v: " ".join(str(v or "").strip().lower().split()).replace("/","-").replace(" ","_")
+    return f"{norm(make)}__{norm(model)}__{int(year_start)}__{int(year_end)}__{norm(market)}"
 def _now(): return datetime.now(timezone.utc).isoformat()
 
 def _contains_marker(v):
@@ -86,7 +91,7 @@ def _save_raw_debug(trace):
     save_json(raw_runs, runs)
     save_json(raw_candidates, cands)
 
-def run_single_model(make, model, year_start=None, year_end=None, market='IL', force_mock=False, allow_mock_fallback=True, model_mode='pro_only', use_cache=True, force_refresh=False, max_sources=6, max_snippets_per_source=2, max_snippet_chars=220, max_candidate_variants=12, verification_mode='skip_second_pass', max_gemini_calls_per_model_run=3, max_grounded_calls_per_model_run=1):
+def run_single_model(make, model, year_start=None, year_end=None, market='IL', force_mock=False, allow_mock_fallback=True, model_mode='pro_only', use_cache=True, force_refresh=False, max_sources=6, max_snippets_per_source=2, max_snippet_chars=220, max_candidate_variants=12, verification_mode='skip_second_pass', max_gemini_calls_per_model_run=3, max_grounded_calls_per_model_run=1, batch_id=None):
     ensure_output_files(); run_id = str(uuid.uuid4()); seed = find_seed(make, model)
     if not seed:
         return {'status': 'error', 'error': 'seed not found'}
@@ -97,7 +102,7 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     cache_key = f"final:{make}:{model}:{ys}:{ye}:{market}:{strong}:{model_mode}:{verification_mode}"
     discovery_cache_key = f"discovery:{make}:{model}:{ys}:{ye}:{market}:{strong}:{model_mode}"
     verification_cache_key = f"verification:{make}:{model}:{ys}:{ye}:{market}:{strong}:{verification_mode}"
-    trace = {'run_id': run_id, 'cache_key': cache_key, 'gemini_calls_count': 0, 'grounded_calls_count': 0, 'gemini_attempted': False, 'grounding_requested': False, 'model_mode': model_mode, 'verification_mode': verification_mode, 'input': {'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'model_mode': model_mode}, 'discovery_model_used': None, 'verification_model_used': None, 'escalated_to_strong': False, 'escalation_reason': None, 'final_cache_hit': False, 'discovery_cache_hit': False, 'verification_cache_hit': False, 'cache_record_schema_version': None, 'sources_required_min': 2, 'raw_candidate_values_preserved': True, 'dedupe_keys_used': [], 'discovery_raw_text_debug_available': False}
+    trace = {'run_id': run_id, 'batch_id': batch_id, 'seed_id': _seed_id(make, model, ys, ye, market), 'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'cache_key': cache_key, 'gemini_calls_count': 0, 'grounded_calls_count': 0, 'gemini_attempted': False, 'grounding_requested': False, 'model_mode': model_mode, 'verification_mode': verification_mode, 'input': {'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'model_mode': model_mode}, 'discovery_model_used': None, 'verification_model_used': None, 'escalated_to_strong': False, 'escalation_reason': None, 'final_cache_hit': False, 'discovery_cache_hit': False, 'verification_cache_hit': False, 'cache_record_schema_version': None, 'sources_required_min': 2, 'raw_candidate_values_preserved': True, 'dedupe_keys_used': [], 'discovery_raw_text_debug_available': False}
     if force_refresh:
         use_cache = False
 
@@ -144,7 +149,8 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
             trace['discovery_parse_error'] = parse_error
             trace['discovery_raw_text'] = raw_text
             trace['discovery_raw_text_debug_available'] = bool(raw_text)
-            add_run_history(trace | {'status': 'error', 'error': 'Failed to parse raw Gemini JSON in runner', 'parse_error': parse_error})
+            err=trace | {'status':'error','error':'Failed to parse raw Gemini JSON in runner','parse_error':parse_error,'classification_summary':{'variants_created':0,'verified_count':0,'partial_count':0,'conflict_count':0,'unresolved_count':0},'created_at':_now(),'duration_ms':0,'model_policy':'pro_only'}
+            add_run_history(err)
             return {'status': 'error', 'error': 'Failed to parse raw Gemini JSON in runner', 'parse_error': parse_error, 'trace': trace}
         parsed = parsed2
         trace['raw_text_parsed_in_runner'] = True
@@ -219,11 +225,16 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     cache[cache_key] = {'schema_version': CACHE_SCHEMA_VERSION, 'result': result, 'trace': trace}
     cache[verification_cache_key] = {'schema_version': CACHE_SCHEMA_VERSION, 'skipped': True}
     save_json(cache_path, cache)
+    trace['status']='completed'
+    trace['classification_summary']={'variants_created':len(unique),'verified_count':len(verified),'partial_count':len(partial),'conflict_count':len(conflicts),'unresolved_count':len(unresolved)}
+    trace['created_at']=_now()
+    trace['duration_ms']=0
+    trace['model_policy']='pro_only'
     add_run_history(trace)
     return result
 
-def run_batch(limit=5, make_filter=None, market='IL', force_mock=False, allow_mock_fallback=True, model_mode='pro_only'):
+def run_batch(limit=5, make_filter=None, market='IL', force_mock=False, allow_mock_fallback=True, model_mode='pro_only', use_cache=True, force_refresh=False):
     seeds = load_model_seeds()
     if make_filter:
         seeds = [s for s in seeds if s.make.lower() == make_filter.lower()]
-    return {'status': 'completed', 'processed': min(limit, len(seeds)), 'results': [run_single_model(s.make, s.model, s.year_start, s.year_end, market, force_mock, allow_mock_fallback, model_mode=model_mode) for s in seeds[:limit]]}
+    return {'status': 'completed', 'processed': min(limit, len(seeds)), 'results': [run_single_model(s.make, s.model, s.year_start, s.year_end, market, force_mock, allow_mock_fallback, model_mode=model_mode, use_cache=use_cache, force_refresh=force_refresh) for s in seeds[:limit]]}
