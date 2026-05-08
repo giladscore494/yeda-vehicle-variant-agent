@@ -48,6 +48,7 @@ def verify_candidates_batch(candidates, sources, model_name=None, cost_settings=
             'metadata': {'error': r.get('error'), 'count': len(candidates or [])},
         }
     data = r.get('data', r)
+    metadata = {'count': 0, 'parsed_json': data if isinstance(data, dict) else None}
     vv = data.get('variant_verifications', []) if isinstance(data, dict) else []
     out = []
     for i, item in enumerate(vv):
@@ -61,4 +62,7 @@ def verify_candidates_batch(candidates, sources, model_name=None, cost_settings=
             'candidate_index': item.get('candidate_index', i),
         }
         out.append(item)
-    return {'ok': True, 'variant_verifications': out, 'metadata': {'count': len(out)}}
+    metadata['count'] = len(out)
+    if len(out) == 0:
+        metadata['warning'] = 'verification_returned_no_items'
+    return {'ok': True, 'variant_verifications': out, 'metadata': metadata}
