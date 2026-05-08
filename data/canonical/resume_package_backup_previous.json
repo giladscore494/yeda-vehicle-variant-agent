@@ -6,7 +6,7 @@
     "schema_version": "batch_state_v1",
     "market": "IL",
     "created_at": "2026-05-08T16:44:55.429137+00:00",
-    "updated_at": "2026-05-08T20:28:17.199140+00:00",
+    "updated_at": "2026-05-08T20:53:02.119510+00:00",
     "last_batch_id": "eb15c199-d8eb-45a9-8e4f-122fdb37699e",
     "total_seeds": 993,
     "processed_seed_ids": [
