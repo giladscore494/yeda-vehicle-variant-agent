@@ -22,9 +22,16 @@ st.sidebar.write(f"Gemini API status: {'âœ… found' if cfg['has_api_key'] else 'â
 st.sidebar.subheader('Gemini config status')
 st.sidebar.write({'api_key': 'found' if cfg['has_api_key'] else 'missing', 'api_key_source': cfg['api_key_source'], 'google_genai_import_ok': cfg['client_import_ok'], 'client_ready': cfg['client_ready'], 'import_error': cfg['import_error'], 'fast_model': cfg['fast_model'], 'strong_model': cfg['strong_model']})
 market = st.sidebar.selectbox("Market", ["IL", "EU", "GLOBAL"], index=0)
-model_mode_label = st.sidebar.selectbox("Model mode", ["Auto escalation", "Fast / Flash", "Strong / Pro"], index=0)
-model_mode = {"Auto escalation":"auto","Fast / Flash":"fast","Strong / Pro":"strong"}[model_mode_label]
-st.sidebar.write({"selected_model_mode": model_mode, "fast_model": cfg["fast_model"], "strong_model": cfg["strong_model"]})
+model_policy = st.sidebar.selectbox("Model policy", ["Pro only", "Mock only", "Advanced"], index=0)
+model_mode='pro_only'
+force_mock_ui=False
+if model_policy=="Mock only":
+    force_mock_ui=True
+elif model_policy=="Advanced":
+    with st.sidebar.expander("Advanced model settings"):
+        adv = st.selectbox("Advanced mode", ["fast", "auto", "strong"], index=1)
+        model_mode=adv
+st.sidebar.write({"model_policy": model_policy, "model_mode": model_mode, "fast_model": cfg["fast_model"], "strong_model": cfg["strong_model"]})
 batch_limit = st.sidebar.selectbox("Batch limit", [1, 5, 10, 20], index=1)
 make_filter = st.sidebar.selectbox("Make filter", [""] + get_makes())
 
@@ -57,7 +64,7 @@ with tabs[1]:
     m = st.selectbox("Model", model_names)
     seed = next((x for x in models if x.model == m), None)
     st.write(f"Parsed year range: {seed.year_start}-{seed.year_end}" if seed else "No seed")
-    fm = st.checkbox("Force mock mode", value=not client.has_api_key())
+    fm = st.checkbox("Force mock mode", value=force_mock_ui or (not client.has_api_key()))
     allow_fallback = st.checkbox('Allow fallback to mock when Gemini fails', value=True)
     if not client.has_api_key() and not fm:
         st.warning("GEMINI_API_KEY is missing. Run will report Gemini failure and may fallback to mock based on setting.")
