@@ -125,12 +125,11 @@ def _api_get_text(url: str, token: str | None) -> dict:
 
 def _extract_package_fields(payload: dict | None) -> dict:
     package = payload if isinstance(payload, dict) else {}
-    variants = _extract_resume_variants(package)
     batch_state = package.get("batch_state", {}) if isinstance(package.get("batch_state"), dict) else {}
     processed = list(batch_state.get("processed_seed_ids") or [])
     return {
         "schema_version": package.get("schema_version"),
-        "variant_count": len(variants),
+        "variant_count": canonical_variant_count(package),
         "processed_count": len(processed),
         "last_completed_seed_id": batch_state.get("last_completed_seed_id"),
         "next_seed_id": batch_state.get("next_seed_id"),
@@ -647,6 +646,28 @@ def _extract_resume_variants(payload: dict) -> list[dict]:
     return dedupe_variants_stable(variants)
 
 
+def _extract_canonical_variant_bucket(payload: dict | None) -> list[dict]:
+    package = payload if isinstance(payload, dict) else {}
+    accumulated = package.get("accumulated_clean_export") if isinstance(package.get("accumulated_clean_export"), dict) else {}
+    final_export = package.get("final_export") if isinstance(package.get("final_export"), dict) else {}
+    if isinstance(accumulated.get("variants"), list):
+        return [copy.deepcopy(v) for v in accumulated.get("variants") if isinstance(v, dict)]
+    if isinstance(final_export.get("variants"), list):
+        return [copy.deepcopy(v) for v in final_export.get("variants") if isinstance(v, dict)]
+    if isinstance(package.get("variants"), list):
+        return [copy.deepcopy(v) for v in package.get("variants") if isinstance(v, dict)]
+    fallback = []
+    if isinstance(package.get("verified_variants"), list):
+        fallback.extend([copy.deepcopy(v) for v in package.get("verified_variants") if isinstance(v, dict)])
+    if isinstance(package.get("partial_variants"), list):
+        fallback.extend([copy.deepcopy(v) for v in package.get("partial_variants") if isinstance(v, dict)])
+    return dedupe_variants_stable(fallback)
+
+
+def canonical_variant_count(payload: dict | None) -> int:
+    return len(_extract_canonical_variant_bucket(payload))
+
+
 def _empty_coverage_by_make(ordered_seeds: list[dict]) -> dict:
     coverage = {}
     for seed in ordered_seeds:
@@ -659,6 +680,65 @@ def _empty_coverage_by_make(ordered_seeds: list[dict]) -> dict:
 def _default_state(market: str, ordered_seeds: list[dict]) -> dict:
     now = _now()
     return {"schema_version": BATCH_STATE_SCHEMA, "market": market, "created_at": now, "updated_at": now, "last_batch_id": None, "total_seeds": len(ordered_seeds), "processed_seed_ids": [], "failed_seed_ids": [], "skipped_seed_ids": [], "in_progress_seed_id": None, "last_completed_seed_id": None, "next_seed_id": ordered_seeds[0]["seed_id"] if ordered_seeds else None, "coverage_by_make": _empty_coverage_by_make(ordered_seeds), "run_history": [], "failed_details": []}
+
+
+def extract_canonical_batch_state(package: dict, ordered_seeds: list[dict], market: str = "IL") -> dict:
+    canonical_by_id = {s["seed_id"]: seed_to_dict(s, default_market=market) for s in ordered_seeds}
+    canonical_ids = [s["seed_id"] for s in ordered_seeds]
+    canonical_set = set(canonical_ids)
+    raw_state = package.get("batch_state") if isinstance(package, dict) and isinstance(package.get("batch_state"), dict) else {}
+
+    incoming_ids = [sid for sid in (raw_state.get("processed_seed_ids") or []) if isinstance(sid, str) and sid in canonical_set]
+    if len(incoming_ids) == 0 and isinstance(raw_state.get("processed_seeds"), list):
+        for row in raw_state.get("processed_seeds") or []:
+            sid = row.get("seed_id") if isinstance(row, dict) else None
+            if isinstance(sid, str) and sid in canonical_set:
+                incoming_ids.append(sid)
+
+    processed_set = set(incoming_ids)
+    processed_seed_ids = [sid for sid in canonical_ids if sid in processed_set]
+
+    raw_last_completed = raw_state.get("last_completed_seed_id")
+    raw_next_seed = raw_state.get("next_seed_id")
+    if len(processed_seed_ids) == 0 and raw_last_completed in canonical_set:
+        processed_seed_ids = canonical_ids[: canonical_ids.index(raw_last_completed) + 1]
+    if len(processed_seed_ids) == 0 and raw_next_seed in canonical_set:
+        next_idx = canonical_ids.index(raw_next_seed)
+        if next_idx > 0:
+            processed_seed_ids = canonical_ids[:next_idx]
+
+    processed_set = set(processed_seed_ids)
+    next_seed_id = next_unprocessed_seed_id(canonical_ids, processed_set)
+    if next_seed_id is None:
+        contiguous_idx = len(canonical_ids) - 1
+    else:
+        contiguous_idx = canonical_ids.index(next_seed_id) - 1
+    last_completed_seed_id = canonical_ids[contiguous_idx] if contiguous_idx >= 0 else None
+
+    failed_seed_ids = [sid for sid in (raw_state.get("failed_seed_ids") or []) if sid in canonical_set and sid not in processed_set]
+    skipped_seed_ids = [sid for sid in (raw_state.get("skipped_seed_ids") or []) if sid in canonical_set and sid not in processed_set]
+    failed_details = [d for d in (raw_state.get("failed_details") or []) if isinstance(d, dict) and d.get("seed_id") not in processed_set]
+
+    now = _now()
+    normalized = {
+        "schema_version": BATCH_STATE_SCHEMA,
+        "market": raw_state.get("market") or market or "IL",
+        "created_at": raw_state.get("created_at") or now,
+        "updated_at": now,
+        "last_batch_id": raw_state.get("last_batch_id"),
+        "total_seeds": len(ordered_seeds),
+        "processed_seed_ids": processed_seed_ids,
+        "processed_seeds": [canonical_by_id[sid] for sid in processed_seed_ids],
+        "failed_seed_ids": failed_seed_ids,
+        "skipped_seed_ids": skipped_seed_ids,
+        "in_progress_seed_id": None,
+        "last_completed_seed_id": last_completed_seed_id,
+        "next_seed_id": next_seed_id,
+        "run_history": raw_state.get("run_history", []),
+        "failed_details": failed_details,
+    }
+    _refresh_coverage(normalized, ordered_seeds)
+    return normalized
 
 
 def load_batch_state(market: str = "IL") -> dict:
@@ -1082,18 +1162,21 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
     issues: list[str] = []
     ordered = get_ordered_seed_list(market)
     local_canonical = load_local_canonical_resume_package()
+    local_canonical_exists = isinstance(local_canonical, dict) and isinstance(local_canonical.get("batch_state"), dict)
     if not isinstance(local_canonical, dict):
         issues.append("canonical package missing")
-        canonical_variants = []
+        canonical_variants_count = 0
+        state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
     else:
-        canonical_variants = _extract_resume_variants(local_canonical)
+        canonical_variants_count = canonical_variant_count(local_canonical)
+        state = extract_canonical_batch_state(local_canonical, ordered, market=market)
+        _save_state(state)
     batch_state_exists = _batch_state_path().exists()
-    state = load_batch_state(market)
     processed = list(state.get("processed_seed_ids") or [])
     next_seed_id = state.get("next_seed_id")
-    if not batch_state_exists:
+    if not batch_state_exists and not local_canonical_exists:
         issues.append("batch_state missing")
-    if len(canonical_variants) == 0:
+    if canonical_variants_count == 0:
         issues.append("variants_found == 0")
     if len(processed) == 0:
         issues.append("processed_seed_ids_found == 0")
@@ -1105,8 +1188,8 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
     if int(coverage.get("holes_count", 0) or 0) > 0:
         issues.append("holes exist before last_completed_seed_id")
     github = fetch_file_from_github(get_github_config().get("canonical_path") or CANONICAL_RESUME_PATH_DEFAULT)
-    github_count = len(_extract_resume_variants(github if isinstance(github, dict) else {}))
-    local_count = len(canonical_variants)
+    github_count = canonical_variant_count(github if isinstance(github, dict) else {})
+    local_count = canonical_variants_count
     if github_count > 0 and local_count > 0 and local_count < github_count:
         issues.append("canonical variant count is smaller than last known GitHub/local canonical")
         issues.append("GitHub canonical is newer/larger and local import would overwrite it without merge")
@@ -1117,6 +1200,7 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
         "github_canonical_variant_count": github_count,
         "processed_seed_count": len(processed),
         "total_seed_count": len(ordered),
+        "last_completed_seed_id": state.get("last_completed_seed_id"),
         "next_seed_id": next_seed_id,
         "coverage_audit": coverage,
     }
@@ -1132,7 +1216,15 @@ def run_next_batch(limit=5, market="IL", make_filter=None, force_refresh=False, 
             "results": [],
         }
     ordered = get_ordered_seed_list(market)
-    state = load_batch_state(market) if resume else _default_state(market, ordered)
+    if resume:
+        local_canonical = load_local_canonical_resume_package()
+        if isinstance(local_canonical, dict) and isinstance(local_canonical.get("batch_state"), dict):
+            state = extract_canonical_batch_state(local_canonical, ordered, market=market)
+            _save_state(state)
+        else:
+            state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
+    else:
+        state = _default_state(market, ordered)
     outputs = _load_outputs()
     if state.get("in_progress_seed_id"):
         state.setdefault("failed_details", []).append({"seed_id": state["in_progress_seed_id"], "reason": "Previous run interrupted before completion", "created_at": _now()})
@@ -1175,7 +1267,12 @@ def repair_coverage_until_clean(limit_per_pass=20, max_passes=10, market="IL"):
 
 def get_batch_progress(market="IL") -> dict:
     ordered = get_ordered_seed_list(market)
-    state = load_batch_state(market)
+    local_canonical = load_local_canonical_resume_package()
+    if isinstance(local_canonical, dict) and isinstance(local_canonical.get("batch_state"), dict):
+        state = extract_canonical_batch_state(local_canonical, ordered, market=market)
+        _save_state(state)
+    else:
+        state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
     _refresh_coverage(state, ordered)
     audit = audit_coverage_until_last_completed(ordered, state, _load_outputs())
     next_seed = next((seed_to_dict(s) for s in ordered if s["seed_id"] == state.get("next_seed_id")), None)
@@ -1648,13 +1745,18 @@ def pull_canonical_from_github() -> dict:
     payload = fetch_file_from_github(cfg.get("canonical_path") or CANONICAL_RESUME_PATH_DEFAULT)
     if not isinstance(payload, dict):
         return {"ok": False, "error": "Canonical resume package not found on GitHub."}
+    ordered = get_ordered_seed_list("IL")
+    normalized_state = extract_canonical_batch_state(payload, ordered, market="IL")
+    payload = copy.deepcopy(payload)
+    payload["batch_state"] = normalized_state
     previous = load_local_canonical_resume_package()
     if isinstance(previous, dict):
         save_local_canonical_backup(previous)
     save_local_canonical_resume_package(payload)
+    save_json(_batch_state_path(), normalized_state)
     merged = dedupe_variants_stable([*load_imported_accumulated_variants(), *_extract_resume_variants(payload)])
     save_json(project_root() / "data/output/imported_accumulated_dataset.json", {"created_at": _now(), "variants": merged})
-    return {"ok": True, "variants": len(_extract_resume_variants(payload))}
+    return {"ok": True, "variants": canonical_variant_count(payload)}
 
 
 def canonical_integrity_report(market: str = "IL") -> dict:
@@ -1668,7 +1770,7 @@ def canonical_integrity_report(market: str = "IL") -> dict:
     local_variants = _extract_resume_variants(local)
     github_variants = _extract_resume_variants(github)
     final_variants = [v for v in final_export.get("variants", []) if isinstance(v, dict)]
-    local_state = normalize_batch_state_for_resume(local.get("batch_state", {}), get_ordered_seed_list(market), variants=local_variants, market=market)
+    local_state = extract_canonical_batch_state(local, get_ordered_seed_list(market), market=market)
     candidate = {"accumulated_clean_export": {"variants": final_variants, "quality_gate": final_export.get("quality_gate"), "audit": final_export.get("audit")}, "batch_state": local_state, "_candidate_source": "build_final_export"}
     validate_result = validate_canonical_update(local, candidate, market=market)
     guards = list(validate_result.get("issues") or [])
@@ -1688,7 +1790,7 @@ def canonical_integrity_report(market: str = "IL") -> dict:
 
     return {
         "local_canonical_count": len(local_variants),
-        "github_canonical_count": len(github_variants),
+        "github_canonical_count": canonical_variant_count(github),
         "current_imported_count": len(imported),
         "final_merged_count": len(final_variants),
         "previous_processed_count": len(local.get("batch_state", {}).get("processed_seed_ids", []) if isinstance(local.get("batch_state"), dict) else []),
@@ -1769,91 +1871,8 @@ def _normalize_imported_batch_state(imported_state: dict, market: str = "IL") ->
 
 
 def normalize_batch_state_for_resume(batch_state: dict, ordered_seeds: list[dict], variants: list[dict] | None = None, market: str = "IL") -> dict:
-    canonical_by_id = {s["seed_id"]: seed_to_dict(s, default_market=market) for s in ordered_seeds}
-    canonical_ids = [s["seed_id"] for s in ordered_seeds]
-    canonical_set = set(canonical_ids)
-
-    def _parse_sid(sid: str):
-        parts = str(sid or "").split("__")
-        if len(parts) != 5:
-            return None
-        try:
-            return {"make": parts[0], "model": parts[1], "year_start": int(parts[2]), "year_end": int(parts[3]), "market": parts[4]}
-        except Exception:
-            return None
-
-    variants = variants or []
-    seen_mm_year = set()
-    for v in variants:
-        if not isinstance(v, dict):
-            continue
-        mk = normalize_token(v.get("make"))
-        md = normalize_token(v.get("model"))
-        ys = v.get("year_start")
-        ye = v.get("year_end")
-        if mk and md and isinstance(ys, int) and isinstance(ye, int):
-            seen_mm_year.add((mk, md, ys, ye))
-
-    incoming_ids = list(batch_state.get("processed_seed_ids") or [])
-    processed_seeds_rows = batch_state.get("processed_seeds") if isinstance(batch_state.get("processed_seeds"), list) else []
-    for s in processed_seeds_rows:
-        if isinstance(s, dict) and s.get("seed_id"):
-            incoming_ids.append(s["seed_id"])
-
-    processed = set()
-    for sid in incoming_ids:
-        if sid in canonical_set:
-            processed.add(sid)
-            continue
-        legacy = _parse_sid(sid)
-        if not legacy:
-            continue
-        for can in ordered_seeds:
-            cmk = normalize_token(can.get("make"))
-            cmd = normalize_token(can.get("model"))
-            if legacy["make"] != cmk or legacy["model"] != cmd:
-                continue
-            cys, cye = int(can["year_start"]), int(can["year_end"])
-            overlaps = not (legacy["year_end"] < cys or legacy["year_start"] > cye)
-            has_variant_overlap = any(mk == cmk and md == cmd and not (ye < cys or ys > cye) for mk, md, ys, ye in seen_mm_year)
-            if overlaps and (has_variant_overlap or (legacy["year_start"] >= cys and legacy["year_end"] <= cye)):
-                processed.add(can["seed_id"])
-
-    ordered_processed = [sid for sid in canonical_ids if sid in processed]
-    processed_set = set(ordered_processed)
-    next_seed_id = next((sid for sid in canonical_ids if sid not in processed_set), None)
-    contiguous_idx = -1
-    for idx, sid in enumerate(canonical_ids):
-        if sid in processed_set:
-            contiguous_idx = idx
-            continue
-        break
-    last_completed = canonical_ids[contiguous_idx] if contiguous_idx >= 0 else None
-
-    failed_seed_ids = [sid for sid in (batch_state.get("failed_seed_ids") or []) if sid in canonical_set and sid not in processed_set]
-    skipped_seed_ids = [sid for sid in (batch_state.get("skipped_seed_ids") or []) if sid in canonical_set and sid not in processed_set]
-    failed_details = [d for d in (batch_state.get("failed_details") or []) if isinstance(d, dict) and d.get("seed_id") not in processed_set]
-
-    now = _now()
-    normalized = {
-        "schema_version": BATCH_STATE_SCHEMA,
-        "market": batch_state.get("market") or market or "IL",
-        "created_at": batch_state.get("created_at") or now,
-        "updated_at": now,
-        "last_batch_id": batch_state.get("last_batch_id"),
-        "total_seeds": len(ordered_seeds),
-        "processed_seed_ids": ordered_processed,
-        "processed_seeds": [canonical_by_id[sid] for sid in ordered_processed],
-        "failed_seed_ids": failed_seed_ids,
-        "skipped_seed_ids": skipped_seed_ids,
-        "in_progress_seed_id": None,
-        "last_completed_seed_id": last_completed,
-        "next_seed_id": next_seed_id,
-        "run_history": batch_state.get("run_history", []),
-        "failed_details": failed_details,
-    }
-    _refresh_coverage(normalized, ordered_seeds)
-    return normalized
+    package = {"batch_state": batch_state if isinstance(batch_state, dict) else {}}
+    return extract_canonical_batch_state(package, ordered_seeds, market=market)
 
 
 def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, market: str = "IL") -> dict:
@@ -1949,8 +1968,10 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
             save_json(paths["unresolved_models"], pkg.get("unresolved", []))
             save_json(paths["vehicle_conflicts"], pkg.get("conflicts", []))
         ordered = get_ordered_seed_list(market)
-        imported_state = pkg.get("batch_state", state) if isinstance(pkg.get("batch_state"), dict) else state
-        normalized_state = normalize_batch_state_for_resume(imported_state, ordered, variants=variants, market=market)
+        imported_package = copy.deepcopy(pkg)
+        if not isinstance(imported_package.get("batch_state"), dict):
+            imported_package["batch_state"] = state
+        normalized_state = extract_canonical_batch_state(imported_package, ordered, market=market)
         save_json(_batch_state_path(), normalized_state)
         imported_pkg = copy.deepcopy(pkg)
         imported_pkg["schema_version"] = "resume_package_v1"
