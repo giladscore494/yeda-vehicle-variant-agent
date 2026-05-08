@@ -4,25 +4,52 @@ from core.schemas import VehicleModelSeed
 
 
 def build_discovery_prompt(seed: VehicleModelSeed, market="IL") -> str:
-    return f"""JSON only. No prose. No markdown. No explanations outside JSON.
-Reason max 120 chars. Evidence snippet max 220 chars. Max 2 snippets per source.
+    return f"""Return compact JSON only. No prose. No markdown.
+No hidden reasoning.
+Reason max 120 chars.
+Evidence snippet max 220 chars.
+
 Research make={seed.make}, model={seed.model}, year_start={seed.year_start}, year_end={seed.year_end}, market={market}.
-You must discover actual candidate variants for this make/model/year range.
-Do not return empty candidate objects.
-If no usable facts are found, return candidate_variants=[] and unresolved=true.
+Discover real candidate variants and split long ranges by generation and major powertrain.
 Return at most 12 candidates.
-For long ranges, split by generation and major powertrain.
-Do not collapse 2017-2026 into one candidate if generations/engines changed.
-Candidate must have at least one usable identity field: engine, transmission, fuel_type, body_type, generation, year_start, or year_end.
-If all critical fields are unknown/null, do not include the candidate.
-Return exactly top-level keys: {{"search_queries":[],"sources":[],"candidate_variants":[],"conflicts":[],"unresolved":false,"unresolved_reason":null}}
-Each candidate_variant must include exactly this structure:
-{{"candidate_index":0,"make":"...","model":"...","year_start":2017,"year_end":2023,"generation":"optional string or null","body_type":"sedan|hatchback|suv|crossover|wagon|mpv|pickup|van|coupe|convertible|minivan|commercial|unknown|null","seats":5,"engine":"string or null","transmission":"manual|automatic|cvt|e_cvt|dual_clutch|single_speed_ev|unknown|null","fuel_type":"petrol|diesel|hybrid|plug_in_hybrid|electric|hydrogen|lpg|unknown|null","drivetrain":"FWD|RWD|AWD|4WD|null","trim":"string or null","source_urls":[],"field_sources":{{"body_type":[],"seats":[],"engine":[],"transmission":[],"fuel_type":[],"drivetrain":[],"generation":[],"year_start":[],"year_end":[]}},"notes":[]}}
-Each source must include exactly this structure:
-{{"source_id":"source_1","url":"...","title":"...","source_name":"...","source_type":"official_importer|israeli_specs|israeli_review|price_list|global_fallback|unknown","market_scope":"IL|EU|GLOBAL|UNKNOWN","fields_supported":[],"evidence_snippet":"max 220 chars"}}
-Allowed statuses: verified, partial, conflict, unverified, unknown.
-Forbidden statuses: inferred, assumed, likely, typical, common, estimated, guessed.
-No prose outside JSON. No markdown. Use compact JSON only.
+Do not return empty candidate variants.
+Each candidate must have at least one usable field value.
+If no usable candidate data exists, return candidate_variants=[] and unresolved=true.
+
+Required top-level JSON shape (exact keys):
+{{
+  "make": "...",
+  "model": "...",
+  "market": "...",
+  "year_start": 0,
+  "year_end": 0,
+  "search_queries": [],
+  "sources": [],
+  "candidate_variants": [],
+  "conflicts": [],
+  "unresolved": false,
+  "unresolved_reason": null,
+  "data_quality": {{
+    "usable_candidate_count": 0,
+    "empty_candidate_count": 0,
+    "warnings": []
+  }}
+}}
+
+Each candidate_variant must include:
+{{
+  "candidate_index": 0,
+  "generation": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
+  "year_start": {{"value": null, "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
+  "year_end": {{"value": null, "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
+  "body_type": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
+  "seats": {{"value": null, "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
+  "engine": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
+  "transmission": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
+  "fuel_type": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
+  "drivetrain": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
+  "trim": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}}
+}}
 """
 
 
