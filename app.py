@@ -7,7 +7,8 @@ import pandas as pd
 from storage.json_store import ensure_output_files, load_outputs_summary, get_output_paths, load_json_list, safe_get
 from storage.export import export_verified_for_yeda
 from core.ingest import get_makes, get_models_by_make, count_makes, count_models
-from agent.runner import run_single_model, run_batch
+from agent.runner import run_single_model
+from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -152,12 +153,52 @@ with tabs[1]:
 
 with tabs[2]:
     st.caption("No run-all button by design.")
-    confirm = st.checkbox("I confirm running >10 models", value=False) if batch_limit > 10 else True
-    if st.button("Run Next Batch"):
-        if batch_limit > 10 and not confirm:
-            st.error("Please confirm before running more than 10 models.")
-        else:
-            st.json(run_batch(limit=batch_limit, make_filter=make_filter or None, market=market, force_mock=not client.has_api_key(), allow_mock_fallback=True, model_mode=model_mode))
+    progress = get_batch_progress(market=market)
+    st.progress((progress.get("percent_complete", 0.0))/100.0)
+    st.write(f"Processed {progress.get('processed', 0)} / {progress.get('total_seeds', 0)} ({progress.get('percent_complete', 0)}%)")
+    next_seed = progress.get("next_seed") or {}
+    st.write({"current_make": progress.get("current_make"), "next_seed": next_seed})
+    st.dataframe(pd.DataFrame(progress.get("coverage_by_make", [])))
+
+    batch_limit_ui = st.selectbox("Batch limit", [1,3,5,10,20], index=2, key='batch_limit_ui')
+    resume_ui = st.checkbox("Resume from last position", value=True)
+    include_failed_ui = st.checkbox("Include failed retries", value=False)
+    use_cache_ui = st.checkbox("Use cache (batch)", value=True)
+    force_refresh_ui = st.checkbox("Force refresh (batch)", value=False)
+    make_filter_ui = st.selectbox("Make filter (optional)", [""] + get_makes(), key='batch_make_filter_ui')
+
+    current_seed_text = st.empty()
+    batch_progress_bar = st.progress(0.0)
+    results_placeholder = st.empty()
+    run_rows = []
+
+    def _on_progress(payload):
+        idx = payload.get("index", 0); total = max(payload.get("total", 1), 1)
+        seed = payload.get("seed", {})
+        batch_progress_bar.progress(idx/total)
+        current_seed_text.write(f"Running {idx} / {total} — Current: {seed.get('make')} {seed.get('model')} {seed.get('year_start')}–{seed.get('year_end')}")
+        results_placeholder.dataframe(pd.DataFrame(run_rows) if run_rows else pd.DataFrame())
+
+    if st.button("Run next batch"):
+        result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=resume_ui, include_failed=include_failed_ui, progress_callback=_on_progress)
+        for item in result.get("results", []):
+            seed=item.get("seed", {}); r=item.get("result", {})
+            run_rows.append({"make":seed.get("make"), "model":seed.get("model"), "status":r.get("status"), "variants":r.get("variants_created",0)})
+        results_placeholder.dataframe(pd.DataFrame(run_rows) if run_rows else pd.DataFrame())
+        st.json(result)
+
+    if st.button("Retry failed only"):
+        st.json(run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=True))
+
+    reset_confirm = st.checkbox("Confirm reset batch state", value=False)
+    if st.button("Reset batch state") and reset_confirm:
+        p = get_output_paths()["run_history"].parents[0] / "batch_state.json"
+        if p.exists():
+            p.unlink()
+        st.success("batch_state.json reset")
+
+    if st.button("Rebuild progress from output files"):
+        st.json(rebuild_batch_state_from_outputs(market=market))
 
 with tabs[3]:
     runs = load_json_list(paths["run_history"])
@@ -185,7 +226,20 @@ with tabs[6]:
     st.dataframe(pd.DataFrame(s) if s else pd.DataFrame())
 
 with tabs[7]:
-    for name, path in paths.items():
-        st.download_button(f"Download {name}.json", path.read_bytes(), file_name=path.name)
-    yeda = json.dumps(export_verified_for_yeda(), ensure_ascii=False, indent=2).encode("utf-8")
-    st.download_button("Download Yeda Rechev Export JSON", yeda, file_name="yeda_rechev_export.json")
+    include_raw = st.checkbox("Include raw debug files in export", value=False)
+    include_unresolved_conflicts = st.checkbox("Include unresolved/conflicts in final export", value=False)
+    final_payload = build_final_export(include_partial=True, include_verified=True, include_conflicts=include_unresolved_conflicts, include_unresolved=include_unresolved_conflicts)
+    st.download_button("Download final dataset", json.dumps(final_payload, ensure_ascii=False, indent=2).encode("utf-8"), file_name="combined_vehicle_variants_final.json")
+    out_dir = get_output_paths()["run_history"].parents[0]
+    for name in ["latest_batch_result.json", "batch_state.json", "run_history.json"]:
+        path = out_dir / name
+        if path.exists():
+            st.download_button(f"Download {name}", path.read_bytes(), file_name=name)
+    runs = load_json_list(paths["run_history"])
+    latest_single = runs[-1] if runs else {}
+    st.download_button("Download latest_single_run.json", json.dumps(latest_single, ensure_ascii=False, indent=2).encode("utf-8"), file_name="latest_single_run.json")
+    if include_raw:
+        for name in ["gemini_raw_runs.json", "vehicle_candidates_raw.json"]:
+            path = out_dir / name
+            if path.exists():
+                st.download_button(f"Download {name}", path.read_bytes(), file_name=name)
