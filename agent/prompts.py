@@ -5,12 +5,19 @@ from core.schemas import VehicleModelSeed
 
 def build_discovery_prompt(seed: VehicleModelSeed, market="IL") -> str:
     return f"""Return compact JSON only. JSON only. No prose. No markdown.
-Reason max 120 chars for conflict/unresolved only.
+Reason max 120 chars for unresolved_reason only.
 Research make={seed.make}, model={seed.model}, year_start={seed.year_start}, year_end={seed.year_end}, market={market}.
-Return max 8 candidate_variants and max 4 sources.
-Each evidence_snippet <= 120 chars.
-Do not include per-field status/confidence.
-Do not include per-field reason unless conflict/unresolved and keep short.
+Return valid minified JSON only.
+No markdown.
+No prose.
+No trailing commas.
+No unfinished fields.
+Do not include notes.
+Do not include explanations.
+Do not include reason strings.
+Return max 8 candidate_variants and max 5 sources.
+Do not include evidence_snippets by default.
+If evidence_snippets are included, max 1 per source and max 80 chars.
 Top-level keys: search_queries, sources, candidate_variants, conflicts, unresolved, unresolved_reason.
 Candidate shape:
 {{
@@ -27,11 +34,19 @@ Candidate shape:
   "fuel_type": "",
   "drivetrain": "",
   "trim": "",
-  "source_urls": [],
+  "source_ids": [],
   "field_sources": {{
-    "body_type": [], "seats": [], "engine": [], "transmission": [], "fuel_type": [], "drivetrain": [], "generation": [], "year_start": [], "year_end": []
-  }},
-  "notes": []
+    "body_type": [], "seats": [], "engine": [], "transmission": [], "fuel_type": [], "drivetrain": [], "generation": [], "year_start": [], "year_end": [], "trim": []
+  }}
+}}
+Source shape:
+{{
+  "source_id": "src_1",
+  "url": "",
+  "title": "",
+  "source_type": "official_importer|israeli_specs|israeli_review|price_list|global_fallback|unknown",
+  "market_scope": "IL|EU|GLOBAL|UNKNOWN",
+  "fields_supported": []
 }}
 """
 

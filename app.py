@@ -131,6 +131,14 @@ with tabs[1]:
             if trace_json.get('discovery_raw_text'):
                 st.code(trace_json.get('discovery_raw_text'))
             st.write('discovery_parse_error', trace_json.get('discovery_parse_error'))
+            st.write('repair_attempted', trace_json.get('repair_attempted', False))
+            st.write('repair_success', trace_json.get('repair_success', False))
+            st.write('json_salvage_used', trace_json.get('json_salvage_used', False))
+            st.write('dropped_incomplete_candidate', trace_json.get('dropped_incomplete_candidate', False))
+            if trace_json.get('repair_attempted') and trace_json.get('repair_success'):
+                st.info('Malformed Gemini JSON was repaired successfully.')
+            if trace_json.get('repair_attempted') and not trace_json.get('repair_success'):
+                st.error('Gemini JSON repair attempt failed.')
             st.write('discovery_parsed_top_level_keys', trace_json.get('discovery_parsed_top_level_keys'))
             st.write('candidate_extraction_path', trace_json.get('candidate_extraction_path'))
             st.write('candidate_variants_count', trace_json.get('candidate_variants_count'))

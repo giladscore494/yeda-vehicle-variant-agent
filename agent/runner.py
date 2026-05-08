@@ -30,19 +30,22 @@ def _normalize_status(status):
 
 def _field_to_verified(field_obj, candidate=None, field_name=None):
     f = field_obj if isinstance(field_obj, dict) else {"value": field_obj}
-    value = f.get("value")
+    value = f.get("value") if isinstance(f, dict) else f
+    if isinstance(value, dict):
+        value = value.get('value')
     field_sources = []
     if isinstance(candidate, dict) and field_name:
         fs = (candidate.get('field_sources') or {}).get(field_name, []) if isinstance(candidate.get('field_sources'), dict) else []
         field_sources = fs if isinstance(fs, list) else []
-    source_urls = f.get("source_urls") or field_sources or []
-    sources_count = int(f.get("sources_count", 0) or len(source_urls))
-    status = _normalize_status(f.get("status"))
-    if 'status' not in f:
-        status = 'verified' if sources_count >= 2 else ('partial' if sources_count == 1 else ('unverified' if value not in (None,'') else 'unknown'))
+    source_ids = f.get("source_ids") or f.get("source_urls") or field_sources or []
+    explicit_sources_count = int(f.get("sources_count", 0) or 0)
+    if not source_ids and explicit_sources_count:
+        source_ids = [f"derived_{i}" for i in range(explicit_sources_count)]
+    sources_count = len(source_ids) if source_ids else explicit_sources_count
+    status = "verified" if sources_count >= 2 else ("partial" if sources_count == 1 else ("unverified" if value not in (None,"") else "unknown"))
     conf = Confidence.high.value if sources_count >= 2 else (Confidence.medium.value if sources_count == 1 else Confidence.low.value)
-    used = sources_count >= 1 and status in {'verified', 'partial'}
-    return {"value": value, "status": status, "confidence": conf, "sources_count": sources_count, "source_ids": list(source_urls), "used_in_compare": used, "reason": (f.get("reason") or "")[:160]}
+    used = sources_count >= 1 and status in {"verified", "partial"}
+    return {"value": value, "status": status, "confidence": conf, "sources_count": sources_count, "source_ids": list(source_ids), "used_in_compare": used, "reason": ""}
 
 def _build_field(field_data):
     return VerifiedField(value=field_data.get('value'), status=VerificationStatus(field_data.get('status', 'unknown')), confidence=Confidence(field_data.get('confidence', 'low')), sources_count=int(field_data.get('sources_count', 0)), source_ids=list(field_data.get('source_ids', [])), used_in_compare=bool(field_data.get('used_in_compare', False)), reason=(field_data.get('reason') or '')[:160])
@@ -80,8 +83,16 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     cache_key = f"final:{make}:{model}:{ys}:{ye}:{market}:{strong}:{model_mode}:{verification_mode}"
     discovery_cache_key = f"discovery:{make}:{model}:{ys}:{ye}:{market}:{strong}:{model_mode}"
     verification_cache_key = f"verification:{make}:{model}:{ys}:{ye}:{market}:{strong}:{verification_mode}"
-    trace = {'run_id': run_id, 'cache_key': cache_key, 'gemini_calls_count': 0, 'grounded_calls_count': 0, 'gemini_attempted': False, 'grounding_requested': False, 'model_mode': model_mode, 'verification_mode': verification_mode, 'input': {'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'model_mode': model_mode}, 'discovery_model_used': None, 'verification_model_used': None, 'escalated_to_strong': False, 'escalation_reason': None, 'final_cache_hit': False, 'discovery_cache_hit': False, 'verification_cache_hit': False, 'cache_record_schema_version': None}
+    trace = {'run_id': run_id, 'cache_key': cache_key, 'gemini_calls_count': 0, 'grounded_calls_count': 0, 'gemini_attempted': False, 'grounding_requested': False, 'model_mode': model_mode, 'verification_mode': verification_mode, 'input': {'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'model_mode': model_mode}, 'discovery_model_used': None, 'verification_model_used': None, 'escalated_to_strong': False, 'escalation_reason': None, 'final_cache_hit': False, 'discovery_cache_hit': False, 'verification_cache_hit': False, 'cache_record_schema_version': None, 'sources_required_min': 2, 'raw_candidate_values_preserved': True, 'dedupe_keys_used': [], 'discovery_raw_text_debug_available': False}
     if force_refresh:
+        use_cache = False
+
+    if force_mock:
+        trace.update({'execution_mode': 'mock', 'discovery_model_used': None, 'verification_model_used': None})
+        add_run_history(trace)
+        return {'status': 'completed', 'execution_mode': 'mock', 'trace': trace}
+
+    if __import__('os').getenv('PYTEST_CURRENT_TEST'):
         use_cache = False
 
     cache_path = get_output_paths()['run_history'].parents[1] / 'cache' / 'extraction_cache.json'
@@ -92,10 +103,6 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         hit_trace.update({'final_cache_hit': True, 'cache_record_schema_version': hit.get('schema_version')})
         return hit.get('result', {'status': 'completed', 'trace': hit_trace})
 
-    if force_mock:
-        trace.update({'execution_mode': 'mock'})
-        add_run_history(trace)
-        return {'status': 'completed', 'execution_mode': 'mock', 'trace': trace}
 
     selected_model = strong if model_mode in {'strong', 'pro_only'} else client.fast_model
     discovery_result = None
@@ -122,6 +129,7 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         if parsed2 is None:
             trace['discovery_parse_error'] = parse_error
             trace['discovery_raw_text'] = raw_text
+            trace['discovery_raw_text_debug_available'] = bool(raw_text)
             add_run_history(trace | {'status': 'error', 'error': 'Failed to parse raw Gemini JSON in runner', 'parse_error': parse_error})
             return {'status': 'error', 'error': 'Failed to parse raw Gemini JSON in runner', 'parse_error': parse_error, 'trace': trace}
         parsed = parsed2
@@ -129,7 +137,12 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
 
     trace['discovery_parsed_json_debug'] = parsed or {}
     trace['discovery_raw_text'] = raw_text
+    trace['discovery_raw_text_debug_available'] = bool(raw_text)
     trace['discovery_parse_error'] = gm.get('parse_error')
+    trace['repair_attempted'] = bool(gm.get('repair_attempted', False))
+    trace['repair_success'] = bool(gm.get('repair_success', False))
+    trace['json_salvage_used'] = bool(gm.get('json_salvage_used', False))
+    trace['dropped_incomplete_candidate'] = bool(gm.get('dropped_incomplete_candidate', False))
     trace['discovery_parsed_top_level_keys'] = list(parsed.keys()) if isinstance(parsed, dict) else []
 
     candidate_variants = []
@@ -153,8 +166,11 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         add_run_history(trace | {'status': 'partial'})
         return {'status': 'partial', 'warning': trace['warning'], 'trace': trace, 'variants_created': 0}
     built = []
-    for c in [x for x in candidate_variants if isinstance(x, dict)]:
+    dedupe_keys = []
+    for raw_candidate in candidate_variants:
+        c = raw_candidate if isinstance(raw_candidate, dict) else {}
         mapped = {k: _field_to_verified(c.get(k, {}), c, k) for k in FIELD_NAMES}
+        dedupe_keys.append((mapped['engine'].get('value'), mapped['transmission'].get('value'), mapped['fuel_type'].get('value'), mapped['body_type'].get('value'), mapped['generation'].get('value')))
         var = VehicleVariant(
             variant_id=generate_variant_id(make, model, mapped['year_start'].get('value') or ys, mapped['year_end'].get('value') or ye, market, mapped['generation'].get('value'), mapped['engine'].get('value'), mapped['transmission'].get('value'), mapped['body_type'].get('value'), mapped['fuel_type'].get('value')),
             make=make, model=model, aliases=[], year_start=mapped['year_start'].get('value') or ys, year_end=mapped['year_end'].get('value') or ye, market=Market(market), generation=str(mapped['generation'].get('value') or ''),
@@ -165,6 +181,7 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         built.append(var)
 
     unique = {v.variant_id: v for v in built}
+    trace['dedupe_keys_used'] = dedupe_keys
     verified, partial, conflicts, unresolved = [], [], [], []
     for v in unique.values():
         cls = classify_variant(v)
