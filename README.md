@@ -23,9 +23,14 @@ Default enrichment uses **Gemini Pro only** (`GEMINI_MODEL_STRONG=gemini-3-pro-p
 
 ## Export
 
-- Final dataset export defaults to verified + partial variants.
+- Final export v2 (`combined_vehicle_variants_final_clean.json`) is the safe file for Yeda Rechev.
+- Raw/batch/debug outputs are not production-safe by themselves.
+- Mock-contaminated records are automatically removed during clean export build.
+- Verified/partial statuses are rebuilt from field evidence and source coverage.
+- Trim-only duplicates are merged into technical variants with `trim_options`.
+- Final export includes a quality gate (score/grade/blocking issues).
+- Use only a passing clean final export in production.
 - Latest batch result export contains only last batch summary and results.
-- Raw debug exports are optional.
 
 
 ## Coverage Audit + Resume Import

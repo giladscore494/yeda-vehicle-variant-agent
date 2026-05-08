@@ -246,22 +246,52 @@ with tabs[6]:
     st.dataframe(pd.DataFrame(s) if s else pd.DataFrame())
 
 with tabs[7]:
-    include_raw = st.checkbox("Include raw debug files in export", value=False)
-    include_unresolved_conflicts = st.checkbox("Include unresolved/conflicts in final export", value=False)
-    final_payload = build_final_export(include_partial=True, include_verified=True, include_conflicts=include_unresolved_conflicts, include_unresolved=include_unresolved_conflicts)
-    st.download_button("Download final dataset", json.dumps(final_payload, ensure_ascii=False, indent=2).encode("utf-8"), file_name="combined_vehicle_variants_final.json")
+    st.subheader("Clean Final Export")
+    include_verified_export = st.checkbox("Include verified", value=True)
+    include_partial_export = st.checkbox("Include partial", value=True)
+    include_conflicts_export = st.checkbox("Include conflicts", value=False)
+    include_unresolved_export = st.checkbox("Include unresolved", value=False)
+    merge_trim_options = st.checkbox("Merge trim options", value=True)
+    strict_no_mock = st.checkbox("Strict no mock", value=True)
+    if "clean_final_payload" not in st.session_state:
+        st.session_state.clean_final_payload = None
+    if st.button("Build clean final export"):
+        st.session_state.clean_final_payload = build_final_export(
+            include_partial=include_partial_export,
+            include_verified=include_verified_export,
+            include_conflicts=include_conflicts_export,
+            include_unresolved=include_unresolved_export,
+            merge_trim_options=merge_trim_options,
+            strict_no_mock=strict_no_mock,
+        )
+    final_payload = st.session_state.clean_final_payload or build_final_export(
+        include_partial=include_partial_export,
+        include_verified=include_verified_export,
+        include_conflicts=include_conflicts_export,
+        include_unresolved=include_unresolved_export,
+        merge_trim_options=merge_trim_options,
+        strict_no_mock=strict_no_mock,
+    )
+    q = final_payload.get("quality_gate", {})
+    c = final_payload.get("counts", {})
+    a = final_payload.get("audit", {})
+    st.write({"quality_score": q.get("score"), "grade": q.get("grade"), "passed": q.get("passed")})
+    st.write({"counts": c, "source_id_coverage_ratio": a.get("source_id_coverage_ratio"), "verified_ratio": a.get("verified_ratio"), "partial_ratio": a.get("partial_ratio")})
+    if not q.get("passed", False):
+        st.error("Final export failed quality gate. Do not use this file in Yeda Rechev.")
+    if c.get("mock_removed", 0) > 0:
+        st.error("Mock contaminated records were found and removed.")
+    if q.get("blocking_issues"):
+        st.write({"blocking_issues": q.get("blocking_issues")})
+    if q.get("warnings"):
+        st.write({"warnings": q.get("warnings")})
+
+    st.download_button("Download clean final export JSON", json.dumps(final_payload, ensure_ascii=False, indent=2).encode("utf-8"), file_name="combined_vehicle_variants_final_clean.json")
+    st.download_button("Download quality report JSON", json.dumps(final_payload.get("quality_gate", {}), ensure_ascii=False, indent=2).encode("utf-8"), file_name="final_export_quality_report.json")
     resume_pkg = build_resume_package()
-    st.download_button("Download resume_package.json", json.dumps(resume_pkg, ensure_ascii=False, indent=2).encode("utf-8"), file_name="resume_package.json")
+    st.download_button("Download resume package JSON", json.dumps(resume_pkg, ensure_ascii=False, indent=2).encode("utf-8"), file_name="resume_package.json")
     out_dir = get_output_paths()["run_history"].parents[0]
     for name in ["latest_batch_result.json", "batch_state.json", "run_history.json"]:
         path = out_dir / name
         if path.exists():
             st.download_button(f"Download {name}", path.read_bytes(), file_name=name)
-    runs = load_json_list(paths["run_history"])
-    latest_single = runs[-1] if runs else {}
-    st.download_button("Download latest_single_run.json", json.dumps(latest_single, ensure_ascii=False, indent=2).encode("utf-8"), file_name="latest_single_run.json")
-    if include_raw:
-        for name in ["gemini_raw_runs.json", "vehicle_candidates_raw.json"]:
-            path = out_dir / name
-            if path.exists():
-                st.download_button(f"Download {name}", path.read_bytes(), file_name=name)

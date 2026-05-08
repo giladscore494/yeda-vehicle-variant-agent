@@ -7,6 +7,7 @@ from typing import Callable
 from core.ingest import load_model_seeds
 from agent.runner import run_single_model
 from storage.json_store import get_output_paths, load_json_list, load_json_object, save_json, project_root
+from core.final_export_builder import build_clean_final_export, assert_no_mock_in_final_export
 
 BATCH_STATE_SCHEMA = "batch_state_v1"
 
@@ -207,11 +208,25 @@ def get_batch_progress(market="IL") -> dict:
     return {"total_seeds": total, "processed": processed, "remaining": max(total-processed, 0), "failed": failed, "percent_complete": round((processed/total)*100, 1) if total else 0.0, "current_make": (next_seed or {}).get("make"), "next_seed": next_seed, "coverage_by_make": coverage_rows, "coverage_audit": audit}
 
 
-def build_final_export(include_partial=True, include_verified=True, include_conflicts=False, include_unresolved=False) -> dict:
-    p = get_output_paths(); verified = load_json_list(p["vehicle_variants_verified"]) if include_verified else []; partial = load_json_list(p["vehicle_variants_partial"]) if include_partial else []
-    variants = {r.get("variant_id"): r for r in partial if r.get("variant_id")}
-    variants.update({r.get("variant_id"): r for r in verified if r.get("variant_id")})
-    return {"schema_version": "vehicle_variants_final_v1", "created_at": _now(), "counts": {"verified": len(verified), "partial": len(partial), "total_variants": len(variants)}, "variants": list(variants.values()), "sources": load_json_list(p["vehicle_sources"]), "conflicts": load_json_list(p["vehicle_conflicts"]) if include_conflicts else [], "unresolved": load_json_list(p["unresolved_models"]) if include_unresolved else []}
+def build_final_export(include_partial=True, include_verified=True, include_conflicts=False, include_unresolved=False, merge_trim_options=True, strict_no_mock=True) -> dict:
+    p = get_output_paths()
+    verified = load_json_list(p["vehicle_variants_verified"]) if include_verified else []
+    partial = load_json_list(p["vehicle_variants_partial"]) if include_partial else []
+    final_export = build_clean_final_export(
+        verified_variants=verified,
+        partial_variants=partial,
+        sources=load_json_list(p["vehicle_sources"]),
+        conflicts=load_json_list(p["vehicle_conflicts"]),
+        unresolved=load_json_list(p["unresolved_models"]),
+        include_partial=include_partial,
+        include_verified=include_verified,
+        include_conflicts=include_conflicts,
+        include_unresolved=include_unresolved,
+        merge_trim_options=merge_trim_options,
+        strict_no_mock=strict_no_mock,
+    )
+    assert_no_mock_in_final_export(final_export)
+    return final_export
 
 
 def build_resume_package() -> dict:
