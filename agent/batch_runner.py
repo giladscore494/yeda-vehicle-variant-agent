@@ -81,6 +81,33 @@ def _load_outputs() -> dict:
     return {"run_history": load_json_list(p["run_history"]), "unresolved": load_json_list(p["unresolved_models"]), "conflicts": load_json_list(p["vehicle_conflicts"]), "verified": load_json_list(p["vehicle_variants_verified"]), "partial": load_json_list(p["vehicle_variants_partial"]), "sources": load_json_list(p["vehicle_sources"])}
 
 
+def _is_verified_variant(variant: dict) -> bool:
+    status = str(variant.get("verification_status") or variant.get("classification") or variant.get("status") or "").lower()
+    return status == "verified"
+
+
+def _merge_variant_lists(existing: list[dict], incoming: list[dict]) -> list[dict]:
+    by_id = {}
+    for row in [*(existing or []), *(incoming or [])]:
+        if not isinstance(row, dict):
+            continue
+        vid = row.get("variant_id")
+        if not vid:
+            continue
+        current = by_id.get(vid)
+        if current is None:
+            by_id[vid] = dict(row)
+            continue
+        pick_new = _is_verified_variant(row) and not _is_verified_variant(current)
+        if pick_new:
+            merged = dict(current)
+            merged.update(row)
+            merged["source_ids"] = sorted(set((current.get("source_ids") or []) + (row.get("source_ids") or [])))
+            merged["trim_options"] = current.get("trim_options") or row.get("trim_options")
+            by_id[vid] = merged
+    return list(by_id.values())
+
+
 def is_seed_completed(seed_id: str, outputs: dict, batch_state: dict) -> bool:
     if seed_id in (batch_state.get("processed_seed_ids") or []):
         return True
@@ -238,15 +265,11 @@ def build_final_export(include_partial=True, include_verified=True, include_conf
             fallback_variants = [v for v in combined.get("variants", []) if isinstance(v, dict)]
             verified = [v for v in fallback_variants if str(v.get("verification_status") or v.get("classification") or "").lower() == "verified"]
             partial = [v for v in fallback_variants if v not in verified]
-    if not verified and not partial:
-        latest_batch = load_json_object(project_root() / "data/output/latest_batch_result.json")
-        rebuilt = []
-        for row in latest_batch.get("results", []):
-            parsed = (((row.get("result") or {}).get("trace") or {}).get("discovery_parsed_json_debug") or {})
-            for cand in parsed.get("candidate_variants", []):
-                if isinstance(cand, dict):
-                    rebuilt.append(cand)
-        partial = rebuilt
+    historical_clean = load_json_object(project_root() / "data/output/combined_vehicle_variants_final_clean.json")
+    historical_variants = historical_clean.get("variants", []) if isinstance(historical_clean, dict) else []
+    if historical_variants:
+        verified = _merge_variant_lists(verified, [v for v in historical_variants if _is_verified_variant(v)])
+        partial = _merge_variant_lists(partial, [v for v in historical_variants if not _is_verified_variant(v)])
     final_export = build_clean_final_export(
         verified_variants=verified,
         partial_variants=partial,
@@ -310,6 +333,8 @@ def detect_import_file_type(uploaded_json) -> str:
     if isinstance(uploaded_json, list):
         if uploaded_json and isinstance(uploaded_json[0], dict) and "run_id" in uploaded_json[0]:
             return "run_history"
+        if uploaded_json and isinstance(uploaded_json[0], dict) and "variant_id" in uploaded_json[0]:
+            return "accumulated_variants"
         return "unknown"
     if uploaded_json.get("schema_version") == "resume_package_v1":
         return "resume_package"
@@ -351,27 +376,30 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
         merged = existing + [r for r in uploaded_json if r.get("run_id") not in old_ids]
         save_json(paths["run_history"], merged)
         result["run_history_added"] = len(merged) - len(existing)
-    elif file_type == "final_export":
-        variants = uploaded_json.get("variants", [])
+    elif file_type in {"final_export", "accumulated_variants"}:
+        variants = uploaded_json if isinstance(uploaded_json, list) else uploaded_json.get("variants", [])
         verified = load_json_list(paths["vehicle_variants_verified"])
         partial = load_json_list(paths["vehicle_variants_partial"])
-        vid_verified = {v.get("variant_id") for v in verified}
-        vid_partial = {v.get("variant_id") for v in partial}
-        for v in variants:
-            vid = v.get("variant_id")
-            status = str(v.get("classification") or v.get("status") or "").lower()
-            if status == "verified" and vid not in vid_verified:
-                verified.append(v); vid_verified.add(vid); result["variants_verified_added"] += 1
-            elif vid not in vid_partial and vid not in vid_verified:
-                partial.append(v); vid_partial.add(vid); result["variants_partial_added"] += 1
-        save_json(paths["vehicle_variants_verified"], verified)
-        save_json(paths["vehicle_variants_partial"], [v for v in partial if v.get("variant_id") not in vid_verified])
+        merged_verified = _merge_variant_lists(verified, [v for v in variants if _is_verified_variant(v)])
+        merged_partial = _merge_variant_lists(partial, [v for v in variants if not _is_verified_variant(v)])
+        verified_ids = {v.get("variant_id") for v in merged_verified}
+        merged_partial = [v for v in merged_partial if v.get("variant_id") not in verified_ids]
+        result["variants_verified_added"] = max(0, len(merged_verified) - len(verified))
+        result["variants_partial_added"] = max(0, len(merged_partial) - len(partial))
+        save_json(paths["vehicle_variants_verified"], merged_verified)
+        save_json(paths["vehicle_variants_partial"], merged_partial)
     elif file_type == "resume_package":
         pkg = uploaded_json
-        save_json(paths["run_history"], pkg.get("run_history", []))
-        save_json(paths["vehicle_variants_verified"], pkg.get("verified_variants", []))
-        save_json(paths["vehicle_variants_partial"], pkg.get("partial_variants", []))
-        save_json(paths["vehicle_sources"], pkg.get("sources", []))
+        if overwrite:
+            save_json(paths["run_history"], pkg.get("run_history", []))
+            save_json(paths["vehicle_variants_verified"], pkg.get("verified_variants", []))
+            save_json(paths["vehicle_variants_partial"], pkg.get("partial_variants", []))
+            save_json(paths["vehicle_sources"], pkg.get("sources", []))
+        else:
+            save_json(paths["run_history"], load_json_list(paths["run_history"]) + pkg.get("run_history", []))
+            save_json(paths["vehicle_variants_verified"], _merge_variant_lists(load_json_list(paths["vehicle_variants_verified"]), pkg.get("verified_variants", [])))
+            save_json(paths["vehicle_variants_partial"], _merge_variant_lists(load_json_list(paths["vehicle_variants_partial"]), pkg.get("partial_variants", [])))
+            save_json(paths["vehicle_sources"], load_json_list(paths["vehicle_sources"]) + pkg.get("sources", []))
         save_json(paths["unresolved_models"], pkg.get("unresolved", []))
         save_json(paths["vehicle_conflicts"], pkg.get("conflicts", []))
         save_json(_batch_state_path(), pkg.get("batch_state", state))

@@ -91,3 +91,24 @@ def test_cleanup_retryable_schema_error(monkeypatch):
     result = batch_runner.cleanup_retryable_schema_errors("IL")
     assert result["cleaned_count"] == 1
     assert "abarth__punto__2007__2015__il" not in state["processed_seed_ids"]
+
+
+def test_import_accumulated_variants_restores_90(monkeypatch):
+    monkeypatch.setattr(batch_runner, "load_batch_state", lambda market="IL": {"processed_seed_ids": [], "failed_seed_ids": []})
+    monkeypatch.setattr(batch_runner, "rebuild_batch_state_from_outputs", lambda market="IL": {})
+    store = {
+        "vehicle_variants_verified": [],
+        "vehicle_variants_partial": [],
+    }
+    monkeypatch.setattr(batch_runner, "get_output_paths", lambda: {k: k for k in ["vehicle_variants_verified", "vehicle_variants_partial", "run_history", "vehicle_sources", "unresolved_models", "vehicle_conflicts"]})
+    monkeypatch.setattr(batch_runner, "load_json_list", lambda path: list(store.get(path, [])))
+    monkeypatch.setattr(batch_runner, "save_json", lambda path, data: store.__setitem__(path, data))
+    variants = [{"variant_id": f"v{i}", "classification": "verified" if i < 52 else "partial"} for i in range(90)]
+    result = batch_runner.import_progress_json(variants)
+    assert result["file_type"] == "accumulated_variants"
+    assert len(store["vehicle_variants_verified"]) + len(store["vehicle_variants_partial"]) == 90
+
+
+def test_latest_batch_export_is_separate_file_path():
+    from storage.json_store import project_root
+    assert str((project_root() / "data/output/latest_batch_result.json")).endswith("latest_batch_result.json")
