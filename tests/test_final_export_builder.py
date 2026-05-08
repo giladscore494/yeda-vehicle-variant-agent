@@ -65,3 +65,18 @@ def test_zero_variants_is_fail():
     out = build_clean_final_export([], [])
     assert out["quality_gate"]["grade"] == "FAIL"
     assert "No variants in final export." in out["quality_gate"]["blocking_issues"]
+
+
+def test_mock_removed_is_warning_not_blocking():
+    bad = _variant(); bad["notes"] = ["mock mode"]
+    out = build_clean_final_export([_variant("X", "verified")], [bad], sources=[{"source_id": "source_mock_1", "source_type": "mock"}])
+    assert "Mock contaminated records were found and removed." in out["quality_gate"]["warnings"]
+    assert "Mock contamination remains after cleanup." not in out["quality_gate"]["blocking_issues"]
+    assert out["quality_gate"]["passed"] is True
+
+
+def test_blocking_issue_always_fails():
+    out = build_clean_final_export([], [])
+    assert out["quality_gate"]["blocking_issues"]
+    assert out["quality_gate"]["passed"] is False
+    assert out["quality_gate"]["grade"] == "FAIL"

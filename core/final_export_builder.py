@@ -222,8 +222,19 @@ def build_clean_final_export(verified_variants, partial_variants, sources=None, 
     cleaned_sources, mock_sources_removed = _clean_sources(sources)
     counts["mock_sources_removed"] = mock_sources_removed
     out = {"schema_version": "vehicle_variants_final_v2", "created_at": _now(), "counts": counts, "variants": variants, "sources": cleaned_sources, "conflicts": conflicts if include_conflicts else [], "unresolved": unresolved if include_unresolved else [], "audit": audit}
-    out["quality_gate"] = evaluate_final_export_quality(out)
-    if strict_no_mock and mock_removed > 0:
-        out["quality_gate"].setdefault("blocking_issues", []).append("Mock contaminated variants were removed from final export.")
+    quality_gate = evaluate_final_export_quality(out)
+    if strict_no_mock and (mock_removed > 0 or mock_sources_removed > 0):
+        if any(is_mock_contaminated_variant(v) for v in out.get("variants", [])):
+            quality_gate.setdefault("blocking_issues", []).append("Mock contamination remains after cleanup.")
+        else:
+            quality_gate.setdefault("warnings", []).append("Mock contaminated records were found and removed.")
+    quality_gate["blocking_issues"] = list(dict.fromkeys(quality_gate.get("blocking_issues", [])))
+    quality_gate["warnings"] = list(dict.fromkeys(quality_gate.get("warnings", [])))
+    if quality_gate["blocking_issues"]:
+        quality_gate["passed"] = False
+        quality_gate["grade"] = "FAIL"
+    if quality_gate["blocking_issues"] and quality_gate["passed"]:
+        raise AssertionError("quality gate cannot pass with blocking issues")
+    out["quality_gate"] = quality_gate
     assert_no_mock_in_final_export(out)
     return out
