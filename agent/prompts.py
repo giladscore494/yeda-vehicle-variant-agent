@@ -4,51 +4,34 @@ from core.schemas import VehicleModelSeed
 
 
 def build_discovery_prompt(seed: VehicleModelSeed, market="IL") -> str:
-    return f"""Return compact JSON only. No prose. No markdown.
-No hidden reasoning.
-Reason max 120 chars.
-Evidence snippet max 220 chars.
-
+    return f"""Return compact JSON only. JSON only. No prose. No markdown.
+Reason max 120 chars for conflict/unresolved only.
 Research make={seed.make}, model={seed.model}, year_start={seed.year_start}, year_end={seed.year_end}, market={market}.
-Discover real candidate variants and split long ranges by generation and major powertrain.
-Return at most 12 candidates.
-Do not return empty candidate variants.
-Each candidate must have at least one usable field value.
-If no usable candidate data exists, return candidate_variants=[] and unresolved=true.
-
-Required top-level JSON shape (exact keys):
-{{
-  "make": "...",
-  "model": "...",
-  "market": "...",
-  "year_start": 0,
-  "year_end": 0,
-  "search_queries": [],
-  "sources": [],
-  "candidate_variants": [],
-  "conflicts": [],
-  "unresolved": false,
-  "unresolved_reason": null,
-  "data_quality": {{
-    "usable_candidate_count": 0,
-    "empty_candidate_count": 0,
-    "warnings": []
-  }}
-}}
-
-Each candidate_variant must include:
+Return max 8 candidate_variants and max 4 sources.
+Each evidence_snippet <= 120 chars.
+Do not include per-field status/confidence.
+Do not include per-field reason unless conflict/unresolved and keep short.
+Top-level keys: search_queries, sources, candidate_variants, conflicts, unresolved, unresolved_reason.
+Candidate shape:
 {{
   "candidate_index": 0,
-  "generation": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
-  "year_start": {{"value": null, "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
-  "year_end": {{"value": null, "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
-  "body_type": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
-  "seats": {{"value": null, "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
-  "engine": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
-  "transmission": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
-  "fuel_type": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
-  "drivetrain": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}},
-  "trim": {{"value": "", "status": "verified|partial|conflict|unverified|unknown", "sources_count": 0, "source_urls": [], "reason": ""}}
+  "make": "",
+  "model": "",
+  "year_start": 2009,
+  "year_end": 2014,
+  "generation": "",
+  "body_type": "",
+  "seats": 5,
+  "engine": "",
+  "transmission": "",
+  "fuel_type": "",
+  "drivetrain": "",
+  "trim": "",
+  "source_urls": [],
+  "field_sources": {{
+    "body_type": [], "seats": [], "engine": [], "transmission": [], "fuel_type": [], "drivetrain": [], "generation": [], "year_start": [], "year_end": []
+  }},
+  "notes": []
 }}
 """
 
@@ -63,23 +46,6 @@ CANDIDATE_VARIANTS_TO_VERIFY:
 SOURCES:
 {sources_json}
 Verify each candidate against the provided sources only.
-Do not use outside knowledge.
-Do not infer.
-Do not guess.
-If a candidate value is present but not supported by the provided sources:
-- keep the value
-- status=\"unverified\"
-- sources_count=0
-- used_in_compare=false
-- reason=\"Candidate value not verified by provided sources.\"
-If a field is missing:
-- value=null
-- status=\"unknown\"
-- sources_count=0
-- used_in_compare=false
 Return JSON only:
 {{"variant_verifications":[{{"candidate_index":0,"field_verifications":{{"body_type":{{"value":"...","status":"verified|partial|conflict|unverified|unknown","confidence":"high|medium|low","sources_count":0,"source_ids":[],"used_in_compare":false,"reason":"max 120 chars"}},"seats":{{}},"engine":{{}},"transmission":{{}},"fuel_type":{{}},"drivetrain":{{}},"generation":{{}},"year_start":{{}},"year_end":{{}}}},"overall_status":"verified|partial|conflict|unverified|unknown","overall_confidence":"high|medium|low","blocked_fields":[],"notes":[]}}]}}
-Allowed statuses only: verified, partial, conflict, unverified, unknown.
-Forbidden: inferred, assumed, likely, typical, common, estimated, guessed.
-No prose. No markdown. Compact JSON only.
 """

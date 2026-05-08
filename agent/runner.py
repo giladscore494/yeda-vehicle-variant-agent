@@ -30,20 +30,24 @@ def _normalize_status(status):
     return s if s in {"verified", "partial", "conflict", "unverified", "unknown"} else "unknown"
 
 
-def _field_to_verified(field_obj):
+def _field_to_verified(field_obj, candidate=None, field_name=None):
     f = field_obj if isinstance(field_obj, dict) else {"value": field_obj}
+    value = f.get("value")
+    if value is None and not isinstance(field_obj, dict):
+        value = field_obj
+    field_sources = []
+    if isinstance(candidate, dict) and field_name:
+        fs = (candidate.get('field_sources') or {}).get(field_name, []) if isinstance(candidate.get('field_sources'), dict) else []
+        field_sources = fs if isinstance(fs, list) else []
+    sources_count = int(f.get("sources_count", 0) or len(field_sources))
     status = _normalize_status(f.get("status"))
-    sources_count = int(f.get("sources_count", 0) or 0)
-    if status == "verified" and sources_count >= 2:
-        conf = Confidence.high.value
-    elif status in {"verified", "partial"} and sources_count == 1:
-        conf = Confidence.medium.value
-    else:
-        conf = Confidence.low.value
-    used = status in {"verified", "partial"} and sources_count >= 1
-    source_urls = f.get("source_urls") or []
+    if 'status' not in f:
+        status = 'verified' if sources_count >= 2 else ('partial' if sources_count == 1 else ('unverified' if value not in (None,'') else 'unknown'))
+    conf = Confidence.high.value if sources_count >= 2 else (Confidence.medium.value if sources_count == 1 else Confidence.low.value)
+    used = sources_count >= 1 and value not in (None, '')
+    source_urls = f.get("source_urls") or field_sources
     return {
-        "value": f.get("value"), "status": status, "confidence": conf,
+        "value": value, "status": status, "confidence": conf,
         "sources_count": sources_count, "source_ids": list(source_urls),
         "used_in_compare": used, "reason": (f.get("reason") or "")[:160]
     }
@@ -115,12 +119,21 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         trace['gemini_calls_count'] += 1; trace['grounded_calls_count'] += 1
     trace['discovery_model_used'] = selected_model
     if not discovery_result.get('ok'):
+        gm = discovery_result.get('gemini_metadata', {}) if isinstance(discovery_result.get('gemini_metadata'), dict) else {}
+        trace['discovery_raw_text'] = gm.get('raw_text')
+        trace['discovery_parse_error'] = gm.get('parse_error')
+        trace['discovery_raw_text_debug_available'] = bool(gm.get('raw_text'))
+        trace['gemini_error'] = discovery_result.get('error')
         add_run_history(trace | {'status': 'error', 'execution_mode': 'gemini'})
-        return {'status': 'error', 'execution_mode': 'gemini', 'gemini_error': discovery_result.get('error')}
+        return {'status': 'error', 'execution_mode': 'gemini', 'gemini_error': discovery_result.get('error'), 'trace': trace}
 
     gm = discovery_result.get('gemini_metadata', {}) if isinstance(discovery_result.get('gemini_metadata'), dict) else {}
     trace['discovery_parsed_json_debug'] = gm.get('parsed_json') or discovery_result.get('data', {})
     trace['discovery_raw_text'] = gm.get('raw_text')
+    trace['discovery_parse_error'] = gm.get('parse_error')
+    trace['discovery_parsed_top_level_keys'] = gm.get('discovery_parsed_top_level_keys', [])
+    trace['candidate_extraction_path'] = gm.get('candidate_extraction_path')
+    trace['candidate_extraction_warning'] = gm.get('candidate_extraction_warning')
     trace['discovery_raw_text_debug_available'] = bool(gm.get('raw_text'))
 
     raw_candidates = (discovery_result.get('data', {}).get('candidate_variants') or [])[:max_candidate_variants]
@@ -154,7 +167,7 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
 
     built, dedupe_keys = [], []
     for i, c in enumerate(candidates):
-        mapped = {k: _field_to_verified(c.get(k, {})) for k in FIELD_NAMES}
+        mapped = {k: _field_to_verified(c.get(k, {}), c, k) for k in FIELD_NAMES}
         var = VehicleVariant(
             variant_id=generate_variant_id(make, model, mapped['year_start'].get('value') or ys, mapped['year_end'].get('value') or ye, market, mapped['generation'].get('value'), mapped['engine'].get('value'), mapped['transmission'].get('value'), mapped['body_type'].get('value'), mapped['fuel_type'].get('value')),
             make=make, model=model, aliases=[], year_start=mapped['year_start'].get('value') or ys, year_end=mapped['year_end'].get('value') or ye, market=Market(market), generation=str(mapped['generation'].get('value') or ''),
