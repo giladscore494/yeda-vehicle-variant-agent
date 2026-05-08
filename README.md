@@ -26,3 +26,13 @@ Default enrichment uses **Gemini Pro only** (`GEMINI_MODEL_STRONG=gemini-3-pro-p
 - Final dataset export defaults to verified + partial variants.
 - Latest batch result export contains only last batch summary and results.
 - Raw debug exports are optional.
+
+
+## Coverage Audit + Resume Import
+- Batch runs in canonical alphabetical order (make/model/year).
+- Resume state is persistent in `data/output/batch_state.json`.
+- Before moving forward, each batch audits coverage from first seed through last completed seed.
+- If holes exist, the next batch repairs holes first and does not continue forward in the same click.
+- You can upload `resume_package.json`, `batch_state.json`, `latest_batch_result.json`, `combined_vehicle_variants_final.json`, or `run_history.json` in **Batch Runner > Resume from file**.
+- Use **Export > Download resume_package.json** after important progress checkpoints.
+- No run-all button by design.

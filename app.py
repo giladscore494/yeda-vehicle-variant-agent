@@ -8,7 +8,7 @@ from storage.json_store import ensure_output_files, load_outputs_summary, get_ou
 from storage.export import export_verified_for_yeda
 from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
-from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export
+from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -159,6 +159,12 @@ with tabs[2]:
     next_seed = progress.get("next_seed") or {}
     st.write({"current_make": progress.get("current_make"), "next_seed": next_seed})
     st.dataframe(pd.DataFrame(progress.get("coverage_by_make", [])))
+    audit = progress.get("coverage_audit", {})
+    st.subheader("Coverage Audit")
+    st.write({"last_completed_seed_id": audit.get("last_completed_seed_id"), "scanned_count": audit.get("scanned_count"), "holes_count": audit.get("holes_count")})
+    if audit.get("holes_count",0) > 0:
+        st.warning("Coverage holes detected. Next batch will repair these before continuing.")
+    st.dataframe(pd.DataFrame(audit.get("missing_seeds", [])))
 
     batch_limit_ui = st.selectbox("Batch limit", [1,3,5,10,20], index=2, key='batch_limit_ui')
     resume_ui = st.checkbox("Resume from last position", value=True)
@@ -189,6 +195,20 @@ with tabs[2]:
 
     if st.button("Retry failed only"):
         st.json(run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=True))
+
+    st.subheader("Resume from file")
+    uploaded = st.file_uploader("Upload progress JSON", type=["json"], key="resume_upload")
+    overwrite_import = st.checkbox("Overwrite local state/files", value=False)
+    confirm_import = st.checkbox("I confirm importing this progress file", value=False)
+    if uploaded is not None:
+        payload = json.loads(uploaded.read().decode("utf-8"))
+        detected = detect_import_file_type(payload)
+        st.write({"detected_file_type": detected})
+        if st.button("Import and rebuild progress") and confirm_import:
+            st.json(import_progress_json(payload, overwrite=overwrite_import, market=market))
+
+    if st.button("Run hole repair batch"):
+        st.json(run_next_batch(limit=batch_limit_ui, market=market, resume=True))
 
     reset_confirm = st.checkbox("Confirm reset batch state", value=False)
     if st.button("Reset batch state") and reset_confirm:
@@ -230,6 +250,8 @@ with tabs[7]:
     include_unresolved_conflicts = st.checkbox("Include unresolved/conflicts in final export", value=False)
     final_payload = build_final_export(include_partial=True, include_verified=True, include_conflicts=include_unresolved_conflicts, include_unresolved=include_unresolved_conflicts)
     st.download_button("Download final dataset", json.dumps(final_payload, ensure_ascii=False, indent=2).encode("utf-8"), file_name="combined_vehicle_variants_final.json")
+    resume_pkg = build_resume_package()
+    st.download_button("Download resume_package.json", json.dumps(resume_pkg, ensure_ascii=False, indent=2).encode("utf-8"), file_name="resume_package.json")
     out_dir = get_output_paths()["run_history"].parents[0]
     for name in ["latest_batch_result.json", "batch_state.json", "run_history.json"]:
         path = out_dir / name
