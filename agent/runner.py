@@ -124,12 +124,48 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         add_run_history(trace | {'status': 'error', 'execution_mode': 'gemini'})
         return {'status': 'error', 'execution_mode': 'gemini', 'gemini_error': trace['gemini_error']}
 
+    gm = discovery_result.get('gemini_metadata', {}) if isinstance(discovery_result.get('gemini_metadata'), dict) else {}
+    trace['discovery_parsed_json_debug'] = gm.get('parsed_json')
+    trace['discovery_raw_text'] = gm.get('raw_text')
+    trace['discovery_raw_text_debug_available'] = bool(gm.get('raw_text'))
+    trace['discovery_parsed_top_level_keys'] = gm.get('discovery_parsed_top_level_keys', [])
+    trace['candidate_extraction_path'] = gm.get('candidate_extraction_path')
+    trace['candidate_extraction_warning'] = gm.get('candidate_extraction_warning')
+    trace['raw_candidates_count_before_normalization'] = gm.get('raw_candidates_count_before_normalization', 0)
+    trace['candidate_variants_count_after_extraction'] = gm.get('candidate_variants_count_after_extraction', 0)
+
     raw_candidates = (discovery_result.get('data', {}).get('candidate_variants') or [])[:max_candidate_variants]
     candidates = [c if isinstance(c, dict) else {} for c in raw_candidates]
+    if _contains_marker({'candidates': raw_candidates, 'sources': discovery_result.get('data', {}).get('sources', [])}):
+        trace['mock_contamination_detected'] = True
+        trace['rejected_variants_count'] = len(raw_candidates)
+        trace['rejected_reasons'].append('mock contamination')
+        add_run_history(trace | {'status': 'error', 'execution_mode': 'gemini'})
+        return {'status': 'error', 'execution_mode': 'gemini', 'gemini_error': 'Mock contamination detected in real Gemini run', 'variants_created': 0, 'unresolved_count': 1, 'mock_contamination_detected': True, 'trace': trace}
     trace['discovery_candidates_preview'] = [
         {'candidate_index': i, 'year_start': c.get('year_start'), 'year_end': c.get('year_end'), 'generation': c.get('generation'), 'engine': c.get('engine'), 'transmission': c.get('transmission'), 'fuel_type': c.get('fuel_type'), 'body_type': c.get('body_type')}
         for i, c in enumerate(candidates)
     ]
+
+    critical_fields = ('engine', 'transmission', 'fuel_type', 'body_type', 'generation', 'year_start', 'year_end')
+    def _is_usable_candidate(c):
+        return any((c or {}).get(k) not in (None, '') for k in critical_fields)
+    dict_raw_candidates = [c for c in raw_candidates if isinstance(c, dict)]
+    if dict_raw_candidates and not any(_is_usable_candidate(c) for c in dict_raw_candidates):
+        trace.update({
+            'execution_mode': execution_mode,
+            'model_mode': model_mode,
+            'candidate_variants_count': len(candidates),
+            'final_decision': {
+                'classification': 'partial',
+                'data_quality': 'discovery_empty_candidates',
+                'reason': 'Discovery returned candidates without usable identity fields.',
+            },
+            'warning': 'Discovery returned candidates without usable identity fields.',
+        })
+        add_run_history(trace | {'status': 'partial'})
+        return {'status': 'partial', 'warning': 'Discovery returned candidates without usable identity fields.', 'trace': trace, 'variants_created': 0}
+
     sources = compact_sources_for_model(discovery_result.get('data', {}).get('sources') or [], max_sources, max_snippets_per_source, max_snippet_chars)
     ver = verify_candidates_batch(candidates, sources, model_name=strong)
     trace['gemini_calls_count'] += 1
