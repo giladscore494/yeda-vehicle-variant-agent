@@ -45,15 +45,35 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     if force_mock:
         execution_mode = 'mock'
     else:
-        gem = run_discovery(seed, market)
-        meta = gem.get('gemini_metadata', gem)
-        gemini_attempted = bool(meta.get('request_attempted'))
-        gemini_error = gem.get('error')
-        gemini_model_used = meta.get('model')
-        grounding_requested = bool(meta.get('grounding_requested', True))
-        search_queries = gem.get('search_queries', [])
+        discovery_result = run_discovery(seed, market)
+        if not isinstance(discovery_result, dict):
+            discovery_result = {
+                'ok': False,
+                'data': None,
+                'error': f'run_discovery returned non-dict: {type(discovery_result).__name__}',
+                'gemini_metadata': {
+                    'ok': False,
+                    'provider': 'gemini',
+                    'model': None,
+                    'grounding_requested': True,
+                    'request_attempted': False,
+                    'error': 'non-dict discovery result',
+                    'raw_text': None,
+                },
+            }
 
-        if gem.get('ok', True) and not gem.get('error'):
+        meta = discovery_result.get('gemini_metadata') or {}
+        if not isinstance(meta, dict):
+            meta = {}
+
+        gemini_attempted = bool(meta.get('request_attempted'))
+        gemini_error = discovery_result.get('error') or meta.get('error')
+        gemini_model_used = meta.get('model')
+        grounding_requested = bool(meta.get('grounding_requested'))
+        discovery_data = discovery_result.get('data') if isinstance(discovery_result.get('data'), dict) else {}
+        search_queries = discovery_data.get('search_queries', []) if isinstance(discovery_data.get('search_queries', []), list) else []
+
+        if discovery_result.get('ok') is True:
             execution_mode = 'gemini'
         elif allow_mock_fallback:
             execution_mode = 'gemini_failed_fallback_to_mock'
@@ -69,7 +89,7 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
                 'gemini_attempted': gemini_attempted,
                 'gemini_error': gemini_error,
                 'gemini_model_used': gemini_model_used,
-                'grounding_requested': True,
+                'grounding_requested': grounding_requested,
                 'grounding_supported': grounding_supported,
                 'search_queries': search_queries,
                 'sources_found': 0,
@@ -81,10 +101,10 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
                 'unresolved_count': 1,
                 'blocked_fields': [],
                 'final_decision': None,
-                'error': gemini_error,
+                'error': gemini_error or 'Gemini discovery failed and fallback is disabled',
             }
             add_run_history(trace)
-            return {'status': 'error', 'run_id': run_id, 'error': gemini_error, 'trace': trace}
+            return {'status': 'error', 'run_id': run_id, 'error': trace['error'], 'trace': trace}
 
     variant, source = _mock_variant(make, model, ys, ye, market)
     cls = classify_variant(variant)

@@ -81,15 +81,18 @@ class GeminiClient:
             "Convert the following into strict JSON only, with no markdown and no explanations.\n"
             f"Content:\n{text}"
         )
-        repair_response = self.client.models.generate_content(
-            model=model,
-            contents=repair_prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=0.1,
-            ),
-        )
-        repair_text = getattr(repair_response, "text", "") or ""
+        try:
+            repair_response = self.client.models.generate_content(
+                model=model,
+                contents=repair_prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.1,
+                ),
+            )
+            repair_text = getattr(repair_response, "text", "") or ""
+        except Exception as exc:
+            return None, text, f"Invalid JSON and repair failed: {exc}"
         try:
             return json.loads(repair_text), repair_text, None
         except Exception as exc:
