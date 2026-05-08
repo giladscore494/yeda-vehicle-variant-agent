@@ -1,1 +1,9 @@
-.
+streamlit
+google-genai
+pydantic
+requests
+beautifulsoup4
+trafilatura
+pandas
+python-dotenv
+pytest
