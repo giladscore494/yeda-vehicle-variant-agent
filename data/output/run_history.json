@@ -8725,5 +8725,4682 @@
     "created_at": "2026-05-08T18:33:05.861684+00:00",
     "duration_ms": 0,
     "model_policy": "pro_only"
+  },
+  {
+    "run_id": "b8c8a2a4-1e5c-46a8-b0af-0da4ce63a24a",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__2000__2005__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 2000,
+    "year_end": 2005,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:2000:2005:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 2000,
+      "year_end": 2005,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.8",
+        "manual",
+        null,
+        "sedan",
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.8",
+          "transmission": "manual",
+          "body_type": "sedan"
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": "1.8",
+        "transmission": "manual",
+        "body_type": "sedan"
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": "sedan",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.8",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "transmission": {
+        "value": "manual",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:35.763240+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "9ed01703-5f08-4747-bb1a-db6c77479120",
+    "batch_id": null,
+    "seed_id": "toyota__avensis__1997__2018__il",
+    "make": "Toyota",
+    "model": "Avensis",
+    "year_start": 1997,
+    "year_end": 2018,
+    "market": "IL",
+    "cache_key": "final:Toyota:Avensis:1997:2018:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Avensis",
+      "year_start": 1997,
+      "year_end": 2018,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.6",
+        "manual",
+        null,
+        "sedan",
+        null
+      ],
+      [
+        "1.8",
+        "automatic",
+        null,
+        "sedan",
+        null
+      ],
+      [
+        "2.0",
+        "automatic",
+        null,
+        "wagon",
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.6",
+          "transmission": "manual",
+          "body_type": "sedan"
+        },
+        {
+          "engine": "1.8",
+          "transmission": "automatic",
+          "body_type": "sedan"
+        },
+        {
+          "engine": "2.0",
+          "transmission": "automatic",
+          "body_type": "wagon"
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 3,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": "1.6",
+        "transmission": "manual",
+        "body_type": "sedan"
+      },
+      {
+        "candidate_index": 1,
+        "engine": "1.8",
+        "transmission": "automatic",
+        "body_type": "sedan"
+      },
+      {
+        "candidate_index": 2,
+        "engine": "2.0",
+        "transmission": "automatic",
+        "body_type": "wagon"
+      }
+    ],
+    "variants_built_before_dedupe": 3,
+    "variants_after_dedupe": 3,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": "sedan",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.6",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "transmission": {
+        "value": "manual",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 3,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 3,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 3,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 3
+    },
+    "created_at": "2026-05-08T20:11:35.790305+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "aba0edd1-6703-4ecd-b0d7-4bfc4910f547",
+    "batch_id": null,
+    "seed_id": "toyota__avensis__1997__2018__il",
+    "make": "Toyota",
+    "model": "Avensis",
+    "year_start": 1997,
+    "year_end": 2018,
+    "market": "IL",
+    "cache_key": "final:Toyota:Avensis:1997:2018:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Avensis",
+      "year_start": 1997,
+      "year_end": 2018,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.6",
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        "2.0",
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.6"
+        },
+        {
+          "engine": "2.0"
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 2,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": "1.6"
+      },
+      {
+        "candidate_index": 1,
+        "engine": "2.0"
+      }
+    ],
+    "variants_built_before_dedupe": 2,
+    "variants_after_dedupe": 2,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.6",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 2,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 2,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 2,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 2
+    },
+    "created_at": "2026-05-08T20:11:35.817623+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "46a2d549-7093-4add-a5e8-4d22ea99e1a6",
+    "batch_id": null,
+    "seed_id": "toyota__avensis__1997__2018__il",
+    "make": "Toyota",
+    "model": "Avensis",
+    "year_start": 1997,
+    "year_end": 2018,
+    "market": "IL",
+    "cache_key": "final:Toyota:Avensis:1997:2018:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Avensis",
+      "year_start": 1997,
+      "year_end": 2018,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": null,
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": null,
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {}
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "warning": "Discovery returned candidates without usable identity fields.",
+    "final_decision": {
+      "classification": "partial",
+      "data_quality": "discovery_empty_candidates"
+    },
+    "status": "partial"
+  },
+  {
+    "run_id": "e04d10b4-2f30-4a5b-96e3-a056e9bd7597",
+    "batch_id": null,
+    "seed_id": "abarth__500__2018__2023__il",
+    "make": "Abarth",
+    "model": "500",
+    "year_start": 2018,
+    "year_end": 2023,
+    "market": "IL",
+    "cache_key": "final:Abarth:500:2018:2023:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Abarth",
+      "model": "500",
+      "year_start": 2018,
+      "year_end": 2023,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.4 Turbo",
+        null,
+        "petrol",
+        "hatchback",
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        {
+          "source_id": "s1"
+        }
+      ],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.4 Turbo",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "petrol",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "hatchback",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "drivetrain": {
+            "value": "FWD",
+            "status": "partial",
+            "sources_count": 1
+          }
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": {
+          "value": "1.4 Turbo",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "fuel_type": {
+          "value": "petrol",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "body_type": {
+          "value": "hatchback",
+          "status": "partial",
+          "sources_count": 1
+        },
+        "drivetrain": {
+          "value": "FWD",
+          "status": "partial",
+          "sources_count": 1
+        }
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": "hatchback",
+        "status": "partial",
+        "confidence": "medium",
+        "sources_count": 1,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "partial from 1 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.4 Turbo",
+        "status": "verified",
+        "confidence": "high",
+        "sources_count": 2,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "verified from 2 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": "petrol",
+        "status": "verified",
+        "confidence": "high",
+        "sources_count": 2,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "verified from 2 source(s)"
+      },
+      "drivetrain": {
+        "value": "FWD",
+        "status": "partial",
+        "confidence": "medium",
+        "sources_count": 1,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "partial from 1 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 1,
+    "conflict_count": 0,
+    "unresolved_count": 0,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 1,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 1,
+      "conflict_count": 0,
+      "unresolved_count": 0
+    },
+    "created_at": "2026-05-08T20:11:35.960006+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "48909d65-4b57-42f4-bd55-db14ecd5cc53",
+    "batch_id": null,
+    "seed_id": "abarth__500__2018__2023__il",
+    "make": "Abarth",
+    "model": "500",
+    "year_start": 2018,
+    "year_end": 2023,
+    "market": "IL",
+    "cache_key": "final:Abarth:500:2018:2023:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Abarth",
+      "model": "500",
+      "year_start": 2018,
+      "year_end": 2023,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.4 Turbo 145",
+        "manual",
+        "petrol",
+        "hatchback",
+        null
+      ],
+      [
+        "1.4 Turbo 165",
+        "manual",
+        "petrol",
+        "hatchback",
+        null
+      ],
+      [
+        "1.4 Turbo 180",
+        "manual",
+        "petrol",
+        "hatchback",
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        {
+          "source_id": "s1"
+        }
+      ],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.4 Turbo 145",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "transmission": {
+            "value": "manual",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "petrol",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "hatchback",
+            "status": "partial",
+            "sources_count": 1
+          }
+        },
+        {
+          "engine": {
+            "value": "1.4 Turbo 165",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "transmission": {
+            "value": "manual",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "petrol",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "hatchback",
+            "status": "partial",
+            "sources_count": 1
+          }
+        },
+        {
+          "engine": {
+            "value": "1.4 Turbo 180",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "transmission": {
+            "value": "manual",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "petrol",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "hatchback",
+            "status": "partial",
+            "sources_count": 1
+          }
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 3,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": {
+          "value": "1.4 Turbo 145",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "transmission": {
+          "value": "manual",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "fuel_type": {
+          "value": "petrol",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "body_type": {
+          "value": "hatchback",
+          "status": "partial",
+          "sources_count": 1
+        }
+      },
+      {
+        "candidate_index": 1,
+        "engine": {
+          "value": "1.4 Turbo 165",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "transmission": {
+          "value": "manual",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "fuel_type": {
+          "value": "petrol",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "body_type": {
+          "value": "hatchback",
+          "status": "partial",
+          "sources_count": 1
+        }
+      },
+      {
+        "candidate_index": 2,
+        "engine": {
+          "value": "1.4 Turbo 180",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "transmission": {
+          "value": "manual",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "fuel_type": {
+          "value": "petrol",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "body_type": {
+          "value": "hatchback",
+          "status": "partial",
+          "sources_count": 1
+        }
+      }
+    ],
+    "variants_built_before_dedupe": 3,
+    "variants_after_dedupe": 3,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": "hatchback",
+        "status": "partial",
+        "confidence": "medium",
+        "sources_count": 1,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "partial from 1 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.4 Turbo 145",
+        "status": "verified",
+        "confidence": "high",
+        "sources_count": 2,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "verified from 2 source(s)"
+      },
+      "transmission": {
+        "value": "manual",
+        "status": "verified",
+        "confidence": "high",
+        "sources_count": 2,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "verified from 2 source(s)"
+      },
+      "fuel_type": {
+        "value": "petrol",
+        "status": "verified",
+        "confidence": "high",
+        "sources_count": 2,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "verified from 2 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 3,
+    "verified_count": 0,
+    "partial_count": 3,
+    "conflict_count": 0,
+    "unresolved_count": 0,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 3,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 3,
+      "verified_count": 0,
+      "partial_count": 3,
+      "conflict_count": 0,
+      "unresolved_count": 0
+    },
+    "created_at": "2026-05-08T20:11:35.988018+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "ca978acf-4997-4970-8d88-cc4cda0ecb70",
+    "batch_id": null,
+    "seed_id": "abarth__600e__2024__2026__il",
+    "make": "Abarth",
+    "model": "600e",
+    "year_start": 2024,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Abarth:600e:2024:2026:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Abarth",
+      "model": "600e",
+      "year_start": 2024,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "electric 115kW",
+        null,
+        "electric",
+        "crossover",
+        null
+      ],
+      [
+        "electric 176kW",
+        null,
+        "electric",
+        "crossover",
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        {
+          "source_id": "s1"
+        }
+      ],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "electric 115kW",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "electric",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "drivetrain": {
+            "value": "FWD",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "seats": {
+            "value": 5,
+            "status": "unverified",
+            "sources_count": 0
+          },
+          "transmission": {
+            "value": null,
+            "status": "unknown",
+            "sources_count": 0
+          }
+        },
+        {
+          "engine": {
+            "value": "electric 176kW",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "electric",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "drivetrain": {
+            "value": "FWD",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "seats": {
+            "value": 5,
+            "status": "unverified",
+            "sources_count": 0
+          },
+          "transmission": {
+            "value": null,
+            "status": "unknown",
+            "sources_count": 0
+          }
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 2,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": {
+          "value": "electric 115kW",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "fuel_type": {
+          "value": "electric",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "body_type": {
+          "value": "crossover",
+          "status": "partial",
+          "sources_count": 1
+        },
+        "drivetrain": {
+          "value": "FWD",
+          "status": "partial",
+          "sources_count": 1
+        },
+        "seats": {
+          "value": 5,
+          "status": "unverified",
+          "sources_count": 0
+        },
+        "transmission": {
+          "value": null,
+          "status": "unknown",
+          "sources_count": 0
+        }
+      },
+      {
+        "candidate_index": 1,
+        "engine": {
+          "value": "electric 176kW",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "fuel_type": {
+          "value": "electric",
+          "status": "verified",
+          "sources_count": 2
+        },
+        "body_type": {
+          "value": "crossover",
+          "status": "partial",
+          "sources_count": 1
+        },
+        "drivetrain": {
+          "value": "FWD",
+          "status": "partial",
+          "sources_count": 1
+        },
+        "seats": {
+          "value": 5,
+          "status": "unverified",
+          "sources_count": 0
+        },
+        "transmission": {
+          "value": null,
+          "status": "unknown",
+          "sources_count": 0
+        }
+      }
+    ],
+    "variants_built_before_dedupe": 2,
+    "variants_after_dedupe": 2,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": "crossover",
+        "status": "partial",
+        "confidence": "medium",
+        "sources_count": 1,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "partial from 1 source(s)"
+      },
+      "seats": {
+        "value": 5,
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "engine": {
+        "value": "electric 115kW",
+        "status": "verified",
+        "confidence": "high",
+        "sources_count": 2,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "verified from 2 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": "electric",
+        "status": "verified",
+        "confidence": "high",
+        "sources_count": 2,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "verified from 2 source(s)"
+      },
+      "drivetrain": {
+        "value": "FWD",
+        "status": "partial",
+        "confidence": "medium",
+        "sources_count": 1,
+        "source_ids": [],
+        "used_in_compare": true,
+        "reason": "partial from 1 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 2,
+    "verified_count": 0,
+    "partial_count": 2,
+    "conflict_count": 0,
+    "unresolved_count": 0,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 2,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 2,
+      "verified_count": 0,
+      "partial_count": 2,
+      "conflict_count": 0,
+      "unresolved_count": 0
+    },
+    "created_at": "2026-05-08T20:11:36.016928+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "67c79342-57f7-4a48-8aa2-7bc1c16b3004",
+    "batch_id": null,
+    "seed_id": "toyota__auris__2013__2018__il",
+    "make": "Toyota",
+    "model": "Auris",
+    "year_start": 2013,
+    "year_end": 2018,
+    "market": "IL",
+    "cache_key": "final:Toyota:Auris:2013:2018:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "pro_only",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Auris",
+      "year_start": 2013,
+      "year_end": 2018,
+      "market": "IL",
+      "model_mode": "pro_only"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": null,
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": null,
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "candidate_variants": [
+        {}
+      ],
+      "sources": [
+        {
+          "source_id": "source_mock_kia_sportage"
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "candidate_variants",
+      "sources"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "status": "error"
+  },
+  {
+    "run_id": "bced2c92-a186-478d-b7b1-0ee512413ad7",
+    "batch_id": null,
+    "seed_id": "toyota__auris__2013__2018__il",
+    "make": "Toyota",
+    "model": "Auris",
+    "year_start": 2013,
+    "year_end": 2018,
+    "market": "IL",
+    "cache_key": "final:Toyota:Auris:2013:2018:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+    "gemini_calls_count": 0,
+    "grounded_calls_count": 0,
+    "gemini_attempted": false,
+    "grounding_requested": false,
+    "model_mode": "pro_only",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Auris",
+      "year_start": 2013,
+      "year_end": 2018,
+      "market": "IL",
+      "model_mode": "pro_only"
+    },
+    "discovery_model_used": null,
+    "verification_model_used": null,
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": null,
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [],
+    "discovery_raw_text_debug_available": false,
+    "execution_mode": "mock"
+  },
+  {
+    "run_id": "36530f60-7180-4ac4-bfc2-7de64c1ad1f9",
+    "batch_id": null,
+    "seed_id": "toyota__avensis__1997__2018__il",
+    "make": "Toyota",
+    "model": "Avensis",
+    "year_start": 1997,
+    "year_end": 2018,
+    "market": "IL",
+    "cache_key": "final:Toyota:Avensis:1997:2018:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Avensis",
+      "year_start": 1997,
+      "year_end": 2018,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": null,
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": null,
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [],
+    "discovery_raw_text_debug_available": true,
+    "discovery_parsed_json_debug": {
+      "candidate_variants": [
+        {}
+      ]
+    },
+    "discovery_raw_text": "{...}",
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "warning": "Discovery returned candidates without usable identity fields.",
+    "final_decision": {
+      "classification": "partial",
+      "data_quality": "discovery_empty_candidates"
+    },
+    "status": "partial"
+  },
+  {
+    "run_id": "92473f15-c262-4303-9eb1-a3e3e44b8bfd",
+    "batch_id": null,
+    "seed_id": "toyota__avensis__1997__2018__il",
+    "make": "Toyota",
+    "model": "Avensis",
+    "year_start": 1997,
+    "year_end": 2018,
+    "market": "IL",
+    "cache_key": "final:Toyota:Avensis:1997:2018:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Avensis",
+      "year_start": 1997,
+      "year_end": 2018,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.6",
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": true,
+    "discovery_parsed_json_debug": {
+      "candidate_variants": [
+        {
+          "engine": "1.6"
+        }
+      ],
+      "x": 1
+    },
+    "discovery_raw_text": "{\"candidate_variants\":[{\"engine\":\"1.6\"}],\"x\":1}",
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "candidate_variants",
+      "x"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": "1.6"
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.6",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:36.115932+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "296c8970-f948-4300-855e-0c2e17dafd5a",
+    "batch_id": null,
+    "seed_id": "toyota__c-hr__2017__2023__il",
+    "make": "Toyota",
+    "model": "C-HR",
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "cache_key": "final:Toyota:C-HR:2017:2023:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "pro_only",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "C-HR",
+      "year_start": 2017,
+      "year_end": 2023,
+      "market": "IL",
+      "model_mode": "pro_only"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.8",
+        "e_cvt",
+        null,
+        "crossover",
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.8",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "e_cvt",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "partial",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": {
+          "value": "1.8",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "transmission": {
+          "value": "e_cvt",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "body_type": {
+          "value": "crossover",
+          "status": "partial",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        }
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": "crossover",
+        "status": "partial",
+        "confidence": "medium",
+        "sources_count": 1,
+        "source_ids": [
+          "u1"
+        ],
+        "used_in_compare": true,
+        "reason": "partial from 1 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.8",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 1,
+        "source_ids": [
+          "u1"
+        ],
+        "used_in_compare": false,
+        "reason": "unverified from 1 source(s)"
+      },
+      "transmission": {
+        "value": "e_cvt",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 1,
+        "source_ids": [
+          "u1"
+        ],
+        "used_in_compare": false,
+        "reason": "unverified from 1 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 1,
+    "conflict_count": 0,
+    "unresolved_count": 0,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 1,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 1,
+      "conflict_count": 0,
+      "unresolved_count": 0
+    },
+    "created_at": "2026-05-08T20:11:36.151706+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "263fca5b-1c4b-4994-86a2-0790cae71a9e",
+    "batch_id": null,
+    "seed_id": "toyota__c-hr__2017__2023__il",
+    "make": "Toyota",
+    "model": "C-HR",
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "cache_key": "final:Toyota:C-HR:2017:2023:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "pro_only",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "C-HR",
+      "year_start": 2017,
+      "year_end": 2023,
+      "market": "IL",
+      "model_mode": "pro_only"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.2",
+        "cvt",
+        null,
+        "crossover",
+        null
+      ],
+      [
+        "1.8",
+        "e_cvt",
+        null,
+        "crossover",
+        null
+      ],
+      [
+        "2.0",
+        "e_cvt",
+        null,
+        "crossover",
+        null
+      ],
+      [
+        "ev",
+        "single_speed_ev",
+        null,
+        "crossover",
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.2",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "cvt",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        },
+        {
+          "engine": {
+            "value": "1.8",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "e_cvt",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        },
+        {
+          "engine": {
+            "value": "2.0",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "e_cvt",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        },
+        {
+          "engine": {
+            "value": "ev",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "single_speed_ev",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 4,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": {
+          "value": "1.2",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "transmission": {
+          "value": "cvt",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "body_type": {
+          "value": "crossover",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        }
+      },
+      {
+        "candidate_index": 1,
+        "engine": {
+          "value": "1.8",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "transmission": {
+          "value": "e_cvt",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "body_type": {
+          "value": "crossover",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        }
+      },
+      {
+        "candidate_index": 2,
+        "engine": {
+          "value": "2.0",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "transmission": {
+          "value": "e_cvt",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "body_type": {
+          "value": "crossover",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        }
+      },
+      {
+        "candidate_index": 3,
+        "engine": {
+          "value": "ev",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "transmission": {
+          "value": "single_speed_ev",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        },
+        "body_type": {
+          "value": "crossover",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        }
+      }
+    ],
+    "variants_built_before_dedupe": 4,
+    "variants_after_dedupe": 4,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": "crossover",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 1,
+        "source_ids": [
+          "u1"
+        ],
+        "used_in_compare": false,
+        "reason": "unverified from 1 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.2",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 1,
+        "source_ids": [
+          "u1"
+        ],
+        "used_in_compare": false,
+        "reason": "unverified from 1 source(s)"
+      },
+      "transmission": {
+        "value": "cvt",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 1,
+        "source_ids": [
+          "u1"
+        ],
+        "used_in_compare": false,
+        "reason": "unverified from 1 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 4,
+    "verified_count": 0,
+    "partial_count": 4,
+    "conflict_count": 0,
+    "unresolved_count": 0,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 4,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 4,
+      "verified_count": 0,
+      "partial_count": 4,
+      "conflict_count": 0,
+      "unresolved_count": 0
+    },
+    "created_at": "2026-05-08T20:11:36.182150+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "1dc64711-1716-4b14-8a9d-1315cc3f0ee2",
+    "batch_id": null,
+    "seed_id": "toyota__c-hr__2017__2023__il",
+    "make": "Toyota",
+    "model": "C-HR",
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "cache_key": "final:Toyota:C-HR:2017:2023:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "pro_only",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "C-HR",
+      "year_start": 2017,
+      "year_end": 2023,
+      "market": "IL",
+      "model_mode": "pro_only"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.8",
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.8",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": {
+          "value": "1.8",
+          "status": "verified",
+          "sources_count": 1,
+          "source_urls": [
+            "u1"
+          ],
+          "reason": "ok"
+        }
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.8",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 1,
+        "source_ids": [
+          "u1"
+        ],
+        "used_in_compare": false,
+        "reason": "unverified from 1 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:36.212096+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "1cc22f68-ac42-45ad-a256-ff743949aaba",
+    "batch_id": null,
+    "seed_id": "toyota__c-hr__2017__2023__il",
+    "make": "Toyota",
+    "model": "C-HR",
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "cache_key": "final:Toyota:C-HR:2017:2023:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "pro_only",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "C-HR",
+      "year_start": 2017,
+      "year_end": 2023,
+      "market": "IL",
+      "model_mode": "pro_only"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [],
+    "discovery_raw_text_debug_available": true,
+    "discovery_parsed_json_debug": {
+      "candidate_variants": []
+    },
+    "discovery_raw_text": "{x}",
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 0,
+    "discovery_candidates_preview": [],
+    "variants_built_before_dedupe": 0,
+    "variants_after_dedupe": 0,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {},
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 0,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 0,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 0,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 0
+    },
+    "created_at": "2026-05-08T20:11:36.241646+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "d82142f4-808c-44bd-ada8-e39dbe4b3e56",
+    "batch_id": null,
+    "seed_id": "fiat__bravo__1995__2014__il",
+    "make": "Fiat",
+    "model": "Bravo",
+    "year_start": 1995,
+    "year_end": 2014,
+    "market": "IL",
+    "cache_key": "final:Fiat:Bravo:1995:2014:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "pro_only",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Fiat",
+      "model": "Bravo",
+      "year_start": 1995,
+      "year_end": 2014,
+      "market": "IL",
+      "model_mode": "pro_only"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.6L",
+        "manual",
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": true,
+    "raw_text_parsed_in_runner": true,
+    "discovery_parsed_json_debug": {
+      "candidate_variants": [
+        {
+          "engine": "1.6L",
+          "transmission": "manual"
+        }
+      ],
+      "sources": []
+    },
+    "discovery_raw_text": "{\"candidate_variants\": [{\"engine\": \"1.6L\", \"transmission\": \"manual\"}], \"sources\": []}",
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "candidate_variants",
+      "sources"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": "1.6L",
+        "transmission": "manual"
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.6L",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "transmission": {
+        "value": "manual",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:36.659036+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "4299acbb-de1f-4096-95d5-0ed27ea9eec9",
+    "batch_id": null,
+    "seed_id": "fiat__bravo__1995__2014__il",
+    "make": "Fiat",
+    "model": "Bravo",
+    "year_start": 1995,
+    "year_end": 2014,
+    "market": "IL",
+    "cache_key": "final:Fiat:Bravo:1995:2014:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "pro_only",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Fiat",
+      "model": "Bravo",
+      "year_start": 1995,
+      "year_end": 2014,
+      "market": "IL",
+      "model_mode": "pro_only"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.6L",
+        "automatic",
+        null,
+        null,
+        null
+      ],
+      [
+        "1.6L",
+        "manual",
+        null,
+        null,
+        null
+      ],
+      [
+        "1.4L",
+        "manual",
+        null,
+        null,
+        null
+      ],
+      [
+        "1.4L Turbo",
+        "automatic",
+        null,
+        null,
+        null
+      ],
+      [
+        "1.4L Turbo",
+        "manual",
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": true,
+    "raw_text_parsed_in_runner": true,
+    "discovery_parsed_json_debug": {
+      "candidate_variants": [
+        {
+          "engine": "1.6L",
+          "transmission": "automatic"
+        },
+        {
+          "engine": "1.6L",
+          "transmission": "manual"
+        },
+        {
+          "engine": "1.4L",
+          "transmission": "manual"
+        },
+        {
+          "engine": "1.4L Turbo",
+          "transmission": "automatic"
+        },
+        {
+          "engine": "1.4L Turbo",
+          "transmission": "manual"
+        }
+      ],
+      "sources": []
+    },
+    "discovery_raw_text": "{\"candidate_variants\": [{\"engine\": \"1.6L\", \"transmission\": \"automatic\"}, {\"engine\": \"1.6L\", \"transmission\": \"manual\"}, {\"engine\": \"1.4L\", \"transmission\": \"manual\"}, {\"engine\": \"1.4L Turbo\", \"transmission\": \"automatic\"}, {\"engine\": \"1.4L Turbo\", \"transmission\": \"manual\"}], \"sources\": []}",
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "candidate_variants",
+      "sources"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 5,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": "1.6L",
+        "transmission": "automatic"
+      },
+      {
+        "candidate_index": 1,
+        "engine": "1.6L",
+        "transmission": "manual"
+      },
+      {
+        "candidate_index": 2,
+        "engine": "1.4L",
+        "transmission": "manual"
+      },
+      {
+        "candidate_index": 3,
+        "engine": "1.4L Turbo",
+        "transmission": "automatic"
+      },
+      {
+        "candidate_index": 4,
+        "engine": "1.4L Turbo",
+        "transmission": "manual"
+      }
+    ],
+    "variants_built_before_dedupe": 5,
+    "variants_after_dedupe": 5,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.6L",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "transmission": {
+        "value": "automatic",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 5,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 5,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 5,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 5
+    },
+    "created_at": "2026-05-08T20:11:36.681518+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "ac163348-c94e-414b-8eee-adb8d7bd3551",
+    "batch_id": null,
+    "seed_id": "toyota__c-hr__2017__2023__il",
+    "make": "Toyota",
+    "model": "C-HR",
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "cache_key": "final:Toyota:C-HR:2017:2023:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "C-HR",
+      "year_start": 2017,
+      "year_end": 2023,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.2",
+        "cvt",
+        "petrol",
+        "crossover",
+        null
+      ],
+      [
+        "1.8",
+        "cvt",
+        "hybrid",
+        "crossover",
+        null
+      ],
+      [
+        "2.0",
+        "automatic",
+        "petrol",
+        "crossover",
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.2",
+          "transmission": "cvt",
+          "fuel_type": "petrol",
+          "body_type": "crossover"
+        },
+        {
+          "engine": "1.8",
+          "transmission": "cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover"
+        },
+        {
+          "engine": "2.0",
+          "transmission": "automatic",
+          "fuel_type": "petrol",
+          "body_type": "crossover"
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 3,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": "1.2",
+        "transmission": "cvt",
+        "fuel_type": "petrol",
+        "body_type": "crossover"
+      },
+      {
+        "candidate_index": 1,
+        "engine": "1.8",
+        "transmission": "cvt",
+        "fuel_type": "hybrid",
+        "body_type": "crossover"
+      },
+      {
+        "candidate_index": 2,
+        "engine": "2.0",
+        "transmission": "automatic",
+        "fuel_type": "petrol",
+        "body_type": "crossover"
+      }
+    ],
+    "variants_built_before_dedupe": 3,
+    "variants_after_dedupe": 3,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": "crossover",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.2",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "transmission": {
+        "value": "cvt",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": "petrol",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 3,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 3,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 3,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 3
+    },
+    "created_at": "2026-05-08T20:11:36.715548+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "5d7edad7-b5ac-462b-8682-a9431bee3ad4",
+    "batch_id": null,
+    "seed_id": "toyota__c-hr__2017__2023__il",
+    "make": "Toyota",
+    "model": "C-HR",
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "cache_key": "final:Toyota:C-HR:2017:2023:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "C-HR",
+      "year_start": 2017,
+      "year_end": 2023,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        "1.2 Turbo",
+        "cvt",
+        "petrol",
+        "crossover",
+        "X10"
+      ],
+      [
+        "1.8 Hybrid",
+        "e_cvt",
+        "hybrid",
+        "crossover",
+        "X10"
+      ],
+      [
+        "2.0 Hybrid",
+        "e_cvt",
+        "hybrid",
+        "crossover",
+        "X10"
+      ],
+      [
+        "2.0 Hybrid",
+        "e_cvt",
+        "hybrid",
+        "crossover",
+        "X10"
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.2 Turbo",
+          "transmission": "cvt",
+          "fuel_type": "petrol",
+          "body_type": "crossover",
+          "generation": "X10"
+        },
+        {
+          "engine": "1.8 Hybrid",
+          "transmission": "e_cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover",
+          "generation": "X10"
+        },
+        {
+          "engine": "2.0 Hybrid",
+          "transmission": "e_cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover",
+          "generation": "X10"
+        },
+        {
+          "engine": "2.0 Hybrid",
+          "transmission": "e_cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover",
+          "generation": "X10"
+        }
+      ]
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "candidate_variants"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 4,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0,
+        "engine": "1.2 Turbo",
+        "transmission": "cvt",
+        "fuel_type": "petrol",
+        "body_type": "crossover",
+        "generation": "X10"
+      },
+      {
+        "candidate_index": 1,
+        "engine": "1.8 Hybrid",
+        "transmission": "e_cvt",
+        "fuel_type": "hybrid",
+        "body_type": "crossover",
+        "generation": "X10"
+      },
+      {
+        "candidate_index": 2,
+        "engine": "2.0 Hybrid",
+        "transmission": "e_cvt",
+        "fuel_type": "hybrid",
+        "body_type": "crossover",
+        "generation": "X10"
+      },
+      {
+        "candidate_index": 3,
+        "engine": "2.0 Hybrid",
+        "transmission": "e_cvt",
+        "fuel_type": "hybrid",
+        "body_type": "crossover",
+        "generation": "X10"
+      }
+    ],
+    "variants_built_before_dedupe": 4,
+    "variants_after_dedupe": 3,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": "crossover",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": "1.2 Turbo",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "transmission": {
+        "value": "cvt",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": "petrol",
+        "status": "unverified",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unverified from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": false
+    },
+    "variants_created": 3,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 3,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 3,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 3
+    },
+    "created_at": "2026-05-08T20:11:36.746444+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "4a5f5d8e-3f66-41f1-b40e-9f1b15982f0c",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__1992__2026__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:1992:2026:IL:gemini-3-pro-preview:fast:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "fast",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 1992,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "fast"
+    },
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "search_queries",
+      "candidate_variants",
+      "conflicts"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:36.860840+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "7f02f43d-284c-4b4c-95b5-b912ad151941",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__1992__2026__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:1992:2026:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 1992,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "search_queries",
+      "candidate_variants",
+      "conflicts"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:36.892756+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "8b8757e8-1efe-428a-9320-fe1ce34a4cf1",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__1992__2026__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:1992:2026:IL:gemini-3-pro-preview:auto:skip_second_pass",
+    "gemini_calls_count": 2,
+    "grounded_calls_count": 2,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "auto",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 1992,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "auto"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": true,
+    "escalation_reason": "sources_found < 2",
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "search_queries",
+      "candidate_variants",
+      "conflicts"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:36.924942+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "3c3a8ac0-180c-4f7f-a8de-6680412bd5ea",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__1992__2026__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:1992:2026:IL:gemini-3-pro-preview:auto:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "auto",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 1992,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "auto"
+    },
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "search_queries",
+      "candidate_variants",
+      "conflicts"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:36.957094+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "fe5a8205-b7a9-4f46-8ad1-8bd59de36ccf",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__1992__2026__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:1992:2026:IL:gemini-3-pro-preview:fast:skip_second_pass",
+    "gemini_calls_count": 0,
+    "grounded_calls_count": 0,
+    "gemini_attempted": false,
+    "grounding_requested": false,
+    "model_mode": "fast",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 1992,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "fast"
+    },
+    "discovery_model_used": null,
+    "verification_model_used": null,
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": null,
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [],
+    "discovery_raw_text_debug_available": false,
+    "execution_mode": "mock"
+  },
+  {
+    "run_id": "ab4ebe57-e11d-4403-9dea-5109b92be837",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__1992__2026__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:1992:2026:IL:gemini-3-pro-preview:auto:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "auto",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 1992,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "auto"
+    },
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "search_queries",
+      "candidate_variants",
+      "conflicts"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:37.010112+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "5f9d9ff9-79f7-4ede-94df-1e8da6fa6cd2",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__1992__2026__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:1992:2026:IL:gemini-3-pro-preview:fast:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "fast",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 1992,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "fast"
+    },
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "search_queries",
+      "candidate_variants",
+      "conflicts"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:37.044122+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "58c215bc-bbd5-4e35-96ea-2ebd140f8f74",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__1992__2026__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:1992:2026:IL:gemini-3-pro-preview:strong:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "strong",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 1992,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "strong"
+    },
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "search_queries",
+      "candidate_variants",
+      "conflicts"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:37.077050+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
+  },
+  {
+    "run_id": "0a4b6535-c2f5-4675-aa7f-256a68945ff9",
+    "batch_id": null,
+    "seed_id": "toyota__corolla__1992__2026__il",
+    "make": "Toyota",
+    "model": "Corolla",
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "cache_key": "final:Toyota:Corolla:1992:2026:IL:gemini-3-pro-preview:fast:skip_second_pass",
+    "gemini_calls_count": 1,
+    "grounded_calls_count": 1,
+    "gemini_attempted": true,
+    "grounding_requested": true,
+    "model_mode": "fast",
+    "verification_mode": "skip_second_pass",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year_start": 1992,
+      "year_end": 2026,
+      "market": "IL",
+      "model_mode": "fast"
+    },
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "not_used",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "final_cache_hit": false,
+    "discovery_cache_hit": false,
+    "verification_cache_hit": false,
+    "cache_record_schema_version": "vehicle_variant_agent_v2",
+    "sources_required_min": 2,
+    "raw_candidate_values_preserved": true,
+    "dedupe_keys_used": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ],
+    "discovery_raw_text_debug_available": false,
+    "discovery_parsed_json_debug": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    },
+    "discovery_raw_text": null,
+    "discovery_parse_error": null,
+    "repair_attempted": false,
+    "repair_success": false,
+    "json_salvage_used": false,
+    "dropped_incomplete_candidate": false,
+    "discovery_parsed_top_level_keys": [
+      "sources",
+      "search_queries",
+      "candidate_variants",
+      "conflicts"
+    ],
+    "candidate_extraction_path": "candidate_variants",
+    "candidate_variants_count": 1,
+    "discovery_candidates_preview": [
+      {
+        "candidate_index": 0
+      }
+    ],
+    "variants_built_before_dedupe": 1,
+    "variants_after_dedupe": 1,
+    "verification_mapping_mode": "candidate_index",
+    "field_verifications": {
+      "body_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "seats": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "engine": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "transmission": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "fuel_type": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      },
+      "drivetrain": {
+        "value": null,
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "unknown from 0 source(s)"
+      }
+    },
+    "final_decision": {
+      "classification": "partial",
+      "possible_under_split": true
+    },
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 0,
+    "conflict_count": 0,
+    "unresolved_count": 1,
+    "variants_saved_to_verified": 0,
+    "variants_saved_to_partial": 0,
+    "verification_calls_count": 0,
+    "status": "completed",
+    "classification_summary": {
+      "variants_created": 1,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 1
+    },
+    "created_at": "2026-05-08T20:11:37.109747+00:00",
+    "duration_ms": 0,
+    "model_policy": "pro_only"
   }
 ]

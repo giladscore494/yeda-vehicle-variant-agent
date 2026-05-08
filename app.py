@@ -11,7 +11,7 @@ from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
-    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard
 except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -45,6 +45,9 @@ except ImportError as exc:
         return {"counts": {}, "audit": {}, "quality_gate": {"passed": False}, "variants": [], **_get_batch_runner_error_result()}
 
     def build_resume_package(*args, **kwargs):
+        return {}
+
+    def build_canonical_candidate(*args, **kwargs):
         return {}
 
     def detect_import_file_type(*args, **kwargs):
@@ -388,7 +391,16 @@ with tabs[2]:
                 candidate_pkg["_candidate_source"] = source_name
         elif source_name == "merged_candidate":
             try:
-                candidate_pkg = build_resume_package()
+                fe = build_final_export()
+                candidate_pkg = build_canonical_candidate(
+                    prev_pkg,
+                    fe.get("variants", []) if isinstance(fe, dict) else [],
+                    new_batch_state=None,
+                    source=source_name,
+                )
+                if isinstance(candidate_pkg.get("accumulated_clean_export"), dict):
+                    candidate_pkg["accumulated_clean_export"]["quality_gate"] = fe.get("quality_gate") if isinstance(fe, dict) else None
+                    candidate_pkg["accumulated_clean_export"]["audit"] = fe.get("audit") if isinstance(fe, dict) else None
                 candidate_pkg["_candidate_source"] = source_name
                 quality_score = (((candidate_pkg.get("accumulated_clean_export") or {}).get("quality_gate") or {}).get("score"))
             except Exception:
@@ -590,7 +602,7 @@ with tabs[7]:
         else:
             st.error("Canonical resume package update blocked")
             st.json(push_res.get("validate_result") or push_res)
-    if c4.button("Build merged canonical and push"):
+    if c4.button("Push merged final export as canonical"):
         push_res = persist_canonical_resume_package(push_to_github=True, market=market)
         if push_res.get("ok"):
             st.success("Merged canonical built and pushed to GitHub.")
