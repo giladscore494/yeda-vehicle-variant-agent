@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 import copy
 import uuid
 from typing import Callable
+from urllib.parse import quote
 
+import requests
 from core.ingest import load_model_seeds
 from agent.runner import run_single_model
 from storage.json_store import get_output_paths, load_json_list, load_json_object, save_json, project_root
@@ -15,6 +18,381 @@ BATCH_STATE_SCHEMA = "batch_state_v1"
 RETRYABLE_SCHEMA_ERROR_TOKENS = ["'market'", "missing market", "keyerror: market", "missing required seed field"]
 CANONICAL_RESUME_PATH_DEFAULT = "data/canonical/resume_package_canonical.json"
 CANONICAL_BACKUP_PATH_DEFAULT = "data/canonical/resume_package_backup_previous.json"
+EXPECTED_CANONICAL_RESUME_PATH = "data/canonical/resume_package_canonical.json"
+EXPECTED_LOCAL_LAST_COMPLETED_SEED_ID = "audi__rs5__2010__2026__il"
+EXPECTED_LOCAL_NEXT_SEED_ID = "audi__rs6__2008__2026__il"
+EXPECTED_LOCAL_MIN_VARIANTS = 263
+EXPECTED_LOCAL_MIN_PROCESSED = 59
+
+
+def _token_prefix_type(token: str | None) -> str:
+    value = str(token or "").strip()
+    if not value:
+        return "missing"
+    if value.startswith("github_pat_"):
+        return "github_pat"
+    if value.startswith("ghp_"):
+        return "ghp"
+    return "unknown"
+
+
+def _safe_json(resp) -> dict:
+    try:
+        payload = resp.json()
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _api_get(url: str, token: str | None) -> dict:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        resp = requests.get(url, headers=headers, timeout=30)
+    except Exception as exc:
+        return {"status_code": None, "ok": False, "json": {}, "message": f"{type(exc).__name__}: {exc}"}
+    payload = _safe_json(resp)
+    message = payload.get("message")
+    return {
+        "status_code": resp.status_code,
+        "ok": resp.status_code < 400,
+        "json": payload,
+        "message": str(message)[:200] if message else "",
+    }
+
+
+def _extract_package_fields(payload: dict | None) -> dict:
+    package = payload if isinstance(payload, dict) else {}
+    variants = _extract_resume_variants(package)
+    batch_state = package.get("batch_state", {}) if isinstance(package.get("batch_state"), dict) else {}
+    processed = list(batch_state.get("processed_seed_ids") or [])
+    return {
+        "schema_version": package.get("schema_version"),
+        "variant_count": len(variants),
+        "processed_count": len(processed),
+        "last_completed_seed_id": batch_state.get("last_completed_seed_id"),
+        "next_seed_id": batch_state.get("next_seed_id"),
+    }
+
+
+def _is_next_seed_at_or_after_expected(next_seed_id: str | None, market: str = "IL") -> bool:
+    if not next_seed_id:
+        return False
+    if next_seed_id == EXPECTED_LOCAL_NEXT_SEED_ID:
+        return True
+    try:
+        ordered_ids = [s["seed_id"] for s in get_ordered_seed_list(market)]
+    except Exception:
+        ordered_ids = []
+    if EXPECTED_LOCAL_NEXT_SEED_ID in ordered_ids and next_seed_id in ordered_ids:
+        return ordered_ids.index(next_seed_id) >= ordered_ids.index(EXPECTED_LOCAL_NEXT_SEED_ID)
+    return str(next_seed_id).strip().lower() >= EXPECTED_LOCAL_NEXT_SEED_ID
+
+
+def diagnose_canonical_github_sync() -> dict:
+    cfg = get_github_config()
+    token = str(cfg.get("token") or "")
+    repo = str(cfg.get("repo") or "")
+    branch = str(cfg.get("branch") or "")
+    canonical_path = str(cfg.get("canonical_path") or "")
+    backup_path = str(cfg.get("backup_path") or "")
+
+    token_present = bool(token.strip())
+    token_length_gt_20 = len(token.strip()) > 20
+    token_prefix_type = _token_prefix_type(token)
+    token_missing = not token_present
+
+    config = {
+        "repo_value": repo,
+        "branch_value": branch,
+        "canonical_path_value": canonical_path,
+        "backup_path_value": backup_path,
+        "repo_has_slash": "/" in repo,
+        "branch_not_empty": bool(branch.strip()),
+        "canonical_path_matches_expected": canonical_path == EXPECTED_CANONICAL_RESUME_PATH,
+        "expected_canonical_path": EXPECTED_CANONICAL_RESUME_PATH,
+    }
+
+    local_path = project_root() / EXPECTED_CANONICAL_RESUME_PATH
+    local_exists = local_path.exists()
+    local_payload = None
+    local_is_valid_json = False
+    if local_exists:
+        try:
+            local_payload = json.loads(local_path.read_text(encoding="utf-8"))
+            local_is_valid_json = isinstance(local_payload, dict)
+        except Exception:
+            local_payload = None
+            local_is_valid_json = False
+    local_fields = _extract_package_fields(local_payload if local_is_valid_json else {})
+    local_next_seed_valid = _is_next_seed_at_or_after_expected(local_fields.get("next_seed_id"), market="IL")
+    local_expected_file = (
+        local_exists
+        and local_is_valid_json
+        and local_fields.get("schema_version") == "resume_package_v1"
+        and int(local_fields.get("variant_count", 0) or 0) >= EXPECTED_LOCAL_MIN_VARIANTS
+        and int(local_fields.get("processed_count", 0) or 0) >= EXPECTED_LOCAL_MIN_PROCESSED
+        and local_next_seed_valid
+    )
+    local_check = {
+        "local_exists": local_exists,
+        "local_is_valid_json": local_is_valid_json,
+        "local_schema_version": local_fields.get("schema_version"),
+        "local_variant_count": int(local_fields.get("variant_count", 0) or 0),
+        "local_processed_count": int(local_fields.get("processed_count", 0) or 0),
+        "local_last_completed_seed_id": local_fields.get("last_completed_seed_id"),
+        "local_next_seed_id": local_fields.get("next_seed_id"),
+        "local_expected_file": local_expected_file,
+        "local_next_seed_at_or_after_expected": local_next_seed_valid,
+        "expected_last_completed_seed_id": EXPECTED_LOCAL_LAST_COMPLETED_SEED_ID,
+        "expected_next_seed_id": EXPECTED_LOCAL_NEXT_SEED_ID,
+        "local_usage_note": "Local canonical is available and can be used even if GitHub fetch fails." if local_exists and local_is_valid_json else "",
+    }
+
+    api_contents_url = ""
+    if repo and canonical_path and branch:
+        api_contents_url = f"https://api.github.com/repos/{repo}/contents/{quote(canonical_path)}?ref={quote(branch)}"
+    repo_api = {"status_code": None, "repo_access_ok": False, "visibility": None, "response_message_excerpt": ""}
+    branch_api = {"status_code": None, "branch_exists": False, "default_branch": None, "response_message_excerpt": ""}
+    contents_api = {
+        "status_code": None,
+        "github_file_exists": False,
+        "github_file_size": None,
+        "github_sha_exists": False,
+        "github_download_url_exists": False,
+        "github_is_valid_json": False,
+        "github_variant_count": 0,
+        "github_processed_count": 0,
+        "github_next_seed_id": None,
+        "response_message_excerpt": "",
+    }
+
+    repo_result = _api_get(f"https://api.github.com/repos/{repo}", token) if repo else {"status_code": None, "ok": False, "json": {}, "message": "missing repo"}
+    repo_body = repo_result.get("json", {})
+    repo_api.update(
+        {
+            "status_code": repo_result.get("status_code"),
+            "repo_access_ok": repo_result.get("status_code") == 200,
+            "visibility": "private" if repo_body.get("private") else ("public" if repo_body else None),
+            "response_message_excerpt": repo_result.get("message", ""),
+        }
+    )
+
+    branch_result = {"status_code": None, "ok": False, "json": {}, "message": ""}
+    if repo_result.get("status_code") == 200 and branch.strip():
+        branch_result = _api_get(f"https://api.github.com/repos/{repo}/branches/{quote(branch)}", token)
+        branch_api.update(
+            {
+                "status_code": branch_result.get("status_code"),
+                "branch_exists": branch_result.get("status_code") == 200,
+                "default_branch": repo_body.get("default_branch"),
+                "response_message_excerpt": branch_result.get("message", ""),
+            }
+        )
+
+    contents_result = {"status_code": None, "ok": False, "json": {}, "message": ""}
+    github_payload = None
+    if repo_result.get("status_code") == 200 and branch_result.get("status_code") == 200 and canonical_path.strip():
+        contents_result = _api_get(f"https://api.github.com/repos/{repo}/contents/{quote(canonical_path)}?ref={quote(branch)}", token)
+        content_body = contents_result.get("json", {})
+        github_payload = None
+        if contents_result.get("status_code") == 200:
+            encoded = content_body.get("content")
+            if isinstance(encoded, str):
+                try:
+                    github_payload = json.loads(base64_decode(encoded))
+                except Exception:
+                    github_payload = None
+        github_fields = _extract_package_fields(github_payload if isinstance(github_payload, dict) else {})
+        contents_api.update(
+            {
+                "status_code": contents_result.get("status_code"),
+                "github_file_exists": contents_result.get("status_code") == 200,
+                "github_file_size": content_body.get("size"),
+                "github_sha_exists": bool(content_body.get("sha")),
+                "github_download_url_exists": bool(content_body.get("download_url")),
+                "github_is_valid_json": isinstance(github_payload, dict),
+                "github_variant_count": int(github_fields.get("variant_count", 0) or 0),
+                "github_processed_count": int(github_fields.get("processed_count", 0) or 0),
+                "github_next_seed_id": github_fields.get("next_seed_id"),
+                "response_message_excerpt": contents_result.get("message", ""),
+            }
+        )
+
+    manual_push_uses_local_canonical = False
+    manual_push_rebuilds_package = True
+    push_behavior = {
+        "manual_push_uses_local_canonical": manual_push_uses_local_canonical,
+        "manual_push_rebuilds_package": manual_push_rebuilds_package,
+    }
+
+    previous_count = int(contents_api.get("github_variant_count", 0) or 0) if contents_api.get("github_file_exists") else int(local_check.get("local_variant_count", 0) or 0)
+    build_final_export_count = None
+    build_final_export_error = ""
+    try:
+        build_export = build_final_export()
+        build_final_export_count = len([v for v in build_export.get("variants", []) if isinstance(v, dict)]) if isinstance(build_export, dict) else 0
+    except Exception as exc:
+        build_final_export_error = f"{type(exc).__name__}: {exc}"
+    new_candidate_count = None
+    build_resume_error = ""
+    try:
+        resume_package = build_resume_package()
+        new_candidate_count = len(_extract_resume_variants(resume_package))
+    except Exception as exc:
+        build_resume_error = f"{type(exc).__name__}: {exc}"
+        if build_final_export_count is not None:
+            new_candidate_count = build_final_export_count
+    uploaded_session_count = len(load_imported_accumulated_variants())
+    shrink_detected = bool(previous_count > 0 and isinstance(new_candidate_count, int) and new_candidate_count < previous_count)
+    shrink_delta = (int(new_candidate_count) - int(previous_count)) if isinstance(new_candidate_count, int) else None
+    shrink_guard = {
+        "previous_count": previous_count,
+        "new_candidate_count": new_candidate_count,
+        "build_final_export_count": build_final_export_count,
+        "uploaded_session_canonical_count": uploaded_session_count,
+        "shrink_detected": shrink_detected,
+        "shrink_delta": shrink_delta,
+        "build_final_export_error": build_final_export_error,
+        "build_resume_package_error": build_resume_error,
+    }
+
+    permissions = {
+        "repo_403_permission_or_rate_limit": repo_result.get("status_code") == 403,
+        "contents_403_lacks_contents_permission": contents_result.get("status_code") == 403,
+    }
+
+    ruled_out: list[str] = []
+    if token_present and token_length_gt_20:
+        ruled_out.append("Token is not missing: token_present=true and token_length_gt_20=true.")
+    if config.get("repo_has_slash"):
+        ruled_out.append("Repository format is not the issue: GITHUB_REPO contains '/'.")
+    if config.get("branch_not_empty"):
+        ruled_out.append("Branch is not empty in secrets.")
+    if repo_result.get("status_code") == 200:
+        ruled_out.append("Repo name is not the issue: GET /repos returned 200.")
+    if branch_result.get("status_code") == 200:
+        ruled_out.append(f"Branch is not the issue: GET /branches/{branch} returned 200.")
+    if config.get("canonical_path_matches_expected"):
+        ruled_out.append("Canonical path is not the issue: configured path matches expected.")
+    if local_check.get("local_exists") and local_check.get("local_is_valid_json"):
+        ruled_out.append(f"Local file is not missing: local canonical exists with {local_check.get('local_variant_count')} variants.")
+    if contents_result.get("status_code") == 200:
+        ruled_out.append("GitHub canonical file exists and is readable at configured path.")
+    if not shrink_detected:
+        ruled_out.append("Shrink guard condition is not active: candidate package is not smaller than previous.")
+
+    root_cause = ""
+    final_diagnosis = ""
+    recommended_action = ""
+
+    if token_missing:
+        root_cause = "GITHUB_TOKEN is missing or empty in Streamlit Secrets."
+        final_diagnosis = root_cause
+        recommended_action = "Set GITHUB_TOKEN in Streamlit Secrets and restart the app."
+    elif repo_result.get("status_code") == 401:
+        root_cause = "GitHub token is invalid or not loaded."
+        final_diagnosis = root_cause
+        recommended_action = "Replace GITHUB_TOKEN with a valid token and redeploy/restart."
+    elif repo_result.get("status_code") == 404:
+        root_cause = "GITHUB_REPO is wrong or token has no access to this repo."
+        final_diagnosis = root_cause
+        recommended_action = "Fix GITHUB_REPO and confirm token access to that repository."
+    elif branch_result.get("status_code") == 404:
+        root_cause = "GITHUB_BRANCH does not exist or is not accessible."
+        final_diagnosis = root_cause
+        recommended_action = "Set GITHUB_BRANCH to an existing branch with token access."
+    elif not config.get("canonical_path_matches_expected"):
+        root_cause = "CANONICAL_RESUME_PATH mismatch."
+        final_diagnosis = root_cause
+        recommended_action = f"Set CANONICAL_RESUME_PATH to {EXPECTED_CANONICAL_RESUME_PATH}."
+    elif repo_result.get("status_code") == 200 and branch_result.get("status_code") == 200 and contents_result.get("status_code") == 404 and local_check.get("local_exists") and local_check.get("local_is_valid_json"):
+        root_cause = "Canonical file is missing at the configured path on GitHub."
+        final_diagnosis = "Canonical file is missing at configured path on GitHub, but local canonical exists and should be usable. Push should create the file."
+        recommended_action = "Use the valid local canonical as source of truth, then push to create the missing GitHub file."
+    elif repo_result.get("status_code") == 403:
+        root_cause = "GitHub token lacks permission or is blocked/rate-limited."
+        final_diagnosis = root_cause
+        recommended_action = "Check token scopes, repository access, and API rate limits."
+    elif contents_result.get("status_code") == 403:
+        root_cause = "Token lacks Contents permission."
+        final_diagnosis = root_cause
+        recommended_action = "Grant Contents read/write permission to the token."
+    elif manual_push_rebuilds_package and local_check.get("local_expected_file") and isinstance(build_final_export_count, int) and build_final_export_count < int(local_check.get("local_variant_count", 0) or 0):
+        root_cause = "Manual push rebuilds from incomplete local outputs instead of pushing the valid local canonical."
+        final_diagnosis = root_cause
+        recommended_action = "Push the valid local canonical package directly, or merge new batch variants into canonical before push."
+    elif shrink_detected:
+        root_cause = "Shrink guard correctly blocked because candidate package is smaller than canonical."
+        final_diagnosis = "Shrink guard correctly blocked a smaller candidate package."
+        recommended_action = "Use local/GitHub canonical as source of truth and merge new batch variants into it."
+    elif not (local_check.get("local_exists") and local_check.get("local_is_valid_json")):
+        root_cause = "Local canonical invalid/missing."
+        final_diagnosis = root_cause
+        recommended_action = "Restore or import a valid local canonical resume package."
+    else:
+        root_cause = "No blocking root cause detected."
+        final_diagnosis = "Canonical GitHub sync checks passed with no blocking root cause detected."
+        recommended_action = "Continue batch processing and keep canonical in sync after each successful batch."
+
+    safe_to_continue_batch = bool(local_check.get("local_expected_file") and local_check.get("local_next_seed_at_or_after_expected") and not shrink_detected)
+
+    checks = {
+        "secrets": {
+            "token_present": token_present,
+            "token_length_gt_20": token_length_gt_20,
+            "token_prefix_type": token_prefix_type,
+        },
+        "config": config,
+        "local_canonical": local_check,
+        "github_api_url": {"contents_url": api_contents_url},
+        "repo_api_auth": {
+            "repo_status_code": repo_api.get("status_code"),
+            "repo_access_ok": repo_api.get("repo_access_ok"),
+            "repo_visibility": repo_api.get("visibility"),
+            "response_message_excerpt": repo_api.get("response_message_excerpt"),
+        },
+        "branch_check": {
+            "branch_status_code": branch_api.get("status_code"),
+            "branch_exists": branch_api.get("branch_exists"),
+            "default_branch": branch_api.get("default_branch"),
+            "response_message_excerpt": branch_api.get("response_message_excerpt"),
+        },
+        "github_contents_check": {
+            "contents_status_code": contents_api.get("status_code"),
+            "github_file_exists": contents_api.get("github_file_exists"),
+            "github_file_size": contents_api.get("github_file_size"),
+            "github_sha_exists": contents_api.get("github_sha_exists"),
+            "github_download_url_exists": contents_api.get("github_download_url_exists"),
+            "github_is_valid_json": contents_api.get("github_is_valid_json"),
+            "github_variant_count": contents_api.get("github_variant_count"),
+            "github_processed_count": contents_api.get("github_processed_count"),
+            "github_next_seed_id": contents_api.get("github_next_seed_id"),
+            "response_message_excerpt": contents_api.get("response_message_excerpt"),
+        },
+        "permissions": permissions,
+        "push_behavior": push_behavior,
+        "shrink_guard_diagnosis": shrink_guard,
+    }
+
+    return {
+        "final_diagnosis": final_diagnosis,
+        "single_root_cause": root_cause,
+        "ruled_out": ruled_out,
+        "checks": checks,
+        "recommended_action": recommended_action,
+        "safe_to_continue_batch": safe_to_continue_batch,
+    }
+
+
+def base64_decode(content: str) -> str:
+    import base64
+
+    return base64.b64decode(content).decode("utf-8")
 
 
 def _now() -> str:
