@@ -30,3 +30,12 @@ def test_get_config_status_no_raw_api_key():
     cfg = GeminiClient().get_config_status()
     assert 'api_key' in cfg and cfg['api_key'] in {'found', 'missing'}
     assert cfg.get('api_key') != getattr(GeminiClient(), 'api_key', None)
+
+
+def test_get_config_status_consistent_missing_key(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    c = GeminiClient()
+    cfg = c.get_config_status()
+    if cfg["api_key"] == "missing":
+        assert cfg["api_key_source"] == "missing"
+        assert cfg["client_ready"] is False

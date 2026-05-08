@@ -16,6 +16,8 @@ def test_audit_detects_missing_middle_seed():
 
 def test_detect_import_file_types():
     assert batch_runner.detect_import_file_type({"schema_version": "resume_package_v1"}) == "resume_package"
+    assert batch_runner.detect_import_file_type({"schema_version": "vehicle_variant_resume_package_v1"}) == "resume_package"
+    assert batch_runner.detect_import_file_type({"batch_state": {}, "final_export": {"variants": []}}) == "resume_package"
     assert batch_runner.detect_import_file_type({"processed_seed_ids": []}) == "batch_state"
     assert batch_runner.detect_import_file_type({"batch": {}, "results": []}) == "latest_batch_result"
     assert batch_runner.detect_import_file_type({"schema_version": "vehicle_variants_final_v1", "variants": []}) == "final_export"
@@ -112,3 +114,22 @@ def test_import_accumulated_variants_restores_90(monkeypatch):
 def test_latest_batch_export_is_separate_file_path():
     from storage.json_store import project_root
     assert str((project_root() / "data/output/latest_batch_result.json")).endswith("latest_batch_result.json")
+
+
+def test_import_vehicle_variant_resume_package_restores_progress(monkeypatch):
+    state = {"processed_seed_ids": [], "failed_seed_ids": []}
+    saved = {}
+    monkeypatch.setattr(batch_runner, "load_batch_state", lambda market="IL": state)
+    monkeypatch.setattr(batch_runner, "get_output_paths", lambda: {k: k for k in ["vehicle_variants_verified", "vehicle_variants_partial", "run_history", "vehicle_sources", "unresolved_models", "vehicle_conflicts"]})
+    monkeypatch.setattr(batch_runner, "load_json_list", lambda path: list(saved.get(path, [])))
+    monkeypatch.setattr(batch_runner, "save_json", lambda path, data: saved.__setitem__(str(path), data))
+    monkeypatch.setattr(batch_runner, "_batch_state_path", lambda: "batch_state.json")
+    monkeypatch.setattr(batch_runner, "rebuild_batch_state_from_outputs", lambda market="IL": {"processed_seed_ids": saved.get("batch_state.json", {}).get("processed_seed_ids", ["x"]), "next_seed_id": "after_alpine"})
+    variants = [{"variant_id": f"v{i}", "classification": "verified" if i < 60 else "partial"} for i in range(90)]
+    pkg = {"schema_version": "vehicle_variant_resume_package_v1", "batch_state": {"processed_seed_ids": ["abarth", "aiways", "alfa", "alpine"], "processed_seeds": 4}, "final_export": {"variants": variants, "sources": [], "counts": {"makes_count": 4, "models_count": 30}}}
+    out = batch_runner.import_progress_json(pkg)
+    assert out["file_type"] == "resume_package"
+    assert out["imported_variants"] == 90
+    assert len(saved["batch_state.json"]["processed_seed_ids"]) == 4
+    assert len(saved["vehicle_variants_verified"]) + len(saved["vehicle_variants_partial"]) == 90
+    assert "imported_accumulated_dataset.json" in " ".join(saved.keys())

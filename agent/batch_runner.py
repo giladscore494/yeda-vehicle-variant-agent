@@ -419,7 +419,9 @@ def detect_import_file_type(uploaded_json) -> str:
         if uploaded_json and isinstance(uploaded_json[0], dict) and "variant_id" in uploaded_json[0]:
             return "accumulated_variants"
         return "unknown"
-    if uploaded_json.get("schema_version") == "resume_package_v1":
+    if uploaded_json.get("schema_version") in {"resume_package_v1", "vehicle_variant_resume_package_v1"}:
+        return "resume_package"
+    if isinstance(uploaded_json.get("batch_state"), dict) and isinstance(uploaded_json.get("final_export"), dict) and isinstance(uploaded_json.get("final_export", {}).get("variants"), list):
         return "resume_package"
     if uploaded_json.get("schema_version") == BATCH_STATE_SCHEMA or "processed_seed_ids" in uploaded_json:
         return "batch_state"
@@ -473,30 +475,43 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
         save_json(paths["vehicle_variants_verified"], merged_verified)
         save_json(paths["vehicle_variants_partial"], merged_partial)
     elif file_type == "resume_package":
-        pkg = uploaded_json
-        save_json(project_root() / "data/output/imported_accumulated_dataset.json", pkg)
-        if overwrite:
-            save_json(paths["run_history"], pkg.get("run_history", []))
-            save_json(paths["vehicle_variants_verified"], pkg.get("verified_variants", []))
-            save_json(paths["vehicle_variants_partial"], pkg.get("partial_variants", []))
-            save_json(paths["vehicle_sources"], pkg.get("sources", []))
+        pkg = uploaded_json if isinstance(uploaded_json, dict) else {}
+        schema_version = pkg.get("schema_version")
+        if schema_version == "vehicle_variant_resume_package_v1" and isinstance(pkg.get("final_export"), dict):
+            acc = pkg.get("final_export", {})
+            imported_sources = acc.get("sources", []) if isinstance(acc.get("sources", []), list) else []
         else:
-            save_json(paths["run_history"], load_json_list(paths["run_history"]) + pkg.get("run_history", []))
-            save_json(paths["vehicle_variants_verified"], _merge_variant_lists(load_json_list(paths["vehicle_variants_verified"]), pkg.get("verified_variants", [])))
-            save_json(paths["vehicle_variants_partial"], _merge_variant_lists(load_json_list(paths["vehicle_variants_partial"]), pkg.get("partial_variants", [])))
-            save_json(paths["vehicle_sources"], load_json_list(paths["vehicle_sources"]) + pkg.get("sources", []))
-        save_json(paths["unresolved_models"], pkg.get("unresolved", []))
-        save_json(paths["vehicle_conflicts"], pkg.get("conflicts", []))
-        acc = pkg.get("accumulated_clean_export", {}) if isinstance(pkg, dict) else {}
-        if isinstance(acc, dict) and isinstance(acc.get("variants"), list):
-            verified = load_json_list(paths["vehicle_variants_verified"])
-            partial = load_json_list(paths["vehicle_variants_partial"])
-            acc_verified, acc_partial = _split_variants(acc.get("variants", []))
-            save_json(paths["vehicle_variants_verified"], _merge_variant_lists(verified, acc_verified))
-            merged_partial = _merge_variant_lists(partial, acc_partial)
-            verified_ids = {v.get("variant_id") for v in load_json_list(paths["vehicle_variants_verified"])}
-            save_json(paths["vehicle_variants_partial"], [v for v in merged_partial if v.get("variant_id") not in verified_ids])
-        save_json(_batch_state_path(), pkg.get("batch_state", state))
+            acc = pkg.get("accumulated_clean_export", {}) if isinstance(pkg.get("accumulated_clean_export"), dict) else {}
+            imported_sources = pkg.get("sources", []) if isinstance(pkg.get("sources", []), list) else []
+        variants = [v for v in (acc.get("variants", []) if isinstance(acc, dict) else []) if isinstance(v, dict)]
+        save_json(project_root() / "data/output/imported_accumulated_dataset.json", acc if isinstance(acc, dict) else {"variants": variants})
+        verified = load_json_list(paths["vehicle_variants_verified"])
+        partial = load_json_list(paths["vehicle_variants_partial"])
+        v_new, p_new = _split_variants(variants)
+        merged_verified = _merge_variant_lists([] if overwrite else verified, v_new)
+        merged_partial = _merge_variant_lists([] if overwrite else partial, p_new)
+        verified_ids = {v.get("variant_id") for v in merged_verified}
+        merged_partial = [v for v in merged_partial if v.get("variant_id") not in verified_ids]
+        save_json(paths["vehicle_variants_verified"], merged_verified)
+        save_json(paths["vehicle_variants_partial"], merged_partial)
+        if imported_sources:
+            save_json(paths["vehicle_sources"], imported_sources if overwrite else (load_json_list(paths["vehicle_sources"]) + imported_sources))
+        if schema_version != "vehicle_variant_resume_package_v1":
+            if overwrite:
+                save_json(paths["run_history"], pkg.get("run_history", []))
+            else:
+                save_json(paths["run_history"], load_json_list(paths["run_history"]) + pkg.get("run_history", []))
+            save_json(paths["unresolved_models"], pkg.get("unresolved", []))
+            save_json(paths["vehicle_conflicts"], pkg.get("conflicts", []))
+        imported_state = pkg.get("batch_state", state) if isinstance(pkg.get("batch_state"), dict) else state
+        save_json(_batch_state_path(), imported_state)
+        result["processed_added"] = max(0, len(set(imported_state.get("processed_seed_ids", [])) - set(state.get("processed_seed_ids", []))))
+        result["variants_verified_added"] = max(0, len(merged_verified) - len(verified))
+        result["variants_partial_added"] = max(0, len(merged_partial) - len(partial))
+        c = acc.get("counts", {}) if isinstance(acc, dict) else {}
+        result["imported_variants"] = len(variants)
+        result["imported_makes"] = c.get("makes_count")
+        result["imported_models"] = c.get("models_count")
     else:
         result["import_status"] = "skipped"
         result["warnings"].append("Unknown import file type")

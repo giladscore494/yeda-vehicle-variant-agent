@@ -178,11 +178,16 @@ class GeminiClient:
         return "missing"
 
     def get_config_status(self) -> dict:
+        has_key = self.has_api_key()
+        source = self.get_api_key_source() if has_key else "missing"
+        client_ready = bool(getattr(self, "client", None) is not None) and has_key
         return {
-            "api_key": "found" if self.has_api_key() else "missing",
-            "api_key_source": self.get_api_key_source() if hasattr(self, "get_api_key_source") else "unknown",
+            "api_key": "found" if has_key else "missing",
+            "api_key_source": source,
             "google_genai_import_ok": bool(genai is not None),
-            "client_ready": bool(getattr(self, "client", None) is not None),
+            "client_import_ok": bool(genai is not None),
+            "has_api_key": has_key,
+            "client_ready": client_ready,
             "import_error": IMPORT_ERROR if "IMPORT_ERROR" in globals() else None,
             "fast_model": getattr(self, "fast_model", None),
             "strong_model": getattr(self, "strong_model", None),
