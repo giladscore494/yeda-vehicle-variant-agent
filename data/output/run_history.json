@@ -1,1 +1,140 @@
-[]
+[
+  {
+    "run_id": "50c1be45-2e3f-4e35-846e-d876accece16",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla"
+    },
+    "started_at": "2026-05-08T11:40:14.031298+00:00",
+    "finished_at": "2026-05-08T11:40:14.059035+00:00",
+    "execution_mode": "gemini",
+    "status": "completed",
+    "model_mode": "fast",
+    "discovery_model_used": "gemini-3-flash-preview",
+    "verification_model_used": "gemini-3-flash-preview",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "sources_required_min": 2,
+    "gemini_attempted": true,
+    "gemini_error": null,
+    "grounding_requested": true,
+    "search_queries": [
+      "q"
+    ],
+    "sources_found": 2,
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 1,
+    "conflict_count": 0,
+    "unresolved_count": 0,
+    "blocked_fields": [
+      "drivetrain"
+    ],
+    "final_decision": {
+      "classification": "partial"
+    },
+    "field_verifications": {
+      "drivetrain": {
+        "value": "FWD",
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "Model inference without source was downgraded to unknown."
+      }
+    }
+  },
+  {
+    "run_id": "811d14a3-becb-44b6-801d-aa3563e33764",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla"
+    },
+    "started_at": "2026-05-08T11:40:14.061140+00:00",
+    "finished_at": "2026-05-08T11:40:14.076162+00:00",
+    "execution_mode": "gemini",
+    "status": "completed",
+    "model_mode": "strong",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "escalated_to_strong": false,
+    "escalation_reason": null,
+    "sources_required_min": 2,
+    "gemini_attempted": true,
+    "gemini_error": null,
+    "grounding_requested": true,
+    "search_queries": [
+      "q"
+    ],
+    "sources_found": 2,
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 1,
+    "conflict_count": 0,
+    "unresolved_count": 0,
+    "blocked_fields": [
+      "drivetrain"
+    ],
+    "final_decision": {
+      "classification": "partial"
+    },
+    "field_verifications": {
+      "drivetrain": {
+        "value": "FWD",
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "Model inference without source was downgraded to unknown."
+      }
+    }
+  },
+  {
+    "run_id": "cb3284f4-056b-4a4d-a3cc-39d1bdac45e7",
+    "input": {
+      "make": "Toyota",
+      "model": "Corolla"
+    },
+    "started_at": "2026-05-08T11:40:14.078248+00:00",
+    "finished_at": "2026-05-08T11:40:14.092958+00:00",
+    "execution_mode": "gemini",
+    "status": "completed",
+    "model_mode": "auto",
+    "discovery_model_used": "gemini-3-pro-preview",
+    "verification_model_used": "gemini-3-pro-preview",
+    "escalated_to_strong": true,
+    "escalation_reason": "sources_found < 2",
+    "sources_required_min": 2,
+    "gemini_attempted": true,
+    "gemini_error": null,
+    "grounding_requested": true,
+    "search_queries": [
+      "q"
+    ],
+    "sources_found": 1,
+    "variants_created": 1,
+    "verified_count": 0,
+    "partial_count": 1,
+    "conflict_count": 0,
+    "unresolved_count": 0,
+    "blocked_fields": [
+      "drivetrain"
+    ],
+    "final_decision": {
+      "classification": "partial"
+    },
+    "field_verifications": {
+      "drivetrain": {
+        "value": "FWD",
+        "status": "unknown",
+        "confidence": "low",
+        "sources_count": 0,
+        "source_ids": [],
+        "used_in_compare": false,
+        "reason": "Model inference without source was downgraded to unknown."
+      }
+    }
+  }
+]

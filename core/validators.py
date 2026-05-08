@@ -1,7 +1,7 @@
 from core.schemas import VehicleVariant, VerificationStatus, BodyType
 
 
-CRITICAL_FIELDS = ("body_type", "seats", "fuel_type", "engine", "transmission")
+CRITICAL_FIELDS = ("body_type", "seats", "fuel_type", "engine", "transmission", "drivetrain")
 ALL_FIELDS = ("body_type", "seats", "engine", "transmission", "fuel_type", "drivetrain")
 
 
@@ -72,10 +72,14 @@ def classify_variant(variant: VehicleVariant) -> str:
             )
         )
 
+    # critical verified fields should generally have >=2 sources unless official source exception is encoded in reason
     if verified_ready:
         per_field_valid = True
         for f in fields.values():
             if f.status == VerificationStatus.verified and f.sources_count < 1:
+                per_field_valid = False
+                break
+            if f.status == VerificationStatus.verified and f.sources_count < 2 and (not (f.reason or "").lower().find("official") >= 0):
                 per_field_valid = False
                 break
             if f.status in {

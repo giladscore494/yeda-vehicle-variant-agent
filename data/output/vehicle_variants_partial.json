@@ -1,1 +1,86 @@
-[]
+[
+  {
+    "variant_id": "toyota_corolla_1992_2026_il_1_6_turbo_automatic_suv",
+    "make": "Toyota",
+    "model": "Corolla",
+    "aliases": [],
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "generation": "QL",
+    "body_type": {
+      "value": "suv",
+      "status": "verified",
+      "confidence": "high",
+      "sources_count": 1,
+      "source_ids": [
+        "source_mock_kia_sportage"
+      ],
+      "used_in_compare": true,
+      "reason": "mock"
+    },
+    "seats": {
+      "value": 5,
+      "status": "verified",
+      "confidence": "high",
+      "sources_count": 1,
+      "source_ids": [
+        "source_mock_kia_sportage"
+      ],
+      "used_in_compare": true,
+      "reason": "mock"
+    },
+    "engine": {
+      "value": "1.6 Turbo",
+      "status": "partial",
+      "confidence": "medium",
+      "sources_count": 1,
+      "source_ids": [
+        "source_mock_kia_sportage"
+      ],
+      "used_in_compare": true,
+      "reason": "mock"
+    },
+    "transmission": {
+      "value": "automatic",
+      "status": "partial",
+      "confidence": "medium",
+      "sources_count": 1,
+      "source_ids": [
+        "source_mock_kia_sportage"
+      ],
+      "used_in_compare": true,
+      "reason": "mock"
+    },
+    "fuel_type": {
+      "value": "petrol",
+      "status": "partial",
+      "confidence": "medium",
+      "sources_count": 1,
+      "source_ids": [
+        "source_mock_kia_sportage"
+      ],
+      "used_in_compare": true,
+      "reason": "mock"
+    },
+    "drivetrain": {
+      "value": "FWD",
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "Model inference without source was downgraded to unknown."
+    },
+    "trim": null,
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "medium",
+    "sources_count": 1,
+    "created_at": "2026-05-08T11:40:14.092111+00:00",
+    "updated_at": "2026-05-08T11:40:14.092121+00:00",
+    "notes": [
+      "mock mode"
+    ]
+  }
+]

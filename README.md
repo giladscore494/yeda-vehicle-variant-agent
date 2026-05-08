@@ -49,3 +49,21 @@ Open the **Export** tab, click **Download Yeda Rechev Export JSON**, and copy th
 
 ## 10. Warning
 Gemini is not source of truth. Review data before production. Only verified fields should enter compare scoring.
+
+## Model modes
+- Fast / Flash: discovery + verification use `GEMINI_MODEL_FAST`.
+- Strong / Pro: discovery + verification use `GEMINI_MODEL_STRONG`.
+- Auto escalation (default): starts with fast and escalates to strong when quality gates fail.
+
+## Minimum source policy
+- Critical fields should attempt at least 2 independent sources.
+- One source generally means `partial` (unless official/importer-level direct support).
+- No source means `unknown`.
+- Inferred/assumed/likely/estimated/common/typical/guessed statuses are downgraded to `unknown`.
+
+## Streamlit secrets
+```toml
+GEMINI_API_KEY = "..."
+GEMINI_MODEL_FAST = "gemini-3-flash-preview"
+GEMINI_MODEL_STRONG = "gemini-3-pro-preview"
+```
