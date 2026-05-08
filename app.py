@@ -118,6 +118,11 @@ with tabs[1]:
         st.json(r)
         with st.expander("Trace JSON"):
             st.json(r.get("trace", {}))
+        with st.expander("Raw Discovery JSON"):
+            trace_json = r.get('trace', {})
+            st.json(trace_json.get('discovery_parsed_json_debug'))
+            if trace_json.get('discovery_raw_text'):
+                st.code(trace_json.get('discovery_raw_text'))
 
 with tabs[2]:
     st.caption("No run-all button by design.")
