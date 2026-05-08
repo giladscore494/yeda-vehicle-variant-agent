@@ -46,9 +46,30 @@ def _candidate_value_or_unknown(candidate, key):
 
 
 def _merge_field(candidate_value, verified_entry):
-    if isinstance(verified_entry, dict) and verified_entry.get('value') is not None:
-        return verified_entry
-    if candidate_value not in [None, '']:
+    has_candidate = candidate_value not in [None, '']
+    if isinstance(verified_entry, dict):
+        status = verified_entry.get('status', 'unknown')
+        has_verified_value = verified_entry.get('value') is not None
+        # Preserve explicit verified/partial/conflict values as-is.
+        if has_verified_value and status in {'verified', 'partial', 'conflict'}:
+            return verified_entry
+        # If verifier returned unknown/unverified (or omitted value), preserve candidate when available.
+        if has_candidate and status in {'unknown', 'unverified', 'partial', 'verified', 'conflict'}:
+            preserved = dict(verified_entry)
+            preserved.update({
+                'value': candidate_value,
+                'used_in_compare': False,
+            })
+            if status in {'unknown', 'unverified'} or not has_verified_value:
+                preserved.update({
+                    'status': 'unverified',
+                    'confidence': 'low',
+                    'sources_count': 0,
+                    'source_ids': [],
+                    'reason': 'Candidate value preserved from discovery but not verified.',
+                })
+            return preserved
+    if has_candidate:
         return {
             'value': candidate_value,
             'status': 'unverified',
@@ -56,7 +77,7 @@ def _merge_field(candidate_value, verified_entry):
             'sources_count': 0,
             'source_ids': [],
             'used_in_compare': False,
-            'reason': 'Candidate value from discovery was not verified.',
+            'reason': 'Candidate value preserved from discovery but not verified.',
         }
     return _unknown_default('Field omitted; defaulted to unknown.')
 
@@ -119,11 +140,14 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     mapping_mode = 'candidate_index' if mapping else ('order_fallback' if vv else 'failed')
 
     built = []
+    dedupe_keys = []
     for i, c in enumerate(candidates):
         item = mapping.get(i) if mapping_mode == 'candidate_index' else (vv[i] if i < len(vv) else {})
         fv = (item.get('field_verifications') or {}) if isinstance(item, dict) else {}
         merged = {k: _merge_field(_candidate_value_or_unknown(c, k), fv.get(k)) for k in CRITICAL_FIELDS}
         identity_conf = 'verified' if any((merged[k].get('sources_count', 0) or 0) > 0 for k in ('engine', 'transmission', 'body_type', 'fuel_type')) else ('candidate_unverified' if any(c.get(k) for k in ('engine', 'transmission', 'body_type', 'fuel_type', 'generation')) else 'unknown')
+        key_parts = (make, model, c.get('year_start') or ys, c.get('year_end') or ye, market, c.get('generation') or '', c.get('engine') or '', c.get('transmission') or '', c.get('fuel_type') or '', c.get('body_type') or '')
+        dedupe_keys.append('|'.join(str(x) for x in key_parts))
         var = VehicleVariant(
             variant_id=generate_variant_id(make, model, c.get('year_start') or ys, c.get('year_end') or ye, market, c.get('generation'), c.get('engine'), c.get('transmission'), c.get('body_type'), c.get('fuel_type')),
             make=make, model=model, aliases=[], year_start=c.get('year_start') or ys, year_end=c.get('year_end') or ye, market=Market(market), generation=str(c.get('generation') or ''),
@@ -152,6 +176,7 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         'verification_mapping_mode': mapping_mode, 'verification_items_received': len(vv), 'candidates_verified_count': len([x for x in built if x]),
         'candidate_variants_count': len(candidates), 'variants_built_before_dedupe': len(built), 'variants_after_dedupe': len(unique),
         'variants_created': len(unique), 'raw_candidate_values_preserved': True,
+        'dedupe_keys_used': dedupe_keys,
         'field_verifications': field_verifications,
         'final_decision': {'classification': 'partial', 'reason': 'Candidate values preserved but not sufficiently verified.', 'possible_under_split': (ye-ys)>8 and len(unique)==1},
         'stopped_by_call_limit': trace['gemini_calls_count'] > max_gemini_calls_per_model_run or trace['grounded_calls_count'] > max_grounded_calls_per_model_run,
