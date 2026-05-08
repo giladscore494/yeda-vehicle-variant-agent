@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone
 import copy
 import uuid
+from threading import Lock
 from typing import Callable
 from urllib.parse import quote
 
@@ -33,6 +34,7 @@ _LAST_CANONICAL_UPDATE_ATTEMPT = {
     "previous_processed_count": 0,
     "candidate_source": None,
 }
+_LAST_CANONICAL_UPDATE_ATTEMPT_LOCK = Lock()
 
 
 def _set_last_canonical_update_attempt(
@@ -41,21 +43,23 @@ def _set_last_canonical_update_attempt(
     candidate_source: str | None = None,
 ):
     result = validate_result if isinstance(validate_result, dict) else {}
-    _LAST_CANONICAL_UPDATE_ATTEMPT.update(
-        {
-            "failed": bool(failed),
-            "guard_issues": list(result.get("issues") or []),
-            "candidate_variant_count": int(result.get("candidate_variant_count", 0) or 0),
-            "previous_variant_count": int(result.get("previous_variant_count", 0) or 0),
-            "candidate_processed_count": int(result.get("candidate_processed_count", 0) or 0),
-            "previous_processed_count": int(result.get("previous_processed_count", 0) or 0),
-            "candidate_source": candidate_source or result.get("candidate_source"),
-        }
-    )
+    with _LAST_CANONICAL_UPDATE_ATTEMPT_LOCK:
+        _LAST_CANONICAL_UPDATE_ATTEMPT.update(
+            {
+                "failed": bool(failed),
+                "guard_issues": list(result.get("issues") or []),
+                "candidate_variant_count": int(result.get("candidate_variant_count", 0) or 0),
+                "previous_variant_count": int(result.get("previous_variant_count", 0) or 0),
+                "candidate_processed_count": int(result.get("candidate_processed_count", 0) or 0),
+                "previous_processed_count": int(result.get("previous_processed_count", 0) or 0),
+                "candidate_source": candidate_source or result.get("candidate_source"),
+            }
+        )
 
 
 def get_last_canonical_update_attempt() -> dict:
-    return copy.deepcopy(_LAST_CANONICAL_UPDATE_ATTEMPT)
+    with _LAST_CANONICAL_UPDATE_ATTEMPT_LOCK:
+        return copy.deepcopy(_LAST_CANONICAL_UPDATE_ATTEMPT)
 
 
 def _token_prefix_type(token: str | None) -> str:
@@ -1280,7 +1284,9 @@ def validate_canonical_update(previous_package: dict | None, candidate_package: 
     candidate_processed_count = len(candidate_processed)
     previous_processed_count = len(previous_processed)
     next_seed_is_processed = bool(candidate_next_seed and candidate_next_seed in set(candidate_processed))
-    last_completed_moved_backward = _seed_index(candidate_last_completed, ordered_seed_ids) < _seed_index(previous_last_completed, ordered_seed_ids)
+    candidate_last_idx = _seed_index(candidate_last_completed, ordered_seed_ids)
+    previous_last_idx = _seed_index(previous_last_completed, ordered_seed_ids)
+    last_completed_moved_backward = bool(candidate_last_idx >= 0 and previous_last_idx >= 0 and candidate_last_idx < previous_last_idx)
     duplicate_variant_ids = _duplicate_variant_ids(candidate_variants)
     mock_hits = sorted(
         {
@@ -1292,7 +1298,7 @@ def validate_canonical_update(previous_package: dict | None, candidate_package: 
     if not mock_hits and _contains_mock_payload(candidate_variants):
         mock_hits = ["<non_id_mock_variant>"]
     quality_gate = candidate_acc.get("quality_gate", {}) if isinstance(candidate_acc, dict) else {}
-    quality_gate_passed = bool(not isinstance(quality_gate, dict) or not quality_gate or quality_gate.get("passed", False))
+    quality_gate_passed = not (isinstance(quality_gate, dict) and quality_gate and not quality_gate.get("passed", False))
 
     if candidate_variant_count < previous_variant_count:
         issues.append("candidate_variant_count < previous_variant_count")

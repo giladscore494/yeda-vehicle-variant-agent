@@ -107,6 +107,25 @@ def is_malformed_run_record(record):
     return not isinstance(record, dict) or "status" not in record
 
 
+def _extract_resume_variants_for_ui(payload):
+    if not isinstance(payload, dict):
+        return []
+    variants = []
+    accumulated = payload.get("accumulated_clean_export")
+    final_export = payload.get("final_export")
+    buckets = [
+        accumulated.get("variants") if isinstance(accumulated, dict) else None,
+        final_export.get("variants") if isinstance(final_export, dict) else None,
+        payload.get("variants"),
+        payload.get("verified_variants"),
+        payload.get("partial_variants"),
+    ]
+    for bucket in buckets:
+        if isinstance(bucket, list):
+            variants.extend([v for v in bucket if isinstance(v, dict)])
+    return variants
+
+
 st.sidebar.header("Settings")
 try:
     cfg = client.get_config_status()
@@ -242,19 +261,14 @@ with tabs[2]:
     st.caption("No run-all button by design.")
     continue_guard = evaluate_continue_guard(market=market)
     local_checkpoint = load_local_canonical_resume_package() or {}
-    local_checkpoint_variants = []
-    if isinstance(local_checkpoint, dict):
-        local_checkpoint_variants = (
-            (((local_checkpoint.get("accumulated_clean_export") or {}).get("variants")) if isinstance(local_checkpoint.get("accumulated_clean_export"), dict) else None)
-            or local_checkpoint.get("variants")
-            or []
-        )
+    local_checkpoint_variants = _extract_resume_variants_for_ui(local_checkpoint)
     local_checkpoint_state = local_checkpoint.get("batch_state", {}) if isinstance(local_checkpoint.get("batch_state"), dict) else {}
     checkpoint_source = "Local canonical" if isinstance(local_checkpoint, dict) and local_checkpoint else "Missing"
     if st.session_state.get("last_import_source"):
         checkpoint_source = st.session_state.get("last_import_source")
     total_seed_count = int(continue_guard.get("total_seed_count", 0) or 0)
-    processed_seed_count = int(continue_guard.get("processed_seed_count", len(local_checkpoint_state.get("processed_seed_ids", []) if isinstance(local_checkpoint_state.get("processed_seed_ids"), list) else []) or 0) or 0)
+    local_processed_seed_ids = local_checkpoint_state.get("processed_seed_ids", []) if isinstance(local_checkpoint_state.get("processed_seed_ids"), list) else []
+    processed_seed_count = int(continue_guard.get("processed_seed_count", len(local_processed_seed_ids)) or 0)
     stopped_at = local_checkpoint_state.get("last_completed_seed_id")
     next_seed_checkpoint = local_checkpoint_state.get("next_seed_id")
     checkpoint_status = "Ready" if continue_guard.get("passed") else "Blocked"
@@ -312,16 +326,7 @@ with tabs[2]:
         payload = json.loads(uploaded.read().decode("utf-8"))
         st.session_state["uploaded_resume_package_payload"] = payload
         detected = detect_import_file_type(payload)
-        variants_found = 0
-        if isinstance(payload, dict):
-            if isinstance((payload.get("accumulated_clean_export") or {}).get("variants"), list):
-                variants_found = len(payload.get("accumulated_clean_export", {}).get("variants", []))
-            elif isinstance((payload.get("final_export") or {}).get("variants"), list):
-                variants_found = len(payload.get("final_export", {}).get("variants", []))
-            elif isinstance(payload.get("variants"), list):
-                variants_found = len(payload.get("variants", []))
-            elif isinstance(payload.get("verified_variants"), list) or isinstance(payload.get("partial_variants"), list):
-                variants_found = len(payload.get("verified_variants", []) if isinstance(payload.get("verified_variants"), list) else []) + len(payload.get("partial_variants", []) if isinstance(payload.get("partial_variants"), list) else [])
+        variants_found = len(_extract_resume_variants_for_ui(payload))
         st.write({"detected_file_type": detected, "variants_found": variants_found})
     import_col1, import_col2, import_col3, import_col4, import_col5 = st.columns(5)
     if import_col1.button("Import into Batch Runner"):
