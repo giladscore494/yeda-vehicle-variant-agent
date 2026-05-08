@@ -1,4 +1,5 @@
 import json
+import logging
 try:
     import streamlit as st
 except Exception as exc:
@@ -8,7 +9,7 @@ from storage.json_store import ensure_output_files, load_outputs_summary, get_ou
 from storage.export import export_verified_for_yeda
 from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
-from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package
+from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -16,6 +17,7 @@ ensure_output_files()
 client = GeminiClient()
 paths = get_output_paths()
 summary = load_outputs_summary()
+logger = logging.getLogger(__name__)
 
 
 def is_malformed_run_record(record):
@@ -399,6 +401,54 @@ with tabs[7]:
             st.write({"guard_issues": integrity.get("guard_issues")})
         else:
             st.success("Canonical integrity check passed.")
+    st.subheader("Canonical GitHub Diagnostic")
+    canonical_diag = diagnose_canonical_github_sync()
+    diag_summary = {
+        "final_diagnosis": canonical_diag.get("final_diagnosis"),
+        "single_root_cause": canonical_diag.get("single_root_cause"),
+        "recommended_action": canonical_diag.get("recommended_action"),
+        "safe_to_continue_batch": canonical_diag.get("safe_to_continue_batch"),
+        "ruled_out_count": len(canonical_diag.get("ruled_out", [])),
+    }
+    st.json(diag_summary)
+    with st.expander("Detailed checks"):
+        st.json(canonical_diag)
+    if canonical_diag.get("single_root_cause") == "No blocking root cause detected.":
+        st.success(canonical_diag.get("final_diagnosis"))
+    elif canonical_diag.get("safe_to_continue_batch"):
+        st.warning(canonical_diag.get("final_diagnosis"))
+    else:
+        st.error(canonical_diag.get("final_diagnosis"))
+    diag_checks = canonical_diag.get("checks", {})
+    cfg_log = diag_checks.get("config", {}) or {}
+    secrets_log = diag_checks.get("secrets", {}) or {}
+    repo_log_value = "configured" if cfg_log.get("repo_value") else "missing"
+    branch_log_value = "configured" if cfg_log.get("branch_value") else "missing"
+    canonical_path_value = cfg_log.get("canonical_path_value")
+    canonical_path_log_value = "expected" if canonical_path_value == "data/canonical/resume_package_canonical.json" else ("configured" if canonical_path_value else "missing")
+    token_present_log_value = "true" if secrets_log.get("token_present") else "false"
+    local_exists_log_value = "true" if ((diag_checks.get("local_canonical", {}) or {}).get("local_exists")) else "false"
+    local_variant_count_raw = ((diag_checks.get("local_canonical", {}) or {}).get("local_variant_count"))
+    local_variant_count_log_value = int(local_variant_count_raw) if isinstance(local_variant_count_raw, int) else 0
+    repo_status_raw = ((diag_checks.get("repo_api_auth", {}) or {}).get("repo_status_code"))
+    branch_status_raw = ((diag_checks.get("branch_check", {}) or {}).get("branch_status_code"))
+    contents_status_raw = ((diag_checks.get("github_contents_check", {}) or {}).get("contents_status_code"))
+    allowed_status = {200, 401, 403, 404}
+    repo_status_log_value = int(repo_status_raw) if isinstance(repo_status_raw, int) and repo_status_raw in allowed_status else -1
+    branch_status_log_value = int(branch_status_raw) if isinstance(branch_status_raw, int) and branch_status_raw in allowed_status else -1
+    contents_status_log_value = int(contents_status_raw) if isinstance(contents_status_raw, int) and contents_status_raw in allowed_status else -1
+    logger.info(
+        "canonical_github_diag repo=%s branch=%s canonical_path=%s token_present=%s local_exists=%s local_variant_count=%s repo_status=%s branch_status=%s contents_status=%s",
+        repo_log_value,
+        branch_log_value,
+        canonical_path_log_value,
+        token_present_log_value,
+        local_exists_log_value,
+        local_variant_count_log_value,
+        repo_status_log_value,
+        branch_status_log_value,
+        contents_status_log_value,
+    )
     out_dir = get_output_paths()["run_history"].parents[0]
     for name in ["latest_batch_result.json", "batch_state.json", "run_history.json"]:
         path = out_dir / name
