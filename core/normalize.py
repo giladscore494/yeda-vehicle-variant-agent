@@ -54,3 +54,12 @@ def normalize_drivetrain(value:str|None)->str|None:
     for x in ["FWD","RWD","AWD","4WD"]:
         if x in v: return x
     return clean_text(value)
+
+
+def normalize_verification_status(value:str)->str:
+    v=clean_text(str(value or "")).lower()
+    mapping={
+        "verified":"verified","partial":"partial","conflict":"conflict","unverified":"unverified","unknown":"unknown",
+        "inferred":"unknown","assumed":"unknown","likely":"unknown","typical":"unknown","common":"unknown","estimated":"unknown","guessed":"unknown",
+    }
+    return mapping.get(v,"unknown")

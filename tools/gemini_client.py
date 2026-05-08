@@ -98,8 +98,8 @@ class GeminiClient:
         except Exception as exc:
             return None, repair_text, f"Invalid JSON returned from Gemini: {exc}"
 
-    def generate_json(self, prompt, schema_hint=None, strong=False):
-        model = self.strong_model if strong else self.fast_model
+    def generate_json(self, prompt, schema_hint=None, strong=False, model_override=None):
+        model = model_override or (self.strong_model if strong else self.fast_model)
         if not self.has_api_key():
             return self._response(model=model, grounding_requested=False, request_attempted=False, ok=False, error="GEMINI_API_KEY missing", data=None)
         if genai is None or types is None:
@@ -124,8 +124,8 @@ class GeminiClient:
         except Exception as exc:
             return self._response(model=model, grounding_requested=False, request_attempted=True, ok=False, error=f"Gemini call failed: {exc}", data=None, raw_text=None)
 
-    def grounded_generate_json(self, prompt, schema_hint=None, strong=False):
-        model = self.strong_model if strong else self.fast_model
+    def grounded_generate_json(self, prompt, schema_hint=None, strong=False, model_override=None):
+        model = model_override or (self.strong_model if strong else self.fast_model)
         if not self.has_api_key():
             return self._response(model=model, grounding_requested=True, request_attempted=False, ok=False, error="GEMINI_API_KEY missing", data=None)
         if genai is None or types is None:
