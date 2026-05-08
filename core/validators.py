@@ -99,7 +99,7 @@ def classify_variant(variant: VehicleVariant) -> str:
         fields["drivetrain"].status,
     ]
     has_partial_or_unknown = any(
-        s in {VerificationStatus.partial, VerificationStatus.inferred, VerificationStatus.unknown, VerificationStatus.unverified}
+        s in {VerificationStatus.partial, VerificationStatus.unknown, VerificationStatus.unverified}
         for s in important_statuses
     )
     if (
