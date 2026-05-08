@@ -146,6 +146,7 @@ def test_push_merged_final_export_as_canonical(monkeypatch):
             "audit": {"accumulation_counts": {"final_merged_variants": 273, "latest_batch_full_variants": 0}},
         },
     )
+    # Intentionally invalid reset-like state; candidate builder should reject it and preserve canonical progress.
     monkeypatch.setattr(batch_runner, "load_batch_state", lambda market="IL": {"processed_seed_ids": [], "next_seed_id": "abarth__124_spider__2016__2020__il"})
     monkeypatch.setattr(batch_runner, "save_local_canonical_backup", lambda package: None)
     monkeypatch.setattr(batch_runner, "save_local_canonical_resume_package", lambda package: pushed.setdefault("saved", package))
@@ -156,10 +157,14 @@ def test_push_merged_final_export_as_canonical(monkeypatch):
     monkeypatch.setattr(batch_runner, "push_canonical_resume_package", _push)
 
     result = batch_runner.persist_canonical_resume_package(push_to_github=True)
+    pushed_package = pushed.get("package") or {}
+    pushed_state = pushed_package.get("batch_state") or {}
+    pushed_export = pushed_package.get("accumulated_clean_export") or {}
 
     assert result["ok"] is True
     assert result["validate_result"]["passed"] is True
-    assert len(((pushed.get("package") or {}).get("accumulated_clean_export") or {}).get("variants", [])) == 273
-    assert len(((pushed.get("package") or {}).get("batch_state") or {}).get("processed_seed_ids", [])) == 59
-    assert (pushed.get("package") or {}).get("batch_state", {}).get("last_completed_seed_id") == "audi__rs5__2010__2026__il"
-    assert (pushed.get("package") or {}).get("batch_state", {}).get("next_seed_id") == "audi__rs6__2008__2026__il"
+    assert len(pushed_export.get("variants", [])) == 273
+    assert len(pushed_state.get("processed_seed_ids", [])) == 59
+    assert pushed_state.get("processed_seed_ids", []) != []
+    assert pushed_state.get("last_completed_seed_id") == "audi__rs5__2010__2026__il"
+    assert pushed_state.get("next_seed_id") == "audi__rs6__2008__2026__il"

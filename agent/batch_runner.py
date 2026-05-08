@@ -25,6 +25,7 @@ EXPECTED_LOCAL_LAST_COMPLETED_SEED_ID = "audi__rs5__2010__2026__il"
 EXPECTED_LOCAL_NEXT_SEED_ID = "audi__rs6__2008__2026__il"
 EXPECTED_LOCAL_MIN_VARIANTS = 263
 EXPECTED_LOCAL_MIN_PROCESSED = 59
+CANDIDATE_SOURCE_MERGED = "merged_candidate"
 _LAST_CANONICAL_UPDATE_ATTEMPT = {
     "failed": False,
     "guard_issues": [],
@@ -1246,6 +1247,10 @@ def _seed_index(seed_id: str | None, ordered_seed_ids: list[str]) -> int:
         return -1
 
 
+def next_unprocessed_seed_id(ordered_seed_ids: list[str], processed_seed_ids: set[str]) -> str | None:
+    return next((sid for sid in ordered_seed_ids if sid not in processed_seed_ids), None)
+
+
 def _contains_mock_payload(variants: list[dict]) -> bool:
     for v in variants or []:
         if is_mock_contaminated_variant(v):
@@ -1329,8 +1334,7 @@ def validate_canonical_update(previous_package: dict | None, candidate_package: 
         final_merged_count > canonical_count
         and latest_batch_full_variants > 0
         and not batch_state_advanced
-        and previous_processed_count == 0
-        and candidate_processed_count == 0
+        and str(candidate.get("_candidate_source") or "") != CANDIDATE_SOURCE_MERGED
     ):
         issues.append("candidate package has final_merged_count > canonical_count but batch_state did not advance")
 
@@ -1358,7 +1362,7 @@ def validate_canonical_resume_package_update(new_package: dict, previous_package
     return list(validate_canonical_update(previous_package, new_package, market=market).get("issues") or [])
 
 
-def _variant_counts_summary(variants: list[dict]) -> dict:
+def _compute_variant_metrics(variants: list[dict]) -> dict:
     makes = {str(v.get("make", "")).strip().lower() for v in variants if isinstance(v, dict) and v.get("make")}
     models = {
         f"{str(v.get('make', '')).strip().lower()}::{str(v.get('model', '')).strip().lower()}"
@@ -1380,7 +1384,7 @@ def build_canonical_candidate(
     previous_package: dict | None,
     merged_variants: list[dict] | None,
     new_batch_state: dict | None = None,
-    source: str = "merged_candidate",
+    source: str = CANDIDATE_SOURCE_MERGED,
 ) -> dict:
     previous = previous_package if isinstance(previous_package, dict) else {}
     candidate = copy.deepcopy(previous) if isinstance(previous, dict) else {}
@@ -1406,7 +1410,8 @@ def build_canonical_candidate(
         new_processed = list(normalized_new.get("processed_seed_ids") or [])
         new_processed_count = len(new_processed)
         new_next_seed = normalized_new.get("next_seed_id")
-        new_next_is_processed = bool(new_next_seed and new_next_seed in set(new_processed))
+        new_processed_set = set(new_processed)
+        new_next_is_processed = bool(new_next_seed and new_next_seed in new_processed_set)
 
         next_moved_backward = False
         allow_backward_from_coverage_holes = False
@@ -1414,6 +1419,7 @@ def build_canonical_candidate(
         new_next_idx = _seed_index(new_next_seed, ordered_seed_ids)
         if prev_next_idx >= 0 and new_next_idx >= 0 and new_next_idx < prev_next_idx:
             next_moved_backward = True
+            # Backward movement is allowed only when coverage holes exist before the current frontier.
             coverage = audit_coverage_until_last_completed(ordered_seeds, normalized_new, _load_outputs())
             allow_backward_from_coverage_holes = int(coverage.get("holes_count", 0) or 0) > 0
 
@@ -1425,14 +1431,16 @@ def build_canonical_candidate(
         if new_state_valid:
             selected_state = normalized_new
 
+    # Defensive fallback: never drop to an empty processed set when a previous canonical already had progress.
     if previous_processed_count > 0 and len(selected_state.get("processed_seed_ids") or []) == 0:
         selected_state = previous_normalized
 
+    selected_state = copy.deepcopy(selected_state)
     selected_processed = list(selected_state.get("processed_seed_ids") or [])
     selected_set = set(selected_processed)
     selected_next = selected_state.get("next_seed_id")
     if selected_next in selected_set:
-        selected_state["next_seed_id"] = next((sid for sid in ordered_seed_ids if sid not in selected_set), None)
+        selected_state["next_seed_id"] = next_unprocessed_seed_id(ordered_seed_ids, selected_set)
 
     candidate_acc = candidate.get("accumulated_clean_export")
     if not isinstance(candidate_acc, dict):
@@ -1441,7 +1449,7 @@ def build_canonical_candidate(
     candidate_acc["variants"] = variants
 
     counts = candidate.get("counts") if isinstance(candidate.get("counts"), dict) else {}
-    summary = _variant_counts_summary(variants)
+    summary = _compute_variant_metrics(variants)
     counts["total_variants"] = summary["total_variants"]
     counts["verified"] = summary["verified"]
     counts["partial"] = summary["partial"]
@@ -1513,7 +1521,7 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
         previous,
         merged_variants,
         new_batch_state=load_batch_state(market),
-        source="merged_candidate",
+        source=CANDIDATE_SOURCE_MERGED,
     )
     package_acc = package.get("accumulated_clean_export") if isinstance(package.get("accumulated_clean_export"), dict) else {}
     package_acc["quality_gate"] = (final_export.get("quality_gate") if isinstance(final_export, dict) else None)
@@ -1533,7 +1541,7 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
     validate_result = validate_canonical_update(previous, package, market=market)
     issues = list(validate_result.get("issues") or [])
     if issues:
-        _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source="merged_candidate")
+        _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source=CANDIDATE_SOURCE_MERGED)
         return {
             "ok": False,
             "error": "Canonical resume package update blocked: shrink or invalid state detected.",
@@ -1548,7 +1556,7 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
     if push_to_github:
         pushed = push_canonical_resume_package(package, previous_package=previous, batch_id=batch_id)
         if not pushed.get("ok"):
-            _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source="merged_candidate")
+            _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source=CANDIDATE_SOURCE_MERGED)
             return {
                 "ok": False,
                 "error": pushed.get("error") or "Failed to push canonical package to GitHub.",
@@ -1563,7 +1571,7 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
         package["merge_metadata"]["last_push_commit_sha"] = ((pushed.get("canonical") or {}).get("commit_sha"))
     if push_to_github and pushed and pushed.get("ok"):
         save_local_canonical_resume_package(package)
-    _set_last_canonical_update_attempt(failed=False, validate_result=validate_result, candidate_source="merged_candidate")
+    _set_last_canonical_update_attempt(failed=False, validate_result=validate_result, candidate_source=CANDIDATE_SOURCE_MERGED)
     return {
         "ok": True,
         "issues": [],
@@ -1663,9 +1671,7 @@ def canonical_integrity_report(market: str = "IL") -> dict:
     local_count = len(local_variants)
     github_count = len(github_variants)
     final_count = len(final_variants)
-    if not all(isinstance(v, int) for v in [local_count, github_count, final_count]):
-        sync_status = "unknown"
-    elif guards:
+    if guards:
         sync_status = "invalid_candidate"
     elif local_count == github_count == final_count:
         sync_status = "in_sync"
