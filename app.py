@@ -120,9 +120,15 @@ with tabs[1]:
             st.json(r.get("trace", {}))
         with st.expander("Raw Discovery JSON"):
             trace_json = r.get('trace', {})
-            st.json(trace_json.get('discovery_parsed_json_debug'))
+            st.write('discovery_raw_text')
             if trace_json.get('discovery_raw_text'):
                 st.code(trace_json.get('discovery_raw_text'))
+            st.write('discovery_parse_error', trace_json.get('discovery_parse_error'))
+            st.write('discovery_parsed_top_level_keys', trace_json.get('discovery_parsed_top_level_keys'))
+            st.write('discovery_parsed_json_debug')
+            st.json(trace_json.get('discovery_parsed_json_debug'))
+            if trace_json.get('discovery_raw_text') and not trace_json.get('discovery_parsed_json_debug'):
+                st.error('Raw Gemini text exists but parsed JSON is empty. Parser bug or invalid JSON.')
 
 with tabs[2]:
     st.caption("No run-all button by design.")
