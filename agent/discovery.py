@@ -3,13 +3,13 @@ from tools.gemini_client import GeminiClient, parse_json_from_gemini_text
 
 NORMALIZED_KEYS = [
     "year_start", "year_end", "generation", "body_type", "seats",
-    "engine", "transmission", "fuel_type", "drivetrain", "trim", "source_urls", "field_sources", "notes"
+    "engine", "transmission", "fuel_type", "drivetrain", "trim", "source_ids", "field_sources"
 ]
 
 
 def _inherit_variant_data(variant, parent):
     merged = dict(variant if isinstance(variant, dict) else {})
-    for key in ("generation", "year_start", "year_end", "source_urls"):
+    for key in ("generation", "year_start", "year_end", "source_ids"):
         if merged.get(key) in (None, "") and isinstance(parent, dict) and parent.get(key) not in (None, ""):
             merged[key] = parent.get(key)
     return merged
@@ -22,7 +22,7 @@ def _normalize_candidate(candidate):
         if dst not in cand and src in cand:
             cand[dst] = cand[src]
     for key in NORMALIZED_KEYS:
-        cand.setdefault(key, None if key not in {"source_urls", "notes"} else [])
+        cand.setdefault(key, None if key not in {"source_ids"} else [])
     cand["field_sources"] = cand.get("field_sources") if isinstance(cand.get("field_sources"), dict) else {}
     return cand
 
@@ -61,6 +61,38 @@ def extract_candidate_variants(parsed_json):
     return [], "none", "no candidate list found in known paths", 0
 
 
+def _salvage_candidates_from_raw(raw_text: str):
+    if not raw_text or '"candidate_variants"' not in raw_text:
+        return None
+    try:
+        left = raw_text.split('"candidate_variants"', 1)[1]
+        start = left.find('[')
+        end = left.rfind(']')
+        if start == -1 or end == -1 or end <= start:
+            return None
+        arr = left[start:end+1]
+        decoder = __import__('json').JSONDecoder()
+        idx = 0
+        complete = []
+        while idx < len(arr):
+            while idx < len(arr) and arr[idx] in ' [\n\t,':
+                idx += 1
+            if idx >= len(arr) or arr[idx] == ']':
+                break
+            try:
+                obj, next_idx = decoder.raw_decode(arr, idx)
+                if isinstance(obj, dict):
+                    complete.append(_normalize_candidate(obj))
+                idx = next_idx
+            except Exception:
+                break
+        if complete:
+            return {"candidate_variants": complete, "sources": []}, True
+    except Exception:
+        return None
+    return None
+
+
 def run_discovery(seed, market='IL', model_name=None) -> dict:
     prompt = build_discovery_prompt(seed, market)
     res = GeminiClient().grounded_generate_json(prompt=prompt, model_override=model_name)
@@ -74,6 +106,13 @@ def run_discovery(seed, market='IL', model_name=None) -> dict:
     if payload is None and res.get('raw_text'):
         payload, fallback_error = parse_json_from_gemini_text(res.get('raw_text'))
         parse_error = parse_error or fallback_error
+    salvage_used = False
+    dropped_incomplete = False
+    if payload is None and res.get('raw_text'):
+        salvaged = _salvage_candidates_from_raw(res.get('raw_text'))
+        if salvaged:
+            payload, dropped_incomplete = salvaged
+            salvage_used = True
 
     if payload is None:
         return {
@@ -85,7 +124,7 @@ def run_discovery(seed, market='IL', model_name=None) -> dict:
                 'error': res.get('error'), 'raw_text': res.get('raw_text'), 'parsed_json': None, 'parse_error': parse_error,
                 'discovery_raw_text_debug_available': bool(res.get('raw_text')), 'discovery_parsed_top_level_keys': [],
                 'candidate_extraction_path': 'none', 'candidate_extraction_warning': 'parse_failed',
-                'raw_candidates_count_before_normalization': 0, 'candidate_variants_count_after_extraction': 0,
+                'raw_candidates_count_before_normalization': 0, 'candidate_variants_count_after_extraction': 0, 'json_salvage_used': salvage_used, 'dropped_incomplete_candidate': dropped_incomplete,
             }
         }
 
@@ -100,7 +139,8 @@ def run_discovery(seed, market='IL', model_name=None) -> dict:
     return {'ok': True, 'data': data, 'error': None, 'gemini_metadata': {
         'model': res.get('model'), 'grounding_requested': bool(res.get('grounding_requested', True)), 'request_attempted': bool(res.get('request_attempted', True)),
         'error': res.get('error'), 'raw_text': res.get('raw_text'), 'parsed_json': payload, 'parse_error': parse_error,
+        'parse_error_original': res.get('parse_error_original'), 'repair_attempted': bool(res.get('repair_attempted', False)), 'repair_success': bool(res.get('repair_success', False)), 'repaired_raw_text': res.get('repaired_raw_text'),
         'discovery_raw_text_debug_available': bool(res.get('raw_text')), 'discovery_parsed_top_level_keys': top_level_keys,
         'candidate_extraction_path': extraction_path, 'candidate_extraction_warning': extraction_warning,
-        'raw_candidates_count_before_normalization': raw_count, 'candidate_variants_count_after_extraction': len(extracted),
+        'raw_candidates_count_before_normalization': raw_count, 'candidate_variants_count_after_extraction': len(extracted), 'json_salvage_used': salvage_used, 'dropped_incomplete_candidate': dropped_incomplete,
     }}

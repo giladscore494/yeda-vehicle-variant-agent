@@ -2,6 +2,8 @@ import json
 import os
 from typing import Any
 
+REPAIR_PROMPT = "Repair this malformed JSON into valid compact JSON. Do not add new facts. Do not infer. Preserve only complete candidate_variants and sources. If the last object is incomplete, drop that incomplete object. Return JSON only."
+
 try:
     import streamlit as st
 except Exception:
@@ -111,7 +113,7 @@ class GeminiClient:
             "grounding_supported": True,
         }
 
-    def _response(self, *, model: str, grounding_requested: bool, request_attempted: bool, ok: bool, error: str = None, data: Any = None, raw_text: str = None, parsed_json: Any = None, parse_error: str = None):
+    def _response(self, *, model: str, grounding_requested: bool, request_attempted: bool, ok: bool, error: str = None, data: Any = None, raw_text: str = None, parsed_json: Any = None, parse_error: str = None, parse_error_original: str = None, repair_attempted: bool = False, repair_success: bool = False, repaired_raw_text: str = None, json_salvage_used: bool = False, dropped_incomplete_candidate: bool = False):
         return {
             "ok": ok,
             "provider": "gemini",
@@ -123,6 +125,12 @@ class GeminiClient:
             "raw_text": raw_text,
             "parsed_json": parsed_json,
             "parse_error": parse_error,
+            "parse_error_original": parse_error_original,
+            "repair_attempted": repair_attempted,
+            "repair_success": repair_success,
+            "repaired_raw_text": repaired_raw_text,
+            "json_salvage_used": json_salvage_used,
+            "dropped_incomplete_candidate": dropped_incomplete_candidate,
         }
 
     def _validate_ready(self, model: str, grounding_requested: bool):
@@ -134,6 +142,20 @@ class GeminiClient:
             return self._response(model=model, grounding_requested=grounding_requested, request_attempted=False, ok=False, error="Gemini client not initialized")
         return None
 
+
+
+    def _attempt_repair_json(self, raw_text: str):
+        try:
+            response = self.client.models.generate_content(
+                model=self.strong_model,
+                contents=f"{REPAIR_PROMPT}\n\nMalformed JSON:\n{raw_text}",
+                config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.0),
+            )
+            repaired_raw_text = getattr(response, "text", "") or ""
+            repaired_json, repaired_err = parse_json_from_gemini_text(repaired_raw_text)
+            return repaired_json, repaired_err, repaired_raw_text
+        except Exception as exc:
+            return None, f"repair call failed: {exc}", None
     def generate_json(self, prompt, schema_hint=None, strong=False, model_override=None):
         model = model_override or (self.strong_model if strong else self.fast_model)
         invalid = self._validate_ready(model, False)
@@ -143,8 +165,16 @@ class GeminiClient:
             response = self.client.models.generate_content(model=model, contents=prompt, config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.1))
             raw_text = getattr(response, "text", "") or ""
             parsed_json, parse_error = parse_json_from_gemini_text(raw_text)
+            parse_error_original = parse_error
+            repair_attempted = False
+            repair_success = False
+            repaired_raw_text = None
+            if parsed_json is None and parse_error is not None:
+                repair_attempted = True
+                parsed_json, parse_error, repaired_raw_text = self._attempt_repair_json(raw_text)
+                repair_success = parsed_json is not None and parse_error is None
             ok = parsed_json is not None and parse_error is None
-            return self._response(model=model, grounding_requested=False, request_attempted=True, ok=ok, error=(None if ok else parse_error), data=(parsed_json if ok else None), raw_text=raw_text, parsed_json=(parsed_json if ok else None), parse_error=(None if ok else parse_error))
+            return self._response(model=model, grounding_requested=False, request_attempted=True, ok=ok, error=(None if ok else parse_error_original), data=(parsed_json if ok else None), raw_text=raw_text, parsed_json=(parsed_json if ok else None), parse_error=(None if ok else parse_error_original), parse_error_original=parse_error_original, repair_attempted=repair_attempted, repair_success=repair_success, repaired_raw_text=repaired_raw_text)
         except Exception as exc:
             return self._response(model=model, grounding_requested=False, request_attempted=True, ok=False, error=f"Gemini call failed: {exc}")
 
@@ -158,7 +188,15 @@ class GeminiClient:
             response = self.client.models.generate_content(model=model, contents=prompt, config=config)
             raw_text = getattr(response, "text", "") or ""
             parsed_json, parse_error = parse_json_from_gemini_text(raw_text)
+            parse_error_original = parse_error
+            repair_attempted = False
+            repair_success = False
+            repaired_raw_text = None
+            if parsed_json is None and parse_error is not None:
+                repair_attempted = True
+                parsed_json, parse_error, repaired_raw_text = self._attempt_repair_json(raw_text)
+                repair_success = parsed_json is not None and parse_error is None
             ok = parsed_json is not None and parse_error is None
-            return self._response(model=model, grounding_requested=True, request_attempted=True, ok=ok, error=(None if ok else parse_error), data=(parsed_json if ok else None), raw_text=raw_text, parsed_json=(parsed_json if ok else None), parse_error=(None if ok else parse_error))
+            return self._response(model=model, grounding_requested=True, request_attempted=True, ok=ok, error=(None if ok else parse_error_original), data=(parsed_json if ok else None), raw_text=raw_text, parsed_json=(parsed_json if ok else None), parse_error=(None if ok else parse_error_original), parse_error_original=parse_error_original, repair_attempted=repair_attempted, repair_success=repair_success, repaired_raw_text=repaired_raw_text)
         except Exception as exc:
             return self._response(model=model, grounding_requested=True, request_attempted=True, ok=False, error=f"Gemini grounding/search call failed: {exc}")
