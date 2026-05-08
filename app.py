@@ -309,7 +309,8 @@ with tabs[2]:
     include_failed_ui = st.checkbox("Include failed retries", value=False)
     use_cache_ui = st.checkbox("Use cache (batch)", value=True)
     force_refresh_ui = st.checkbox("Force refresh (batch)", value=False)
-    auto_push_canonical_ui = st.checkbox("Enable auto-push after successful batch", value=False)
+    st.info("Local canonical is saved automatically after every successful batch. GitHub push is optional.")
+    auto_push_canonical_ui = st.checkbox("Also push canonical to GitHub after successful batch", value=False)
     make_filter_ui = st.selectbox("Make filter (optional)", [""] + get_makes(), key='batch_make_filter_ui')
 
     current_seed_text = st.empty()
@@ -435,9 +436,13 @@ with tabs[2]:
         canonical_persist = result.get("canonical_persist")
         if isinstance(canonical_persist, dict):
             if canonical_persist.get("ok"):
-                st.success("Canonical resume package updated and pushed.")
+                pushed_to_github = isinstance(canonical_persist.get("push_result"), dict) and canonical_persist["push_result"].get("ok")
+                if pushed_to_github:
+                    st.success("Local canonical saved and pushed to GitHub.")
+                else:
+                    st.success("Local canonical saved automatically.")
             else:
-                st.error("Canonical resume package update blocked")
+                st.error("Canonical resume package update blocked — local file was NOT updated.")
                 st.json(canonical_persist.get("validate_result") or canonical_persist)
 
     if st.button("Retry failed only"):

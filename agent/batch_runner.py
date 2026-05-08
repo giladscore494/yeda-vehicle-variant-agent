@@ -1248,8 +1248,8 @@ def run_next_batch(limit=5, market="IL", make_filter=None, force_refresh=False, 
     payload = {"batch": {"batch_id": batch_id, "started_at": _now(), "requested_limit": limit, "processed": len(results), "batch_mode": batch_mode}, "results": results, "coverage_audit_after_batch": coverage_after}
     save_json(latest_batch_path, payload)
     canonical_result = None
-    if auto_push_canonical and len(results) > 0:
-        canonical_result = persist_canonical_resume_package(batch_id=batch_id, push_to_github=True, market=market)
+    if len(results) > 0:
+        canonical_result = persist_canonical_resume_package(batch_id=batch_id, push_to_github=auto_push_canonical, market=market)
     return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result}
 
 
