@@ -13,5 +13,5 @@ def test_ordered_seed_list_deterministic():
 
 def test_build_final_export_shape():
     payload = build_final_export(include_partial=True, include_verified=True)
-    assert payload["schema_version"] == "vehicle_variants_final_v1"
+    assert payload["schema_version"] == "vehicle_variants_final_v2"
     assert "variants" in payload and isinstance(payload["variants"], list)
