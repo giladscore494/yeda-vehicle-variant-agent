@@ -8,7 +8,7 @@ from storage.json_store import ensure_output_files, load_outputs_summary, get_ou
 from storage.export import export_verified_for_yeda
 from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
-from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors
+from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -171,6 +171,7 @@ with tabs[2]:
     include_failed_ui = st.checkbox("Include failed retries", value=False)
     use_cache_ui = st.checkbox("Use cache (batch)", value=True)
     force_refresh_ui = st.checkbox("Force refresh (batch)", value=False)
+    auto_push_canonical_ui = st.checkbox("Enable auto-push after successful batch", value=False)
     make_filter_ui = st.selectbox("Make filter (optional)", [""] + get_makes(), key='batch_make_filter_ui')
 
     current_seed_text = st.empty()
@@ -186,12 +187,18 @@ with tabs[2]:
         results_placeholder.dataframe(pd.DataFrame(run_rows) if run_rows else pd.DataFrame())
 
     if st.button("Run next batch"):
-        result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=resume_ui, include_failed=include_failed_ui, progress_callback=_on_progress)
+        result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=resume_ui, include_failed=include_failed_ui, progress_callback=_on_progress, auto_push_canonical=auto_push_canonical_ui)
         for item in result.get("results", []):
             seed=item.get("seed", {}); r=item.get("result", {})
             run_rows.append({"make":seed.get("make"), "model":seed.get("model"), "status":r.get("status"), "variants":r.get("variants_created",0)})
         results_placeholder.dataframe(pd.DataFrame(run_rows) if run_rows else pd.DataFrame())
         st.json(result)
+        canonical_persist = result.get("canonical_persist")
+        if isinstance(canonical_persist, dict):
+            if canonical_persist.get("ok"):
+                st.success("Canonical resume package updated and pushed.")
+            else:
+                st.error("Canonical resume package update blocked: shrink or invalid state detected.")
 
     if st.button("Retry failed only"):
         st.json(run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=True))
@@ -202,6 +209,7 @@ with tabs[2]:
     confirm_import = st.checkbox("I confirm importing this progress file", value=False)
     if uploaded is not None:
         payload = json.loads(uploaded.read().decode("utf-8"))
+        st.session_state["uploaded_resume_package_payload"] = payload
         detected = detect_import_file_type(payload)
         meta={"detected_file_type": detected, "schema_version": payload.get("schema_version") if isinstance(payload, dict) else None}
         if detected == "resume_package" and isinstance(payload, dict):
@@ -271,7 +279,19 @@ with tabs[7]:
     if "clean_final_payload" not in st.session_state:
         st.session_state.clean_final_payload = None
     if st.button("Build clean final export"):
-        st.session_state.clean_final_payload = build_final_export(
+        try:
+            st.session_state.clean_final_payload = build_final_export(
+                include_partial=include_partial_export,
+                include_verified=include_verified_export,
+                include_conflicts=include_conflicts_export,
+                include_unresolved=include_unresolved_export,
+                merge_trim_options=merge_trim_options,
+                strict_no_mock=strict_no_mock,
+            )
+        except ValueError as exc:
+            st.error(str(exc))
+    try:
+        final_payload = st.session_state.clean_final_payload or build_final_export(
             include_partial=include_partial_export,
             include_verified=include_verified_export,
             include_conflicts=include_conflicts_export,
@@ -279,14 +299,9 @@ with tabs[7]:
             merge_trim_options=merge_trim_options,
             strict_no_mock=strict_no_mock,
         )
-    final_payload = st.session_state.clean_final_payload or build_final_export(
-        include_partial=include_partial_export,
-        include_verified=include_verified_export,
-        include_conflicts=include_conflicts_export,
-        include_unresolved=include_unresolved_export,
-        merge_trim_options=merge_trim_options,
-        strict_no_mock=strict_no_mock,
-    )
+    except ValueError as exc:
+        st.error(str(exc))
+        final_payload = {"counts": {}, "audit": {}, "quality_gate": {"passed": False}, "variants": []}
     q = final_payload.get("quality_gate", {})
     c = final_payload.get("counts", {})
     a = final_payload.get("audit", {})
@@ -335,6 +350,55 @@ with tabs[7]:
         file_name="resume_package.json",
         disabled=resume_pkg is None,
     )
+    st.subheader("Canonical Resume Package")
+    integrity = canonical_integrity_report(market=market)
+    st.write(
+        {
+            "local_canonical_count": integrity.get("local_canonical_count"),
+            "github_canonical_count": integrity.get("github_canonical_count"),
+            "current_imported_count": integrity.get("current_imported_count"),
+            "final_merged_count": integrity.get("final_merged_count"),
+            "previous_processed_count": integrity.get("previous_processed_count"),
+            "new_processed_count": integrity.get("new_processed_count"),
+            "last_completed_seed_id": integrity.get("last_completed_seed_id"),
+            "next_seed_id": integrity.get("next_seed_id"),
+            "sync_status": integrity.get("sync_status"),
+            "last_push_commit_sha": integrity.get("last_push_commit_sha"),
+            "shrink_guard_status": integrity.get("shrink_guard_status"),
+        }
+    )
+    c1, c2, c3, c4, c5 = st.columns(5)
+    if c1.button("Pull canonical from GitHub"):
+        pull_res = pull_canonical_from_github()
+        if pull_res.get("ok"):
+            st.success("Canonical pulled from GitHub.")
+        else:
+            st.error(pull_res.get("error", "Failed pulling canonical from GitHub."))
+    if c2.button("Save uploaded resume as canonical locally"):
+        uploaded_pkg = st.session_state.get("uploaded_resume_package_payload")
+        if isinstance(uploaded_pkg, dict):
+            save_local_canonical_resume_package(uploaded_pkg)
+            st.success("Uploaded package saved as local canonical.")
+        else:
+            st.error("No uploaded resume package found in current session.")
+    if c3.button("Push canonical to GitHub"):
+        push_res = persist_canonical_resume_package(push_to_github=True, market=market)
+        if push_res.get("ok"):
+            st.success("Canonical pushed to GitHub.")
+        else:
+            st.error("Canonical resume package update blocked: shrink or invalid state detected.")
+    local_canonical = load_local_canonical_resume_package()
+    c4.download_button(
+        "Export canonical locally",
+        json.dumps(local_canonical or {}, ensure_ascii=False, indent=2).encode("utf-8"),
+        file_name="resume_package_canonical.json",
+    )
+    if c5.button("Run canonical integrity check"):
+        if integrity.get("guard_issues"):
+            st.error("Canonical resume package update blocked: shrink or invalid state detected.")
+            st.write({"guard_issues": integrity.get("guard_issues")})
+        else:
+            st.success("Canonical integrity check passed.")
     out_dir = get_output_paths()["run_history"].parents[0]
     for name in ["latest_batch_result.json", "batch_state.json", "run_history.json"]:
         path = out_dir / name
