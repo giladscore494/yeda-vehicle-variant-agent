@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from agent import batch_runner
 
 
@@ -18,6 +20,8 @@ def test_detect_import_file_types():
     assert batch_runner.detect_import_file_type({"schema_version": "resume_package_v1"}) == "resume_package"
     assert batch_runner.detect_import_file_type({"schema_version": "vehicle_variant_resume_package_v1"}) == "resume_package"
     assert batch_runner.detect_import_file_type({"batch_state": {}, "final_export": {"variants": []}}) == "resume_package"
+    assert batch_runner.detect_import_file_type({"batch_state": {}, "accumulated_clean_export": {"variants": []}}) == "resume_package"
+    assert batch_runner.detect_import_file_type({"batch_state": {}, "verified_variants": [], "partial_variants": []}) == "resume_package"
     assert batch_runner.detect_import_file_type({"processed_seed_ids": []}) == "batch_state"
     assert batch_runner.detect_import_file_type({"batch": {}, "results": []}) == "latest_batch_result"
     assert batch_runner.detect_import_file_type({"schema_version": "vehicle_variants_final_v1", "variants": []}) == "final_export"
@@ -55,6 +59,7 @@ def test_run_next_batch_defaults_missing_market_in_hole_repair(monkeypatch):
     monkeypatch.setattr(batch_runner, "_save_state", lambda state: None)
     monkeypatch.setattr(batch_runner, "_refresh_coverage", lambda state, ordered: None)
     monkeypatch.setattr(batch_runner, "save_json", lambda *args, **kwargs: None)
+    monkeypatch.setattr(batch_runner, "evaluate_continue_guard", lambda market="IL": {"passed": True, "issues": [], "coverage_audit": {"holes_count": 0}})
     called = {}
     def _fake_run(make, model, year_start, year_end, market, **kwargs):
         called["market"] = market
@@ -177,3 +182,75 @@ def test_normalize_batch_state_maps_legacy_split_with_variants():
     out = batch_runner.normalize_batch_state_for_resume(dirty, ordered, variants=variants, market="IL")
     assert out["processed_seed_ids"] == ["abarth__500__2008__2026__il"]
     assert out["processed_seeds"][0]["seed_id"] == "abarth__500__2008__2026__il"
+
+
+def test_import_canonical_resume_restores_263_and_59_checkpoint(monkeypatch):
+    saved = {}
+    canonical_path = "/repo/data/canonical/resume_package_canonical.json"
+    imported_path = "/repo/data/output/imported_accumulated_dataset.json"
+    batch_state_path = "/repo/data/output/batch_state.json"
+
+    def _save(path, data):
+        saved[str(path)] = data
+
+    ordered = [{"seed_id": f"seed-{i}", "make": "Make", "model": f"M{i}", "year_start": 2000, "year_end": 2026, "market": "IL"} for i in range(993)]
+    ordered[58]["seed_id"] = "audi__rs5__2010__2026__il"
+    ordered[59]["seed_id"] = "audi__rs6__2008__2026__il"
+    processed = [ordered[i]["seed_id"] for i in range(59)]
+    pkg = {
+        "schema_version": "resume_package_v1",
+        "batch_state": {"processed_seed_ids": processed, "last_completed_seed_id": "audi__rs5__2010__2026__il", "next_seed_id": "audi__rs6__2008__2026__il"},
+        "accumulated_clean_export": {"variants": [{"variant_id": f"v-{i}", "classification": "verified"} for i in range(263)]},
+    }
+    monkeypatch.setattr(batch_runner, "project_root", lambda: Path("/repo"))
+    monkeypatch.setattr(batch_runner, "get_github_config", lambda: {"canonical_path": "data/canonical/resume_package_canonical.json", "backup_path": "data/canonical/resume_package_backup_previous.json"})
+    monkeypatch.setattr(batch_runner, "get_output_paths", lambda: {"vehicle_variants_verified": "/repo/data/output/vehicle_variants_verified.json", "vehicle_variants_partial": "/repo/data/output/vehicle_variants_partial.json", "run_history": "/repo/data/output/run_history.json", "vehicle_sources": "/repo/data/output/vehicle_sources.json", "unresolved_models": "/repo/data/output/unresolved_models.json", "vehicle_conflicts": "/repo/data/output/vehicle_conflicts.json"})
+    monkeypatch.setattr(batch_runner, "load_json_object", lambda path: {"variants": []} if str(path) == imported_path else {})
+    monkeypatch.setattr(batch_runner, "load_json_list", lambda path: [])
+    monkeypatch.setattr(batch_runner, "save_json", _save)
+    monkeypatch.setattr(batch_runner, "load_batch_state", lambda market="IL": {"processed_seed_ids": [], "failed_seed_ids": []})
+    monkeypatch.setattr(batch_runner, "get_ordered_seed_list", lambda market="IL": ordered)
+    monkeypatch.setattr(batch_runner, "_batch_state_path", lambda: Path(batch_state_path))
+    monkeypatch.setattr(batch_runner, "_load_outputs", lambda: {"run_history": [], "unresolved": [], "conflicts": [], "verified": [], "partial": [], "sources": []})
+    out = batch_runner.import_progress_json(pkg, overwrite=False, market="IL")
+    assert out["variants_found"] == 263
+    assert out["processed_seed_ids_found"] == 59
+    assert out["next_seed_id"] == "audi__rs6__2008__2026__il"
+    assert out["safe_to_continue"] is True
+    assert canonical_path in saved
+    assert batch_state_path in saved
+    assert imported_path in saved
+
+
+def test_next_batch_starts_from_next_seed_not_from_beginning(monkeypatch):
+    ordered = [
+        {"seed_id": "abarth__500__2008__2026__il", "make": "Abarth", "model": "500", "year_start": 2008, "year_end": 2026, "market": "IL"},
+        {"seed_id": "aston_martin__db9__2004__2016__il", "make": "Aston Martin", "model": "DB9", "year_start": 2004, "year_end": 2016, "market": "IL"},
+        {"seed_id": "audi__rs5__2010__2026__il", "make": "Audi", "model": "RS5", "year_start": 2010, "year_end": 2026, "market": "IL"},
+        {"seed_id": "audi__rs6__2008__2026__il", "make": "Audi", "model": "RS6", "year_start": 2008, "year_end": 2026, "market": "IL"},
+    ]
+    state = {
+        "market": "IL",
+        "processed_seed_ids": [s["seed_id"] for s in ordered[:3]],
+        "failed_seed_ids": [],
+        "failed_details": [],
+        "last_completed_seed_id": "audi__rs5__2010__2026__il",
+        "next_seed_id": "audi__rs6__2008__2026__il",
+        "in_progress_seed_id": None,
+    }
+    called = {}
+    monkeypatch.setattr(batch_runner, "evaluate_continue_guard", lambda market="IL": {"passed": True, "issues": [], "coverage_audit": {"holes_count": 0}})
+    monkeypatch.setattr(batch_runner, "get_ordered_seed_list", lambda market="IL": ordered)
+    monkeypatch.setattr(batch_runner, "load_batch_state", lambda market="IL": state)
+    monkeypatch.setattr(batch_runner, "_load_outputs", lambda: {"run_history": [], "unresolved": [], "conflicts": [], "verified": [], "partial": [], "sources": []})
+    monkeypatch.setattr(batch_runner, "_save_state", lambda state: None)
+    monkeypatch.setattr(batch_runner, "_refresh_coverage", lambda state, ordered: None)
+    monkeypatch.setattr(batch_runner, "save_json", lambda *args, **kwargs: None)
+    monkeypatch.setattr(batch_runner, "persist_canonical_resume_package", lambda **kwargs: {"ok": True})
+    def _fake_run(make, model, year_start, year_end, market, **kwargs):
+        called["seed"] = f"{make}::{model}"
+        return {"status": "completed"}
+    monkeypatch.setattr(batch_runner, "run_single_model", _fake_run)
+    out = batch_runner.run_next_batch(limit=1, market="IL", resume=True, auto_push_canonical=False)
+    assert out["status"] == "completed"
+    assert called["seed"] == "Audi::RS6"
