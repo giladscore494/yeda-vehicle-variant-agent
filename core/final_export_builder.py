@@ -170,6 +170,22 @@ def _tkey(v: dict) -> str:
     return "|".join(str(t).strip().lower() for t in tokens)
 
 
+def _status_rank(v: dict) -> int:
+    status = str(v.get("verification_status") or v.get("classification") or v.get("status") or "").strip().lower()
+    if status == "verified":
+        return 2
+    if status == "partial":
+        return 1
+    return 0
+
+
+def _variant_merge_key(v: dict) -> str:
+    variant_id = str(v.get("variant_id") or "").strip().lower()
+    if variant_id:
+        return f"id:{variant_id}"
+    return f"identity:{_tkey(v)}"
+
+
 def build_clean_final_export(verified_variants, partial_variants, sources=None, conflicts=None, unresolved=None, include_partial=True, include_verified=True, include_conflicts=False, include_unresolved=False, merge_trim_options=True, strict_no_mock=True) -> dict:
     items = []
     if include_partial: items.extend(copy.deepcopy(partial_variants or []))
@@ -187,12 +203,15 @@ def build_clean_final_export(verified_variants, partial_variants, sources=None, 
     for v in filtered:
         st, conf = rebuild_variant_status(v)
         v["verification_status"] = st; v["confidence"] = conf
-        key = _tkey(v) if merge_trim_options else (v.get("variant_id") or _tkey(v))
+        key = _variant_merge_key(v) if merge_trim_options else (v.get("variant_id") or _tkey(v))
         if key not in by_key:
             by_key[key] = v; by_key[key]["trim_options"] = []
         else:
             trim_merged += 1
-            if rank.get(st, 0) > rank.get(by_key[key].get("verification_status", "unresolved"), 0):
+            existing = by_key[key]
+            existing_rank = max(rank.get(existing.get("verification_status", "unresolved"), 0), _status_rank(existing) + 1)
+            incoming_rank = max(rank.get(st, 0), _status_rank(v) + 1)
+            if incoming_rank > existing_rank:
                 base = by_key[key]; by_key[key] = v; by_key[key]["trim_options"] = base.get("trim_options", [])
         trim = _as_field_obj(v.get("trim", {}))
         if trim.get("value") not in (None, ""):
