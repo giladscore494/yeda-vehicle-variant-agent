@@ -9,7 +9,82 @@ from storage.json_store import ensure_output_files, load_outputs_summary, get_ou
 from storage.export import export_verified_for_yeda
 from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
-from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync
+_BATCH_RUNNER_IMPORT_ERROR = None
+try:
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync
+except Exception as exc:
+    _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
+
+    def _batch_runner_error_result():
+        return {"ok": False, "error": f"Batch runner module unavailable: {_BATCH_RUNNER_IMPORT_ERROR}"}
+
+    def run_next_batch(*args, **kwargs):
+        return {"results": [], **_batch_runner_error_result()}
+
+    def get_batch_progress(*args, **kwargs):
+        return {
+            "processed": 0,
+            "total_seeds": 0,
+            "percent_complete": 0.0,
+            "current_make": None,
+            "next_seed": {},
+            "coverage_by_make": [],
+            "coverage_audit": {"last_completed_seed_id": None, "scanned_count": 0, "holes_count": 0, "missing_seeds": []},
+            **_batch_runner_error_result(),
+        }
+
+    def load_batch_state(*args, **kwargs):
+        return {}
+
+    def rebuild_batch_state_from_outputs(*args, **kwargs):
+        return _batch_runner_error_result()
+
+    def build_final_export(*args, **kwargs):
+        return {"counts": {}, "audit": {}, "quality_gate": {"passed": False}, "variants": [], **_batch_runner_error_result()}
+
+    def build_resume_package(*args, **kwargs):
+        return {}
+
+    def detect_import_file_type(*args, **kwargs):
+        return "unknown"
+
+    def import_progress_json(*args, **kwargs):
+        return {"imported_variants": 0, **_batch_runner_error_result()}
+
+    def repair_coverage_until_clean(*args, **kwargs):
+        return _batch_runner_error_result()
+
+    def cleanup_retryable_schema_errors(*args, **kwargs):
+        return _batch_runner_error_result()
+
+    def persist_canonical_resume_package(*args, **kwargs):
+        return _batch_runner_error_result()
+
+    def push_local_canonical_to_github(*args, **kwargs):
+        return _batch_runner_error_result()
+
+    def pull_canonical_from_github(*args, **kwargs):
+        return _batch_runner_error_result()
+
+    def canonical_integrity_report(*args, **kwargs):
+        return {"sync_status": "unavailable", "guard_issues": [_BATCH_RUNNER_IMPORT_ERROR], **_batch_runner_error_result()}
+
+    def load_local_canonical_resume_package(*args, **kwargs):
+        return {}
+
+    def save_local_canonical_resume_package(*args, **kwargs):
+        return _batch_runner_error_result()
+
+    def diagnose_canonical_github_sync(*args, **kwargs):
+        return {
+            "final_diagnosis": f"Batch runner module unavailable: {_BATCH_RUNNER_IMPORT_ERROR}",
+            "single_root_cause": "Batch runner import failed.",
+            "recommended_action": "Check Python/package compatibility and dependency installation for batch_runner imports.",
+            "safe_to_continue_batch": False,
+            "ruled_out": [],
+            "checks": {},
+            **_batch_runner_error_result(),
+        }
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -32,6 +107,8 @@ except Exception as exc:
 st.sidebar.write(f"Gemini API status: {'✅ found' if safe_get(cfg, 'api_key', 'missing') == 'found' else '⚠️ missing'}")
 st.sidebar.subheader('Gemini config status')
 st.sidebar.write({'api_key': safe_get(cfg, 'api_key', 'missing'), 'api_key_source': safe_get(cfg, 'api_key_source'), 'google_genai_import_ok': safe_get(cfg, 'client_import_ok'), 'client_ready': safe_get(cfg, 'client_ready'), 'import_error': safe_get(cfg, 'import_error'), 'fast_model': safe_get(cfg, 'fast_model'), 'strong_model': safe_get(cfg, 'strong_model')})
+if _BATCH_RUNNER_IMPORT_ERROR:
+    st.sidebar.error(f"Batch/Export features limited due to import error: {_BATCH_RUNNER_IMPORT_ERROR}")
 use_cache = st.sidebar.checkbox("Use cache", value=True)
 force_refresh = st.sidebar.checkbox("Force refresh", value=False)
 market = st.sidebar.selectbox("Market", ["IL", "EU", "GLOBAL"], index=0)
