@@ -1612,6 +1612,173 @@ def build_resume_package() -> dict:
     return final_package
 
 
+def rebuild_canonical_metadata_from_accumulated(package: dict, seeds: list[dict]) -> dict:
+    """Rebuild batch_state.coverage_by_make and top-level verified/partial lists from
+    accumulated_clean_export.variants.
+
+    accumulated_clean_export.variants is the single source of truth for variant counts.
+    run_history is NOT used here — it may be incomplete and must not drive canonical coverage.
+    """
+    package = copy.deepcopy(package)
+    acc = package.get("accumulated_clean_export") if isinstance(package.get("accumulated_clean_export"), dict) else {}
+    variants = [v for v in (acc.get("variants") or []) if isinstance(v, dict)]
+
+    # Build top-level verified / partial lists
+    verified_variants = [v for v in variants if _is_verified_variant(v)]
+    partial_variants = [v for v in variants if not _is_verified_variant(v)]
+    package["verified_variants"] = verified_variants
+    package["partial_variants"] = partial_variants
+
+    # Build coverage_by_make — start from seed totals
+    coverage = _empty_coverage_by_make(seeds)
+    by_seed = {s["seed_id"]: s for s in seeds if isinstance(s, dict)}
+
+    batch_state = package.get("batch_state") if isinstance(package.get("batch_state"), dict) else {}
+    processed_seed_ids = set(batch_state.get("processed_seed_ids") or [])
+    failed_seed_ids = set(batch_state.get("failed_seed_ids") or [])
+
+    for sid in processed_seed_ids:
+        if sid in by_seed:
+            coverage[by_seed[sid]["make"]]["processed"] += 1
+
+    for sid in failed_seed_ids:
+        if sid in by_seed:
+            coverage[by_seed[sid]["make"]]["failed"] += 1
+
+    for v in variants:
+        make = str(v.get("make") or "").strip()
+        if make in coverage:
+            if _is_verified_variant(v):
+                coverage[make]["verified_variants"] += 1
+            else:
+                coverage[make]["partial_variants"] += 1
+
+    for make, c in coverage.items():
+        c["completed"] = c["processed"] >= c["total"] and c["total"] > 0
+
+    # Detect and warn on any mismatch with the old coverage
+    old_coverage = batch_state.get("coverage_by_make") if isinstance(batch_state.get("coverage_by_make"), dict) else {}
+    mismatched_makes = []
+    for make, c in coverage.items():
+        old_c = old_coverage.get(make) if isinstance(old_coverage, dict) else None
+        if isinstance(old_c, dict):
+            if old_c.get("verified_variants", 0) != c["verified_variants"] or old_c.get("partial_variants", 0) != c["partial_variants"]:
+                mismatched_makes.append(make)
+    if mismatched_makes:
+        print(f"[canonical] coverage_by_make repaired from accumulated_clean_export.variants for makes: {mismatched_makes}")
+        package["_metadata_repaired_from_accumulated"] = True
+    else:
+        package.pop("_metadata_repaired_from_accumulated", None)
+
+    if isinstance(package.get("batch_state"), dict):
+        package["batch_state"]["coverage_by_make"] = coverage
+
+    return package
+
+
+def _validate_canonical_coverage_sync(package: dict) -> list[str]:
+    """Return a list of warning strings if coverage_by_make is out of sync with
+    accumulated_clean_export.variants.  An empty list means everything is consistent."""
+    warnings_out: list[str] = []
+    acc = package.get("accumulated_clean_export") if isinstance(package.get("accumulated_clean_export"), dict) else {}
+    variants = [v for v in (acc.get("variants") or []) if isinstance(v, dict)]
+
+    batch_state = package.get("batch_state") if isinstance(package.get("batch_state"), dict) else {}
+    coverage = batch_state.get("coverage_by_make") if isinstance(batch_state.get("coverage_by_make"), dict) else {}
+
+    make_verified: dict[str, int] = {}
+    make_partial: dict[str, int] = {}
+    for v in variants:
+        make = str(v.get("make") or "").strip()
+        if _is_verified_variant(v):
+            make_verified[make] = make_verified.get(make, 0) + 1
+        else:
+            make_partial[make] = make_partial.get(make, 0) + 1
+
+    mismatched: list[str] = []
+    for make, c in coverage.items():
+        exp_v = make_verified.get(make, 0)
+        exp_p = make_partial.get(make, 0)
+        if c.get("verified_variants", 0) != exp_v or c.get("partial_variants", 0) != exp_p:
+            mismatched.append(make)
+
+    if mismatched:
+        warnings_out.append(f"coverage_by_make mismatch for makes: {sorted(mismatched)}")
+
+    top_verified = [v for v in (package.get("verified_variants") or []) if isinstance(v, dict)]
+    top_partial = [v for v in (package.get("partial_variants") or []) if isinstance(v, dict)]
+    acc_verified = [v for v in variants if _is_verified_variant(v)]
+    acc_partial = [v for v in variants if not _is_verified_variant(v)]
+    if len(top_verified) != len(acc_verified) or len(top_partial) != len(acc_partial):
+        warnings_out.append(
+            f"top-level verified/partial out of sync with accumulated: "
+            f"accumulated={len(acc_verified)}v/{len(acc_partial)}p, "
+            f"top-level={len(top_verified)}v/{len(top_partial)}p"
+        )
+
+    return warnings_out
+
+
+def _validate_saved_canonical(path) -> dict:
+    """Re-open the saved canonical file and verify internal consistency.
+
+    Returns {ok, issues} — issues is a list of human-readable problem descriptions.
+    """
+    from pathlib import Path as _Path
+    issues: list[str] = []
+    try:
+        raw = _Path(path).read_text(encoding="utf-8") if _Path(path).exists() else None
+        if raw is None:
+            return {"ok": False, "issues": ["saved canonical file does not exist"]}
+        saved = json.loads(raw)
+    except Exception as exc:
+        return {"ok": False, "issues": [f"failed to re-read saved canonical: {exc}"]}
+
+    if not isinstance(saved, dict):
+        return {"ok": False, "issues": ["saved canonical is not a JSON object"]}
+
+    acc = saved.get("accumulated_clean_export") if isinstance(saved.get("accumulated_clean_export"), dict) else {}
+    variants = [v for v in (acc.get("variants") or []) if isinstance(v, dict)]
+    acc_verified = [v for v in variants if _is_verified_variant(v)]
+    acc_partial = [v for v in variants if not _is_verified_variant(v)]
+
+    top_verified = [v for v in (saved.get("verified_variants") or []) if isinstance(v, dict)]
+    top_partial = [v for v in (saved.get("partial_variants") or []) if isinstance(v, dict)]
+
+    # a. top-level lists must match accumulated
+    if len(top_verified) != len(acc_verified) or len(top_partial) != len(acc_partial):
+        issues.append(
+            f"top-level verified/partial out of sync after save: "
+            f"accumulated={len(acc_verified)}v/{len(acc_partial)}p, "
+            f"top-level={len(top_verified)}v/{len(top_partial)}p"
+        )
+
+    batch_state = saved.get("batch_state") if isinstance(saved.get("batch_state"), dict) else {}
+    coverage = batch_state.get("coverage_by_make") if isinstance(batch_state.get("coverage_by_make"), dict) else {}
+
+    # b. coverage sums must match accumulated totals
+    sum_cov_verified = sum(c.get("verified_variants", 0) for c in coverage.values() if isinstance(c, dict))
+    sum_cov_partial = sum(c.get("partial_variants", 0) for c in coverage.values() if isinstance(c, dict))
+    if sum_cov_verified != len(acc_verified) or sum_cov_partial != len(acc_partial):
+        issues.append(
+            f"coverage_by_make sums mismatch after save: "
+            f"sums={sum_cov_verified}v/{sum_cov_partial}p, "
+            f"accumulated={len(acc_verified)}v/{len(acc_partial)}p"
+        )
+
+    # c. BMW must not show zero if BMW variants exist
+    bmw_variants = [v for v in variants if str(v.get("make") or "").strip().lower() == "bmw"]
+    if bmw_variants:
+        bmw_cov = coverage.get("BMW") or {}
+        if bmw_cov.get("verified_variants", 0) == 0 and bmw_cov.get("partial_variants", 0) == 0:
+            issues.append("BMW variants exist in accumulated but coverage_by_make BMW shows zero verified/partial")
+
+    if issues:
+        print(f"[canonical] post-save validation found {len(issues)} issue(s): {issues}")
+
+    return {"ok": len(issues) == 0, "issues": issues}
+
+
 def persist_canonical_resume_package(batch_id: str | None = None, push_to_github: bool = False, market: str = "IL") -> dict:
     previous_local = load_local_canonical_resume_package()
     previous_github = fetch_file_from_github(get_github_config().get("canonical_path") or CANONICAL_RESUME_PATH_DEFAULT)
@@ -1639,6 +1806,8 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
         len(merged_variants) - int(package["merge_metadata"].get("previous_canonical_variants", 0) or 0),
     )
     package["merge_metadata"].setdefault("pushed_to_github", False)
+    # Rebuild coverage metadata from accumulated_clean_export.variants (source of truth).
+    package = rebuild_canonical_metadata_from_accumulated(package, get_ordered_seed_list(market))
     validate_result = validate_canonical_update(previous, package, market=market)
     issues = list(validate_result.get("issues") or [])
     if issues:
@@ -1653,6 +1822,9 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
     if isinstance(previous, dict):
         save_local_canonical_backup(previous)
     save_local_canonical_resume_package(package)
+    post_save = _validate_saved_canonical(_canonical_resume_path())
+    if not post_save.get("ok"):
+        print(f"[canonical] post-save validation warnings: {post_save.get('issues')}")
     pushed = None
     if push_to_github:
         pushed = push_canonical_resume_package(package, previous_package=previous, batch_id=batch_id)
@@ -1680,6 +1852,7 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
         "package": package,
         "push_result": pushed,
         "commit_sha": ((pushed or {}).get("canonical") or {}).get("commit_sha"),
+        "post_save_validation": post_save,
     }
 
 
@@ -1978,6 +2151,8 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
         imported_pkg["batch_state"] = normalized_state
         imported_pkg["accumulated_clean_export"] = {"variants": imported_variants}
         imported_pkg["_candidate_source"] = "uploaded_resume"
+        # Rebuild coverage metadata from accumulated_clean_export.variants (source of truth)
+        imported_pkg = rebuild_canonical_metadata_from_accumulated(imported_pkg, ordered)
         validate_result = validate_canonical_update(load_local_canonical_resume_package(), imported_pkg, market=market)
         guard_issues = list(validate_result.get("issues") or [])
         if len(normalized_state.get("processed_seed_ids", [])) == 0:
@@ -1993,6 +2168,9 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
             if isinstance(previous_local, dict):
                 save_local_canonical_backup(previous_local)
             save_local_canonical_resume_package(imported_pkg)
+            post_save = _validate_saved_canonical(_canonical_resume_path())
+            if not post_save.get("ok"):
+                result["warnings"].extend(post_save.get("issues") or [])
             _set_last_canonical_update_attempt(failed=False, validate_result=validate_result, candidate_source="uploaded_resume")
         result["processed_added"] = max(0, len(set(normalized_state.get("processed_seed_ids", [])) - set(state.get("processed_seed_ids", []))))
         result["variants_verified_added"] = max(0, len(merged_verified) - len(verified))
