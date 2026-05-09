@@ -11,6 +11,7 @@ from urllib.parse import quote
 
 import requests
 from core.ingest import load_model_seeds
+from core.variant_id import generate_variant_id
 from agent.runner import run_single_model
 from storage.json_store import get_output_paths, load_json_list, load_json_object, save_json, project_root
 from core.final_export_builder import build_clean_final_export, assert_no_mock_in_final_export, is_mock_contaminated_variant
@@ -78,6 +79,98 @@ def _load_variants_from_package(package: dict) -> list[dict]:
     if isinstance(package.get("variants"), list):
         return [v for v in package.get("variants",[]) if isinstance(v,dict)]
     return [v for v in (package.get("verified_variants") or []) + (package.get("partial_variants") or []) if isinstance(v,dict)]
+
+
+VOLATILE_BATCH_STATE_FIELDS = [
+    "seed_accounting",
+    "needs_retry_seed_ids",
+    "failed_seed_ids",
+    "failed_details",
+    "false_processed_seed_ids",
+    "zero_variant_seed_ids",
+    "no_variants_by_seed",
+    "dedupe_proof_by_seed",
+    "_last_queue_seed_ids",
+    "_last_total_attempts",
+]
+
+
+def stable_key_for_list_item(item):
+    if isinstance(item, dict):
+        if item.get("seed_id"):
+            return ("seed_id", item.get("seed_id"), item.get("reason"), item.get("status"))
+        return json.dumps(item, sort_keys=True, default=str)
+    return item
+
+
+def merge_lists_preserving_order(existing, incoming):
+    result = []
+    seen = set()
+    for item in list(existing or []) + list(incoming or []):
+        key = stable_key_for_list_item(item)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(item)
+    return result
+
+
+def _variant_ids_from_variants(variants: list[dict]) -> set[str]:
+    return {
+        str(v.get("variant_id")).strip()
+        for v in (variants or [])
+        if isinstance(v, dict) and str(v.get("variant_id") or "").strip()
+    }
+
+
+def _canonical_variant_ids_from_package(package: dict | None) -> set[str]:
+    return _variant_ids_from_variants(_extract_canonical_variant_bucket(package if isinstance(package, dict) else {}))
+
+
+def _variant_value(item, field: str):
+    if not isinstance(item, dict):
+        return None
+    value = item.get(field)
+    if isinstance(value, dict):
+        return value.get("value", None)
+    return value
+
+
+def _candidate_variant_ids_from_result(seed: dict, result: dict, default_market: str = "IL") -> set[str]:
+    trace = (result.get("trace") or {}) if isinstance(result, dict) else {}
+    parsed = (trace.get("discovery_parsed_json_debug") or {}) if isinstance(trace, dict) else {}
+    candidates = parsed.get("candidate_variants") if isinstance(parsed, dict) else []
+    if not isinstance(candidates, list):
+        return set()
+    make = seed.get("make")
+    model = seed.get("model")
+    market = seed.get("market") or default_market
+    fallback_ys = safe_int_value(seed.get("year_start"), 0)
+    fallback_ye = safe_int_value(seed.get("year_end"), 0)
+    out: set[str] = set()
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        try:
+            ys = safe_int_value(_variant_value(candidate, "year_start"), fallback_ys)
+            ye = safe_int_value(_variant_value(candidate, "year_end"), fallback_ye)
+            vid = generate_variant_id(
+                make,
+                model,
+                ys,
+                ye,
+                market,
+                _variant_value(candidate, "generation"),
+                _variant_value(candidate, "engine"),
+                _variant_value(candidate, "transmission"),
+                _variant_value(candidate, "body_type"),
+                _variant_value(candidate, "fuel_type"),
+            )
+            if str(vid).strip():
+                out.add(str(vid).strip())
+        except Exception:
+            continue
+    return out
 
 
 def can_mark_seed_processed(seed_id: str, accounting: dict) -> dict:
@@ -1358,6 +1451,7 @@ def _process_seeds(
         if not seed.get("seed_id"):
             seed["seed_id"] = build_seed_id(seed.get("make"), seed.get("model"), seed.get("year_start"), seed.get("year_end"), seed_market)
         sid = seed["seed_id"]
+        canonical_before_ids = _canonical_variant_ids_from_package(load_local_canonical_resume_package())
         attempt_before = int((state.get("seed_accounting") or {}).get(sid, {}).get("attempts", 0) or 0)
         state["in_progress_seed_id"] = sid
         _save_state(state)
@@ -1383,6 +1477,50 @@ def _process_seeds(
             state["failed_seed_ids"].append(sid)
             state.setdefault("failed_details", []).append({"seed_id": sid, "reason": accounting.get("failure_reason", "failed_after_retries"), "created_at": _now()})
         if status in {"completed", "partial"}:
+            valid_built = int(accounting.get("valid_variants_built", result.get("variants_created", 0)) or 0)
+            predicted_variants = (
+                (build_final_export().get("variants") or [])
+                if valid_built > 0
+                else []
+            )
+            predicted_after_ids = _variant_ids_from_variants(predicted_variants)
+            predicted_delta = max(0, len(predicted_after_ids - canonical_before_ids))
+            accounting["variants_added_to_canonical"] = predicted_delta
+            candidate_variant_ids = _candidate_variant_ids_from_result(seed, result, default_market=seed_market)
+            if valid_built > 0 and predicted_delta == 0 and candidate_variant_ids:
+                matched_ids = sorted(candidate_variant_ids & canonical_before_ids)
+                if matched_ids:
+                    proof_rows = [{"matched_variant_id": vid, "reason": "matched_existing_canonical_variant"} for vid in matched_ids]
+                    accounting["variants_deduped_or_merged"] = len(matched_ids)
+                    accounting["dedupe_proof"] = proof_rows
+                    accounting["marked_processed"] = True
+                    accounting["status"] = "processed_deduped"
+                    state.setdefault("dedupe_proof_by_seed", {})[sid] = {
+                        "matched_variant_ids": matched_ids,
+                        "matched_count": len(matched_ids),
+                        "updated_at": _now(),
+                    }
+                else:
+                    accounting["variants_deduped_or_merged"] = 0
+                    accounting["dedupe_proof"] = []
+                    accounting["marked_processed"] = False
+                    accounting["status"] = "failed_after_retries"
+                    accounting["failure_reason"] = "variants_built_but_canonical_delta_zero_without_dedupe_proof"
+                    status = "failed_after_retries"
+                    result["status"] = "failed_after_retries"
+                    result["blocked"] = True
+                    result["message"] = "Seed processing blocked: variants built but canonical did not grow and no dedupe proof found."
+                    if sid in state.get("processed_seed_ids", []):
+                        state["processed_seed_ids"].remove(sid)
+                    if sid not in state.get("needs_retry_seed_ids", []):
+                        state.setdefault("needs_retry_seed_ids", []).append(sid)
+                    if sid not in state.get("failed_seed_ids", []):
+                        state.setdefault("failed_seed_ids", []).append(sid)
+                    state.setdefault("failed_details", []).append(
+                        {"seed_id": sid, "reason": accounting["failure_reason"], "created_at": _now()}
+                    )
+            state.setdefault("seed_accounting", {})[sid] = accounting
+        if status in {"completed", "partial"}:
             state["last_completed_seed_id"] = sid
         state["in_progress_seed_id"] = None
         results.append({"seed": seed, "result": result})
@@ -1401,6 +1539,11 @@ def _process_seeds(
             )
             per_seed_canonical.append({"seed_id": sid, "canonical_persist": seed_persist})
             saved_canonical = bool(isinstance(seed_persist, dict) and seed_persist.get("ok"))
+            if saved_canonical:
+                canonical_after_ids = _canonical_variant_ids_from_package(load_local_canonical_resume_package())
+                accounting["variants_added_to_canonical"] = max(0, len(canonical_after_ids - canonical_before_ids))
+                state.setdefault("seed_accounting", {})[sid] = accounting
+                _save_state(state)
         elif status == "failed_after_retries":
             # Persist batch_state fields (seed_accounting, failed_seed_ids) into canonical
             # without adding new variants, so the state survives canonical reloads.
@@ -1451,39 +1594,65 @@ def repair_false_processed_seeds(package: dict, ordered_seeds: list[dict] | None
     if not false_processed:
         return {"ok": True, "repaired_count": 0, "repaired_seed_ids": [], "false_processed_seeds": [], "package": package}
 
-    false_ids = {r["seed_id"] for r in false_processed}
-    batch_state = copy.deepcopy(package.get("batch_state") if isinstance(package.get("batch_state"), dict) else {})
-    _ensure_zero_variant_fields(batch_state)
-
-    # Remove false-processed seeds from processed_seed_ids
-    batch_state["processed_seed_ids"] = [sid for sid in batch_state.get("processed_seed_ids", []) if sid not in false_ids]
-
-    # Track them explicitly
-    for sid in false_ids:
-        if sid not in batch_state["needs_retry_seed_ids"]:
-            batch_state["needs_retry_seed_ids"].append(sid)
-        if sid not in batch_state["false_processed_seed_ids"]:
-            batch_state["false_processed_seed_ids"].append(sid)
-
-    # Recompute frontier fields
-    ordered_seed_ids = [s["seed_id"] for s in ordered_seeds]
-    processed_set = set(batch_state["processed_seed_ids"])
-    next_sid = next_unprocessed_seed_id(ordered_seed_ids, processed_set)
-    batch_state["next_seed_id"] = next_sid
-    if next_sid and next_sid in ordered_seed_ids:
-        idx = ordered_seed_ids.index(next_sid) - 1
-        batch_state["last_completed_seed_id"] = ordered_seed_ids[idx] if idx >= 0 else None
-    elif not next_sid:
-        batch_state["last_completed_seed_id"] = ordered_seed_ids[-1] if ordered_seed_ids else None
-
+    false_ids = [r["seed_id"] for r in false_processed if isinstance(r, dict) and r.get("seed_id")]
+    batch_state = _apply_false_processed_repair_to_batch_state(
+        copy.deepcopy(package.get("batch_state") if isinstance(package.get("batch_state"), dict) else {}),
+        ordered_seeds=ordered_seeds,
+        false_processed_seed_ids=false_ids,
+    )
     package["batch_state"] = batch_state
     return {
         "ok": True,
-        "repaired_count": len(false_ids),
-        "repaired_seed_ids": sorted(false_ids),
+        "repaired_count": len(set(false_ids)),
+        "repaired_seed_ids": sorted(set(false_ids)),
         "false_processed_seeds": false_processed,
         "package": package,
     }
+
+
+def _apply_false_processed_repair_to_batch_state(
+    batch_state: dict,
+    ordered_seeds: list[dict],
+    false_processed_seed_ids: list[str] | set[str] | tuple[str, ...],
+) -> dict:
+    repaired = copy.deepcopy(batch_state if isinstance(batch_state, dict) else {})
+    _ensure_zero_variant_fields(repaired)
+    false_ids = {
+        sid for sid in (false_processed_seed_ids or [])
+        if isinstance(sid, str) and sid.strip()
+    }
+    if not false_ids:
+        return repaired
+    ordered_ids = [s.get("seed_id") for s in (ordered_seeds or []) if isinstance(s, dict) and s.get("seed_id")]
+    processed_existing = [sid for sid in repaired.get("processed_seed_ids", []) if isinstance(sid, str)]
+    repaired["processed_seed_ids"] = [sid for sid in processed_existing if sid not in false_ids]
+    for sid in ordered_ids:
+        if sid not in false_ids:
+            continue
+        if sid not in repaired["needs_retry_seed_ids"]:
+            repaired["needs_retry_seed_ids"].append(sid)
+        if sid not in repaired["false_processed_seed_ids"]:
+            repaired["false_processed_seed_ids"].append(sid)
+        if sid in repaired.get("failed_seed_ids", []):
+            repaired["failed_seed_ids"].remove(sid)
+    for sid in sorted(false_ids):
+        if sid in ordered_ids:
+            continue
+        if sid not in repaired["needs_retry_seed_ids"]:
+            repaired["needs_retry_seed_ids"].append(sid)
+        if sid not in repaired["false_processed_seed_ids"]:
+            repaired["false_processed_seed_ids"].append(sid)
+        if sid in repaired.get("failed_seed_ids", []):
+            repaired["failed_seed_ids"].remove(sid)
+    processed_set = set(repaired["processed_seed_ids"])
+    next_sid = next_unprocessed_seed_id(ordered_ids, processed_set)
+    repaired["next_seed_id"] = next_sid
+    if next_sid and next_sid in ordered_ids:
+        idx = ordered_ids.index(next_sid) - 1
+        repaired["last_completed_seed_id"] = ordered_ids[idx] if idx >= 0 else None
+    elif not next_sid:
+        repaired["last_completed_seed_id"] = ordered_ids[-1] if ordered_ids else None
+    return repaired
 
 
 def evaluate_continue_guard(market: str = "IL") -> dict:
@@ -1491,13 +1660,6 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
     ordered = get_ordered_seed_list(market)
     local_canonical = load_local_canonical_resume_package()
     local_canonical_exists = isinstance(local_canonical, dict) and isinstance(local_canonical.get("batch_state"), dict)
-
-    # Volatile repair fields that must be preserved from local batch_state
-    _VOLATILE_FIELDS = [
-        "seed_accounting", "needs_retry_seed_ids", "failed_seed_ids", "failed_details",
-        "false_processed_seed_ids", "zero_variant_seed_ids", "no_variants_by_seed",
-        "dedupe_proof_by_seed", "_last_queue_seed_ids", "_last_total_attempts",
-    ]
 
     if not isinstance(local_canonical, dict):
         issues.append("canonical package missing")
@@ -1510,7 +1672,7 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
         # (needs_retry, failed_after_retries, seed_accounting) are never overwritten.
         local_bs = load_batch_state(market)
         _ensure_zero_variant_fields(canonical_state)
-        for field in _VOLATILE_FIELDS:
+        for field in VOLATILE_BATCH_STATE_FIELDS:
             local_val = local_bs.get(field)
             canonical_val = canonical_state.get(field)
             if local_val is None:
@@ -1521,10 +1683,7 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
                 merged.update(local_val)
                 canonical_state[field] = merged
             elif isinstance(local_val, list) and isinstance(canonical_val, list):
-                # Union lists preserving order
-                seen = set(canonical_val)
-                extras = [v for v in local_val if v not in seen]
-                canonical_state[field] = list(canonical_val) + extras
+                canonical_state[field] = merge_lists_preserving_order(canonical_val, local_val)
             elif field.startswith("_last_") and local_val is not None:
                 # Preserve local stall-detection counters
                 canonical_state[field] = local_val
@@ -1691,19 +1850,14 @@ def run_next_batch(
     candidates = [s for s in ordered if not make_filter or s["make"].lower() == make_filter.lower()]
     # --- Build queue ---
     if guard.get("repair_required"):
-        # Auto-switch to zero-variant repair queue: pull false-processed seeds out of
-        # processed_seed_ids so they go through a real processing attempt.
-        false_processed_ids = {fp["seed_id"] for fp in guard.get("false_processed_seeds", [])}
-        state["processed_seed_ids"] = [s for s in state.get("processed_seed_ids", []) if s not in false_processed_ids]
-        for fid in false_processed_ids:
-            if fid not in state.get("false_processed_seed_ids", []):
-                state.setdefault("false_processed_seed_ids", []).append(fid)
-            if fid not in state.get("needs_retry_seed_ids", []):
-                state.setdefault("needs_retry_seed_ids", []).append(fid)
-            # Remove from failed_seed_ids so they're eligible for retry
-            if fid in state.get("failed_seed_ids", []):
-                state["failed_seed_ids"].remove(fid)
-        repair_ordered = [s for s in ordered if s["seed_id"] in false_processed_ids]
+        false_processed_ids = [fp.get("seed_id") for fp in guard.get("false_processed_seeds", []) if isinstance(fp, dict)]
+        state = _apply_false_processed_repair_to_batch_state(
+            state,
+            ordered_seeds=ordered,
+            false_processed_seed_ids=false_processed_ids,
+        )
+        false_processed_set = set(false_processed_ids)
+        repair_ordered = [s for s in ordered if s["seed_id"] in false_processed_set]
         holes = []
         coverage = audit_coverage_until_last_completed(candidates, state, outputs)
         queue = [seed_to_dict(s, default_market=market) for s in repair_ordered]
@@ -1796,7 +1950,21 @@ def get_batch_progress(market="IL") -> dict:
     local_canonical = load_local_canonical_resume_package()
     if isinstance(local_canonical, dict) and isinstance(local_canonical.get("batch_state"), dict):
         state = extract_canonical_batch_state(local_canonical, ordered, market=market)
-        _save_state(state)
+        local_state = load_batch_state(market)
+        _ensure_zero_variant_fields(state)
+        for field in VOLATILE_BATCH_STATE_FIELDS:
+            local_val = local_state.get(field)
+            canonical_val = state.get(field)
+            if local_val is None:
+                continue
+            if isinstance(local_val, dict) and isinstance(canonical_val, dict):
+                merged = dict(canonical_val)
+                merged.update(local_val)
+                state[field] = merged
+            elif isinstance(local_val, list) and isinstance(canonical_val, list):
+                state[field] = merge_lists_preserving_order(canonical_val, local_val)
+            elif field.startswith("_last_") and local_val is not None:
+                state[field] = local_val
     else:
         state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
     _refresh_coverage(state, ordered)
@@ -2410,8 +2578,7 @@ def _persist_batch_state_into_canonical(batch_state: dict, market: str = "IL") -
             merged.update(incoming)
             canonical_bs[field] = merged
         elif isinstance(incoming, list) and isinstance(existing, list):
-            seen = set(existing)
-            canonical_bs[field] = list(existing) + [v for v in incoming if v not in seen]
+            canonical_bs[field] = merge_lists_preserving_order(existing, incoming)
         else:
             canonical_bs[field] = incoming
     pkg["batch_state"] = canonical_bs
