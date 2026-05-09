@@ -38,7 +38,14 @@ def _ensure_zero_variant_fields(state: dict) -> dict:
     state.setdefault("no_variants_by_seed", {})
     state.setdefault("dedupe_proof_by_seed", {})
     state.setdefault("zero_variant_policy", "retry_then_block")
+    state.setdefault("_last_queue_seed_ids", [])
+    state.setdefault("_last_total_attempts", -1)
     return state
+
+
+def _total_accounting_attempts(state: dict) -> int:
+    """Return total cumulative attempts recorded in seed_accounting."""
+    return sum(int(a.get("attempts", 0) or 0) for a in (state.get("seed_accounting") or {}).values())
 
 
 def _load_variants_from_package(package: dict) -> list[dict]:
@@ -1298,8 +1305,8 @@ def _process_seeds(
     auto_push_per_seed: bool = False,
     commit_message_prefix: str = "Update canonical vehicle variants",
     market: str = "IL",
-) -> tuple[list, list]:
-    """Process a batch of seeds and return (results, per_seed_canonical).
+) -> tuple[list, list, list]:
+    """Process a batch of seeds and return (results, per_seed_canonical, execution_trace).
 
     After each successfully completed seed the canonical package is saved
     locally (mandatory) and, when auto_push_per_seed=True, also pushed to
@@ -1308,6 +1315,8 @@ def _process_seeds(
     """
     results = []
     per_seed_canonical: list[dict] = []
+    execution_trace: list[dict] = []
+    _ensure_zero_variant_fields(state)
     for idx, seed in enumerate(seed_queue[:limit], start=1):
         selected_market = state.get("market")
         seed["market"] = seed.get("market") or selected_market or "IL"
@@ -1315,18 +1324,25 @@ def _process_seeds(
         if not seed.get("seed_id"):
             seed["seed_id"] = build_seed_id(seed.get("make"), seed.get("model"), seed.get("year_start"), seed.get("year_end"), seed_market)
         sid = seed["seed_id"]
+        attempt_before = int((state.get("seed_accounting") or {}).get(sid, {}).get("attempts", 0) or 0)
         state["in_progress_seed_id"] = sid
         _save_state(state)
         if progress_callback:
             progress_callback({"index": idx, "total": min(limit, len(seed_queue)), "seed": seed, "results": list(results)})
+        did_call_model = False
         try:
             result = process_seed_with_variant_retry(seed, state=state, max_attempts=3, market=seed["market"], use_cache=use_cache, force_refresh=force_refresh)
+            did_call_model = True
         except Exception as exc:
             result = {"status": "error", "error": str(exc)}
         status = result.get("status")
+        accounting = result.get("accounting") or {}
         if status == "error" and sid not in state["failed_seed_ids"]:
             state["failed_seed_ids"].append(sid)
             state.setdefault("failed_details", []).append({"seed_id": sid, "reason": str(result.get("error", "")), "created_at": _now()})
+        if status == "failed_after_retries" and sid not in state["failed_seed_ids"]:
+            state["failed_seed_ids"].append(sid)
+            state.setdefault("failed_details", []).append({"seed_id": sid, "reason": accounting.get("failure_reason", "failed_after_retries"), "created_at": _now()})
         if status in {"completed", "partial"}:
             state["last_completed_seed_id"] = sid
         state["in_progress_seed_id"] = None
@@ -1334,6 +1350,7 @@ def _process_seeds(
         _refresh_coverage(state, ordered)
         _save_state(state)
         # Per-seed canonical persistence: local save is mandatory; GitHub push is optional.
+        saved_canonical = False
         if status in {"completed", "partial"}:
             seed_persist = persist_canonical_after_seed(
                 seed=seed,
@@ -1343,7 +1360,23 @@ def _process_seeds(
                 market=seed_market,
             )
             per_seed_canonical.append({"seed_id": sid, "canonical_persist": seed_persist})
-    return results, per_seed_canonical
+            saved_canonical = bool(isinstance(seed_persist, dict) and seed_persist.get("ok"))
+        execution_trace.append({
+            "seed_id": sid,
+            "attempt_before": attempt_before,
+            "attempt_after": int(accounting.get("attempts", attempt_before) or attempt_before),
+            "did_call_model": did_call_model,
+            "model_response_received": did_call_model and status != "error",
+            "candidates_returned": int(accounting.get("candidates_returned", 0) or 0),
+            "valid_variants_built": int(accounting.get("valid_variants_built", 0) or 0),
+            "variants_added_to_canonical": int(accounting.get("variants_added_to_canonical", 0) or 0),
+            "variants_deduped_or_merged": int(accounting.get("variants_deduped_or_merged", 0) or 0),
+            "no_variants_reason": accounting.get("no_variants_reason"),
+            "final_status": status,
+            "saved_canonical": saved_canonical,
+            "saved_batch_state": True,
+        })
+    return results, per_seed_canonical, execution_trace
 
 
 def repair_false_processed_seeds(package: dict, ordered_seeds: list[dict] | None = None, market: str = "IL") -> dict:
@@ -1531,22 +1564,9 @@ def run_next_batch(
         batch_50_guard = evaluate_batch_50_guard(market=market, auto_push_canonical=auto_push_canonical, auto_push_per_seed=auto_push_per_seed)
         if not batch_50_guard.get("passed", False):
             return {"status": "blocked", "error": "Batch 50 blocked by canonical guard.", "guard": batch_50_guard, "results": []}
-    # Block forward batch when false-processed zero-variant seeds are present regardless of
-    # whether they reached the guard's issues list (they may not if variants lack make fields).
-    if guard.get("repair_required"):
-        return {
-            "status": "blocked",
-            "error": (
-                f"Batch blocked: {guard.get('false_processed_seed_count', 0)} false-processed zero-variant "
-                "seeds detected. Run repair_false_processed_seeds() and re-process them before continuing."
-            ),
-            "guard": guard,
-            "repair_required": True,
-            "false_processed_seed_count": guard.get("false_processed_seed_count", 0),
-            "false_processed_seeds": guard.get("false_processed_seeds", []),
-            "results": [],
-        }
-    if not guard.get("passed", False):
+    # When repair_required, auto-switch to repair queue instead of blocking.
+    # Only block when the guard failed for reasons unrelated to zero-variant repair.
+    if not guard.get("repair_required") and not guard.get("passed", False):
         return {
             "status": "blocked",
             "error": "Batch start blocked by canonical/batch_state guard.",
@@ -1558,45 +1578,102 @@ def run_next_batch(
         _raw_state = load_batch_state(market)
         _raw_last_completed = _raw_state.get("last_completed_seed_id")
         state = normalize_batch_state_for_resume(_raw_state, ordered, market=market)
+        # Preserve stall-detection fields that are stripped out by normalization
+        state["_last_queue_seed_ids"] = _raw_state.get("_last_queue_seed_ids") or []
+        state["_last_total_attempts"] = _raw_state.get("_last_total_attempts", -1)
         first_seed = ordered[0]["seed_id"] if ordered else None
         if len(state.get("processed_seed_ids", [])) == 0 and not state.get("last_completed_seed_id") and not _raw_last_completed and (state.get("next_seed_id") in {None, first_seed}):
             local_canonical = load_local_canonical_resume_package()
             if isinstance(local_canonical, dict) and isinstance(local_canonical.get("batch_state"), dict):
                 canonical_state = extract_canonical_batch_state(local_canonical, ordered, market=market)
                 if len(canonical_state.get("processed_seed_ids", [])) > 0:
+                    # Preserve stall-detection fields across the canonical override
+                    _prev_last_queue = state.get("_last_queue_seed_ids", [])
+                    _prev_last_attempts = state.get("_last_total_attempts", -1)
                     state = canonical_state
+                    state["_last_queue_seed_ids"] = _prev_last_queue
+                    state["_last_total_attempts"] = _prev_last_attempts
                     _save_state(state)
     else:
         state = _default_state(market, ordered)
+    _ensure_zero_variant_fields(state)
     outputs = _load_outputs()
     if state.get("in_progress_seed_id"):
         state.setdefault("failed_details", []).append({"seed_id": state["in_progress_seed_id"], "reason": "Previous run interrupted before completion", "created_at": _now()})
         state["in_progress_seed_id"] = None
     candidates = [s for s in ordered if not make_filter or s["make"].lower() == make_filter.lower()]
-    coverage = audit_coverage_until_last_completed(candidates, state, outputs)
-    holes = [seed_to_dict(s, default_market=market) for s in coverage["missing_seeds"]]
-    processed_set = set(state.get("processed_seed_ids", []))
-    next_seed_id = state.get("next_seed_id")
-    forward_queue = [seed_to_dict(s, default_market=market) for s in candidates if s["seed_id"] not in processed_set and (include_failed or s["seed_id"] not in state.get("failed_seed_ids", []))]
-    if next_seed_id and next_seed_id in [s.get("seed_id") for s in forward_queue]:
-        idx = [s.get("seed_id") for s in forward_queue].index(next_seed_id)
-        forward_queue = forward_queue[idx:]
-    use_hole_repair = bool(holes) and not (next_seed_id and next_seed_id not in processed_set)
-    batch_mode = "fill_coverage_holes" if use_hole_repair else "resume_forward"
-    queue = holes if use_hole_repair else forward_queue
-    if not queue and ordered and len(state.get("processed_seed_ids", [])) < len(ordered):
-        next_id = state.get("next_seed_id") or next_unprocessed_seed_id([s["seed_id"] for s in ordered], set(state.get("processed_seed_ids", [])))
-        if next_id:
-            forced = next((s for s in ordered if s["seed_id"] == next_id), None)
-            if forced is not None:
-                queue = [seed_to_dict(forced, default_market=market)]
+    # --- Build queue ---
+    if guard.get("repair_required"):
+        # Auto-switch to zero-variant repair queue: pull false-processed seeds out of
+        # processed_seed_ids so they go through a real processing attempt.
+        false_processed_ids = {fp["seed_id"] for fp in guard.get("false_processed_seeds", [])}
+        state["processed_seed_ids"] = [s for s in state.get("processed_seed_ids", []) if s not in false_processed_ids]
+        for fid in false_processed_ids:
+            if fid not in state.get("false_processed_seed_ids", []):
+                state.setdefault("false_processed_seed_ids", []).append(fid)
+            if fid not in state.get("needs_retry_seed_ids", []):
+                state.setdefault("needs_retry_seed_ids", []).append(fid)
+            # Remove from failed_seed_ids so they're eligible for retry
+            if fid in state.get("failed_seed_ids", []):
+                state["failed_seed_ids"].remove(fid)
+        repair_ordered = [s for s in ordered if s["seed_id"] in false_processed_ids]
+        holes = []
+        coverage = audit_coverage_until_last_completed(candidates, state, outputs)
+        queue = [seed_to_dict(s, default_market=market) for s in repair_ordered]
+        batch_mode = "zero_variant_repair"
+    else:
+        coverage = audit_coverage_until_last_completed(candidates, state, outputs)
+        holes = [seed_to_dict(s, default_market=market) for s in coverage["missing_seeds"]]
+        processed_set = set(state.get("processed_seed_ids", []))
+        next_seed_id = state.get("next_seed_id")
+        forward_queue = [seed_to_dict(s, default_market=market) for s in candidates if s["seed_id"] not in processed_set and (include_failed or s["seed_id"] not in state.get("failed_seed_ids", []))]
+        if next_seed_id and next_seed_id in [s.get("seed_id") for s in forward_queue]:
+            idx = [s.get("seed_id") for s in forward_queue].index(next_seed_id)
+            forward_queue = forward_queue[idx:]
+        use_hole_repair = bool(holes) and not (next_seed_id and next_seed_id not in processed_set)
+        batch_mode = "fill_coverage_holes" if use_hole_repair else "resume_forward"
+        queue = holes if use_hole_repair else forward_queue
+        if not queue and ordered and len(state.get("processed_seed_ids", [])) < len(ordered):
+            next_id = state.get("next_seed_id") or next_unprocessed_seed_id([s["seed_id"] for s in ordered], set(state.get("processed_seed_ids", [])))
+            if next_id:
+                forced = next((s for s in ordered if s["seed_id"] == next_id), None)
+                if forced is not None:
+                    queue = [seed_to_dict(forced, default_market=market)]
     if not queue:
         _refresh_coverage(state, ordered)
         _save_state(state)
         return {"status": "completed_all", "batch_mode": "completed_all", "processed": 0, "remaining": 0, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": 0, "coverage_audit_after_batch": coverage}
+    # --- Queue diagnostics ---
+    current_queue_ids = [s.get("seed_id") for s in queue[:limit]]
+    queue_diagnostics = {
+        "queue_source": batch_mode,
+        "queue_seed_ids": current_queue_ids,
+        "queue_size": len(queue),
+        "first_seed": current_queue_ids[0] if current_queue_ids else None,
+        "last_seed": current_queue_ids[-1] if current_queue_ids else None,
+        "repair_required": guard.get("repair_required", False),
+        "false_processed_count": guard.get("false_processed_seed_count", 0),
+    }
+    # --- Stall detection ---
+    current_total_attempts = _total_accounting_attempts(state)
+    last_queue_ids = list(state.get("_last_queue_seed_ids") or [])
+    _raw_last_attempts = state.get("_last_total_attempts")
+    last_total_attempts = -1 if _raw_last_attempts is None else int(_raw_last_attempts)
+    if current_queue_ids and current_queue_ids == last_queue_ids and current_total_attempts <= last_total_attempts:
+        return {
+            "status": "stall_detected",
+            "error": "Stalled repair loop detected: same queue selected without processing attempts.",
+            "queue_diagnostics": queue_diagnostics,
+            "last_queue_seed_ids": last_queue_ids,
+            "current_total_attempts": current_total_attempts,
+            "results": [],
+        }
+    # Persist queue snapshot for stall detection on next run
+    state["_last_queue_seed_ids"] = current_queue_ids
+    state["_last_total_attempts"] = current_total_attempts
     batch_id = str(uuid.uuid4())
     state["last_batch_id"] = batch_id
-    results, per_seed_canonical = _process_seeds(
+    results, per_seed_canonical, execution_trace = _process_seeds(
         queue, state, ordered, limit, force_refresh, use_cache, progress_callback,
         auto_push_per_seed=auto_push_per_seed,
         commit_message_prefix=commit_message_prefix,
@@ -1611,7 +1688,7 @@ def run_next_batch(
     canonical_result = None
     if len(results) > 0:
         canonical_result = persist_canonical_resume_package(batch_id=batch_id, push_to_github=auto_push_canonical, market=market)
-    return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result, "per_seed_canonical": per_seed_canonical}
+    return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result, "per_seed_canonical": per_seed_canonical, "queue_diagnostics": queue_diagnostics, "batch_execution_trace": execution_trace}
 
 
 def repair_coverage_until_clean(limit_per_pass=20, max_passes=10, market="IL"):

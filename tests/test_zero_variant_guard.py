@@ -161,10 +161,14 @@ def test_evaluate_continue_guard_blocked_by_false_processed_seeds(monkeypatch, t
 
 
 def test_run_next_batch_blocked_by_repair_required(monkeypatch, tmp_path):
-    """run_next_batch must return status='blocked' when evaluate_continue_guard reports repair_required."""
+    """run_next_batch must auto-switch to repair queue when evaluate_continue_guard reports repair_required.
+
+    Previously this returned status='blocked'; after the fix it auto-switches to
+    batch_mode='zero_variant_repair' so the same seeds are actually processed.
+    """
     honda_seeds = _make_honda_seeds(4)
     fake_guard = {
-        "passed": True,  # deliberately set passed=True to isolate the repair_required check
+        "passed": True,
         "issues": [],
         "coverage_audit": {"holes_count": 0},
         "repair_required": True,
@@ -172,10 +176,22 @@ def test_run_next_batch_blocked_by_repair_required(monkeypatch, tmp_path):
         "false_processed_seeds": [{"seed_id": s["seed_id"]} for s in honda_seeds],
     }
     monkeypatch.setattr(br, "evaluate_continue_guard", lambda market="IL": fake_guard)
+    monkeypatch.setattr(br, "get_ordered_seed_list", lambda market="IL": honda_seeds)
+    monkeypatch.setattr(
+        br, "load_batch_state",
+        lambda market="IL": {"market": market, "processed_seed_ids": [s["seed_id"] for s in honda_seeds], "failed_seed_ids": [], "failed_details": [], "last_completed_seed_id": honda_seeds[-1]["seed_id"], "in_progress_seed_id": None},
+    )
+    monkeypatch.setattr(br, "_load_outputs", lambda: {"run_history": [], "unresolved": [], "conflicts": [], "verified": [], "partial": [], "sources": []})
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "save_json", lambda *a, **k: None)
+    monkeypatch.setattr(br, "run_single_model", lambda *a, **k: {"status": "completed", "variants_created": 0, "verified_count": 0, "partial_count": 0, "trace": {"candidate_variants_count": 0, "discovery_parsed_json_debug": {}}})
+    monkeypatch.setattr(br, "persist_canonical_resume_package", lambda **k: {"ok": True})
+    monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": False})
     result = br.run_next_batch(limit=1, market="IL")
-    assert result["status"] == "blocked"
-    assert result.get("repair_required") is True
-    assert result.get("false_processed_seed_count") == 4
+    # Auto-switched to repair queue — must NOT be blocked
+    assert result["status"] == "completed"
+    assert result.get("batch_mode") == "zero_variant_repair"
 
 
 def test_repair_false_processed_seeds_removes_from_processed():
