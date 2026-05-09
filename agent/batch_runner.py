@@ -1150,9 +1150,9 @@ def _process_seeds(
     for idx, seed in enumerate(seed_queue[:limit], start=1):
         selected_market = state.get("market")
         seed["market"] = seed.get("market") or selected_market or "IL"
-        market = seed.get("market") or market
+        seed_market = seed["market"]
         if not seed.get("seed_id"):
-            seed["seed_id"] = build_seed_id(seed.get("make"), seed.get("model"), seed.get("year_start"), seed.get("year_end"), market)
+            seed["seed_id"] = build_seed_id(seed.get("make"), seed.get("model"), seed.get("year_start"), seed.get("year_end"), seed_market)
         sid = seed["seed_id"]
         state["in_progress_seed_id"] = sid
         _save_state(state)
@@ -1181,7 +1181,7 @@ def _process_seeds(
                 batch_state=copy.deepcopy(state),
                 push_to_github=auto_push_per_seed,
                 commit_message_prefix=commit_message_prefix,
-                market=market,
+                market=seed_market,
             )
             per_seed_canonical.append({"seed_id": sid, "canonical_persist": seed_persist})
     return results, per_seed_canonical
