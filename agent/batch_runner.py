@@ -1618,6 +1618,9 @@ def rebuild_canonical_metadata_from_accumulated(package: dict, seeds: list[dict]
 
     accumulated_clean_export.variants is the single source of truth for variant counts.
     run_history is NOT used here — it may be incomplete and must not drive canonical coverage.
+
+    Returns a deep copy of the package with corrected metadata so the caller's object
+    is never mutated (consistent with the existing build_canonical_candidate pattern).
     """
     package = copy.deepcopy(package)
     acc = package.get("accumulated_clean_export") if isinstance(package.get("accumulated_clean_export"), dict) else {}
