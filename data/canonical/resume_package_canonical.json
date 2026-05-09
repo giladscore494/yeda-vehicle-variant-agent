@@ -1,12 +1,12 @@
 {
   "schema_version": "resume_package_v1",
-  "created_at": "2026-05-09T00:26:49.681506+00:00",
+  "created_at": "2026-05-09T00:45:37.153231+00:00",
   "description": "Clean manually merged resume package: previous 258-variant accumulated dataset + latest RS5 resume additions; continues from Audi RS6.",
   "batch_state": {
     "schema_version": "batch_state_v1",
     "market": "IL",
     "created_at": "2026-05-08T16:44:55.429137+00:00",
-    "updated_at": "2026-05-09T00:26:49.730526+00:00",
+    "updated_at": "2026-05-09T00:45:37.203450+00:00",
     "last_batch_id": "f069b043-3fdf-4add-b221-1a8c1ba66572",
     "total_seeds": 993,
     "processed_seed_ids": [
@@ -987,8 +987,8 @@
       "BMW": {
         "total": 114,
         "processed": 29,
-        "verified_variants": 41,
-        "partial_variants": 33,
+        "verified_variants": 0,
+        "partial_variants": 0,
         "unresolved": 0,
         "failed": 0,
         "completed": false
@@ -40003,8 +40003,8 @@
         "imported_accumulated_dataset": 358,
         "combined_clean": 0,
         "combined_old": 0,
-        "vehicle_variants_verified": 41,
-        "vehicle_variants_partial": 44,
+        "vehicle_variants_verified": 0,
+        "vehicle_variants_partial": 11,
         "run_history_embedded": 0,
         "latest_batch_full_variants": 0
       },
@@ -40012,8 +40012,8 @@
         "canonical_resume_package": 432,
         "canonical_source": "local_canonical",
         "imported_accumulated_dataset": 358,
-        "verified_output": 41,
-        "partial_output": 44,
+        "verified_output": 0,
+        "partial_output": 11,
         "latest_batch_full_variants": 0,
         "final_merged_variants": 432,
         "shrink_guard_previous_count": 432,
