@@ -1,12 +1,12 @@
 {
   "schema_version": "resume_package_v1",
-  "created_at": "2026-05-09T01:09:12.646523+00:00",
+  "created_at": "2026-05-09T01:09:21.959828+00:00",
   "description": "Clean manually merged resume package: previous 258-variant accumulated dataset + latest RS5 resume additions; continues from Audi RS6.",
   "batch_state": {
     "schema_version": "batch_state_v1",
     "market": "IL",
     "created_at": "2026-05-08T16:44:55.429137+00:00",
-    "updated_at": "2026-05-09T01:09:12.697930+00:00",
+    "updated_at": "2026-05-09T01:09:22.026462+00:00",
     "last_batch_id": "f069b043-3fdf-4add-b221-1a8c1ba66572",
     "total_seeds": 993,
     "processed_seed_ids": [
@@ -1849,7 +1849,8 @@
           "status": "verified",
           "sources_count": 2
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_520d_2010_2016_il_f10_2_0l_turbo_diesel_8_speed_automatic_sedan_diesel",
@@ -1983,7 +1984,8 @@
           "status": "verified",
           "sources_count": 2
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_520d_2017_2020_il_g30_2_0l_turbo_diesel_8_speed_automatic_sedan_diesel",
@@ -2117,7 +2119,8 @@
           "status": "verified",
           "sources_count": 2
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_523i_1996_2000_il_e39_2_5l_inline_6_petrol_170hp_automatic_manual_sedan_petrol",
@@ -2247,7 +2250,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_523i_2005_2007_il_e60_2_5l_inline_6_petrol_177hp_automatic_sedan_petrol",
@@ -2376,7 +2380,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_523i_2007_2010_il_e60_2_5l_inline_6_petrol_191hp_automatic_sedan_petrol",
@@ -2505,7 +2510,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_525i_1990_1995_il_e34_2_5l_i6_automatic_sedan_petrol",
@@ -2633,7 +2639,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_525i_2000_2003_il_e39_2_5l_i6_automatic_sedan_petrol",
@@ -2761,7 +2768,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_525i_2003_2010_il_e60_2_5l_i6_automatic_sedan_petrol",
@@ -2889,7 +2897,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_530e_2017_2023_il_g30_2_0l_turbo_phev_8_speed_automatic_sedan_plug_in_hybrid",
@@ -3018,7 +3027,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_530e_2024_2026_il_g60_2_0l_turbo_phev_8_speed_automatic_sedan_plug_in_hybrid",
@@ -3149,7 +3159,8 @@
           "status": "verified",
           "sources_count": 2
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "abarth_124_spider_2016_2020_il_1_1_4l_turbo_6_speed_automatic_roadster_petrol",
@@ -65192,7 +65203,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_520i_1995_2003_il_e39_2_0l_i6_2_2l_i6_automatic_manual_sedan_petrol",
@@ -65318,7 +65330,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_520i_2003_2010_il_e60_2_2l_i6_2_0l_i4_automatic_sedan_petrol",
@@ -65444,7 +65457,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_520i_2010_2017_il_f10_2_0l_turbo_i4_8_speed_automatic_sedan_petrol",
@@ -65570,7 +65584,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_520i_2017_2023_il_g30_2_0l_turbo_i4_8_speed_automatic_sedan_petrol",
@@ -65696,7 +65711,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_520i_2023_2026_il_g60_2_0l_turbo_i4_mhev_8_speed_automatic_sedan_mild_hybrid",
@@ -65822,7 +65838,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_523i_2010_2011_il_f10_2_5l_inline_6_petrol_204hp_automatic_sedan_petrol",
@@ -65949,7 +65966,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_528i_1996_2000_il_e39_2_8l_i6_automatic_sedan_petrol",
@@ -66069,7 +66087,8 @@
           "status": "unverified",
           "sources_count": 0
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_528i_2010_2011_il_f10_3_0l_i6_automatic_sedan_petrol",
@@ -66193,7 +66212,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_528i_2011_2016_il_f10_2_0l_i4_turbo_automatic_sedan_petrol",
@@ -66317,7 +66337,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_528i_2012_2016_il_f11_2_0l_i4_turbo_automatic_station_wagon_petrol",
@@ -66441,7 +66462,8 @@
           "status": "partial",
           "sources_count": 1
         }
-      ]
+      ],
+      "source_ids": []
     }
   ],
   "accumulated_clean_export": {
@@ -90252,6 +90274,1392 @@
         "source_ids": []
       },
       {
+        "variant_id": "bmw_520i_1990_1995_il_e34_2_0l_i6_automatic_manual_sedan_petrol",
+        "make": "BMW",
+        "model": "520i",
+        "aliases": [],
+        "year_start": {
+          "value": 1990,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 1995,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "E34",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.0L I6",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "Automatic / Manual",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "trim": {
+          "value": "Base",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 10,
+        "created_at": "2026-05-09T01:05:07.128546+00:00",
+        "updated_at": "2026-05-09T01:05:07.128559+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "E34",
+          "year_start": 1990,
+          "year_end": 1995,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "2.0L I6",
+          "transmission": "Automatic / Manual",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Base"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Base",
+            "source_ids": [
+              "src_wiki"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_520i_1995_2003_il_e39_2_0l_i6_2_2l_i6_automatic_manual_sedan_petrol",
+        "make": "BMW",
+        "model": "520i",
+        "aliases": [],
+        "year_start": {
+          "value": 1995,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2003,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "E39",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.0L I6 / 2.2L I6",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "Automatic / Manual",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "trim": {
+          "value": "Base",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 10,
+        "created_at": "2026-05-09T01:05:07.128672+00:00",
+        "updated_at": "2026-05-09T01:05:07.128676+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "E39",
+          "year_start": 1995,
+          "year_end": 2003,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "2.0L I6 / 2.2L I6",
+          "transmission": "Automatic / Manual",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Base"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Base",
+            "source_ids": [
+              "src_wiki"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_520i_2003_2010_il_e60_2_2l_i6_2_0l_i4_automatic_sedan_petrol",
+        "make": "BMW",
+        "model": "520i",
+        "aliases": [],
+        "year_start": {
+          "value": 2003,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2010,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "E60",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.2L I6 / 2.0L I4",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "Automatic",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "trim": {
+          "value": "Base / Business",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_wiki"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 10,
+        "created_at": "2026-05-09T01:05:07.128771+00:00",
+        "updated_at": "2026-05-09T01:05:07.128775+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "E60",
+          "year_start": 2003,
+          "year_end": 2010,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "2.2L I6 / 2.0L I4",
+          "transmission": "Automatic",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Base / Business"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Base / Business",
+            "source_ids": [
+              "src_wiki"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_520i_2010_2017_il_f10_2_0l_turbo_i4_8_speed_automatic_sedan_petrol",
+        "make": "BMW",
+        "model": "520i",
+        "aliases": [],
+        "year_start": {
+          "value": 2010,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2017,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "F10",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.0L Turbo I4",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "8-speed Automatic",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "trim": {
+          "value": "Executive / Luxury",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 10,
+        "created_at": "2026-05-09T01:05:07.128865+00:00",
+        "updated_at": "2026-05-09T01:05:07.128869+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "F10",
+          "year_start": 2010,
+          "year_end": 2017,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "2.0L Turbo I4",
+          "transmission": "8-speed Automatic",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Executive / Luxury"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Executive / Luxury",
+            "source_ids": [
+              "src_auto_il"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_520i_2017_2023_il_g30_2_0l_turbo_i4_8_speed_automatic_sedan_petrol",
+        "make": "BMW",
+        "model": "520i",
+        "aliases": [],
+        "year_start": {
+          "value": 2017,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2023,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "G30",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.0L Turbo I4",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "8-speed Automatic",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "trim": {
+          "value": "Exclusive / M-Sport",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 10,
+        "created_at": "2026-05-09T01:05:07.128954+00:00",
+        "updated_at": "2026-05-09T01:05:07.128957+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "G30",
+          "year_start": 2017,
+          "year_end": 2023,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "2.0L Turbo I4",
+          "transmission": "8-speed Automatic",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Exclusive / M-Sport"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Exclusive / M-Sport",
+            "source_ids": [
+              "src_auto_il"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_520i_2023_2026_il_g60_2_0l_turbo_i4_mhev_8_speed_automatic_sedan_mild_hybrid",
+        "make": "BMW",
+        "model": "520i",
+        "aliases": [],
+        "year_start": {
+          "value": 2023,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2026,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "G60",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.0L Turbo I4 MHEV",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "8-speed Automatic",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Mild Hybrid",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "trim": {
+          "value": "M-Sport",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 10,
+        "created_at": "2026-05-09T01:05:07.129046+00:00",
+        "updated_at": "2026-05-09T01:05:07.129050+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "G60",
+          "year_start": 2023,
+          "year_end": 2026,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "2.0L Turbo I4 MHEV",
+          "transmission": "8-speed Automatic",
+          "fuel_type": "Mild Hybrid",
+          "drivetrain": "RWD",
+          "trim": "M-Sport"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "M-Sport",
+            "source_ids": [
+              "src_auto_il"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_523i_2010_2011_il_f10_2_5l_inline_6_petrol_204hp_automatic_sedan_petrol",
+        "make": "BMW",
+        "model": "523i",
+        "aliases": [],
+        "year_start": {
+          "value": 2010,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2011,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "F10",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_4"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_4"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.5L Inline-6 Petrol 204hp",
+          "status": "verified",
+          "confidence": "high",
+          "sources_count": 2,
+          "source_ids": [
+            "src_3",
+            "src_4"
+          ],
+          "used_in_compare": true,
+          "reason": "verified from 2 source(s)"
+        },
+        "transmission": {
+          "value": "Automatic",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_4"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_4"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_4"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "trim": {
+          "value": "Executive",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_3"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 12,
+        "created_at": "2026-05-09T01:06:18.304928+00:00",
+        "updated_at": "2026-05-09T01:06:18.304931+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "F10",
+          "year_start": 2010,
+          "year_end": 2011,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "2.5L Inline-6 Petrol 204hp",
+          "transmission": "Automatic",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Executive"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Executive",
+            "source_ids": [
+              "src_3"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_528i_1996_2000_il_e39_2_8l_i6_automatic_sedan_petrol",
+        "make": "BMW",
+        "model": "528i",
+        "aliases": [],
+        "year_start": {
+          "value": 1996,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2000,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "E39",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_konesonline"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.8L I6",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_konesonline"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "Automatic",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_konesonline"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_konesonline"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "unverified",
+          "confidence": "low",
+          "sources_count": 0,
+          "source_ids": [],
+          "used_in_compare": false,
+          "reason": "unverified from 0 source(s)"
+        },
+        "trim": {
+          "value": "Standard",
+          "status": "unverified",
+          "confidence": "low",
+          "sources_count": 0,
+          "source_ids": [],
+          "used_in_compare": false,
+          "reason": "unverified from 0 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 7,
+        "created_at": "2026-05-09T01:07:39.307177+00:00",
+        "updated_at": "2026-05-09T01:07:39.307190+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "E39",
+          "year_start": 1996,
+          "year_end": 2000,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "2.8L I6",
+          "transmission": "Automatic",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Standard"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Standard",
+            "source_ids": [],
+            "status": "unverified",
+            "sources_count": 0
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_528i_2010_2011_il_f10_3_0l_i6_automatic_sedan_petrol",
+        "make": "BMW",
+        "model": "528i",
+        "aliases": [],
+        "year_start": {
+          "value": 2010,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2011,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "F10",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "3.0L I6",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_walla_cars"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "Automatic",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "unverified",
+          "confidence": "low",
+          "sources_count": 0,
+          "source_ids": [],
+          "used_in_compare": false,
+          "reason": "unverified from 0 source(s)"
+        },
+        "trim": {
+          "value": "Executive",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 8,
+        "created_at": "2026-05-09T01:07:39.307295+00:00",
+        "updated_at": "2026-05-09T01:07:39.307299+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "F10",
+          "year_start": 2010,
+          "year_end": 2011,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "3.0L I6",
+          "transmission": "Automatic",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Executive"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Executive",
+            "source_ids": [
+              "src_auto_il"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_528i_2011_2016_il_f10_2_0l_i4_turbo_automatic_sedan_petrol",
+        "make": "BMW",
+        "model": "528i",
+        "aliases": [],
+        "year_start": {
+          "value": 2011,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2016,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "F10",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Sedan",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.0L I4 Turbo",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "Automatic",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "unverified",
+          "confidence": "low",
+          "sources_count": 0,
+          "source_ids": [],
+          "used_in_compare": false,
+          "reason": "unverified from 0 source(s)"
+        },
+        "trim": {
+          "value": "Luxury Line",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 8,
+        "created_at": "2026-05-09T01:07:39.307541+00:00",
+        "updated_at": "2026-05-09T01:07:39.307547+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "F10",
+          "year_start": 2011,
+          "year_end": 2016,
+          "body_type": "Sedan",
+          "seats": 5,
+          "engine": "2.0L I4 Turbo",
+          "transmission": "Automatic",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Luxury Line"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Luxury Line",
+            "source_ids": [
+              "src_auto_il"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "variant_id": "bmw_528i_2012_2016_il_f11_2_0l_i4_turbo_automatic_station_wagon_petrol",
+        "make": "BMW",
+        "model": "528i",
+        "aliases": [],
+        "year_start": {
+          "value": 2012,
+          "used_in_compare": false
+        },
+        "year_end": {
+          "value": 2016,
+          "used_in_compare": false
+        },
+        "market": "IL",
+        "generation": {
+          "value": "F11",
+          "used_in_compare": false
+        },
+        "body_type": {
+          "value": "Station Wagon",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "seats": {
+          "value": 5,
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "engine": {
+          "value": "2.0L I4 Turbo",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "transmission": {
+          "value": "Automatic",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "fuel_type": {
+          "value": "Petrol",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "drivetrain": {
+          "value": "RWD",
+          "status": "unverified",
+          "confidence": "low",
+          "sources_count": 0,
+          "source_ids": [],
+          "used_in_compare": false,
+          "reason": "unverified from 0 source(s)"
+        },
+        "trim": {
+          "value": "Executive",
+          "status": "partial",
+          "confidence": "medium",
+          "sources_count": 1,
+          "source_ids": [
+            "src_auto_il"
+          ],
+          "used_in_compare": true,
+          "reason": "partial from 1 source(s)"
+        },
+        "doors": null,
+        "verification_status": "partial",
+        "confidence": "medium",
+        "sources_count": 8,
+        "created_at": "2026-05-09T01:07:39.307638+00:00",
+        "updated_at": "2026-05-09T01:07:39.307642+00:00",
+        "notes": [],
+        "candidate_raw": {
+          "generation": "F11",
+          "year_start": 2012,
+          "year_end": 2016,
+          "body_type": "Station Wagon",
+          "seats": 5,
+          "engine": "2.0L I4 Turbo",
+          "transmission": "Automatic",
+          "fuel_type": "Petrol",
+          "drivetrain": "RWD",
+          "trim": "Executive"
+        },
+        "identity_confidence": "candidate_unverified",
+        "trim_options": [
+          {
+            "value": "Executive",
+            "source_ids": [
+              "src_auto_il"
+            ],
+            "status": "partial",
+            "sources_count": 1
+          }
+        ],
+        "source_ids": []
+      },
+      {
         "variant_id": "bmw_520d_2008_2010_il_e60_lci_2_0l_turbo_diesel_6_speed_automatic_sedan_diesel",
         "make": "BMW",
         "model": "520d",
@@ -90383,7 +91791,8 @@
             "status": "verified",
             "sources_count": 2
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_520d_2010_2016_il_f10_2_0l_turbo_diesel_8_speed_automatic_sedan_diesel",
@@ -90517,7 +91926,8 @@
             "status": "verified",
             "sources_count": 2
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_520d_2017_2020_il_g30_2_0l_turbo_diesel_8_speed_automatic_sedan_diesel",
@@ -90651,7 +92061,8 @@
             "status": "verified",
             "sources_count": 2
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_523i_1996_2000_il_e39_2_5l_inline_6_petrol_170hp_automatic_manual_sedan_petrol",
@@ -90781,7 +92192,8 @@
             "status": "partial",
             "sources_count": 1
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_523i_2005_2007_il_e60_2_5l_inline_6_petrol_177hp_automatic_sedan_petrol",
@@ -90910,7 +92322,8 @@
             "status": "partial",
             "sources_count": 1
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_523i_2007_2010_il_e60_2_5l_inline_6_petrol_191hp_automatic_sedan_petrol",
@@ -91039,7 +92452,8 @@
             "status": "partial",
             "sources_count": 1
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_525i_1990_1995_il_e34_2_5l_i6_automatic_sedan_petrol",
@@ -91167,7 +92581,8 @@
             "status": "partial",
             "sources_count": 1
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_525i_2000_2003_il_e39_2_5l_i6_automatic_sedan_petrol",
@@ -91295,7 +92710,8 @@
             "status": "partial",
             "sources_count": 1
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_525i_2003_2010_il_e60_2_5l_i6_automatic_sedan_petrol",
@@ -91423,7 +92839,8 @@
             "status": "partial",
             "sources_count": 1
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_530e_2017_2023_il_g30_2_0l_turbo_phev_8_speed_automatic_sedan_plug_in_hybrid",
@@ -91552,7 +92969,8 @@
             "status": "partial",
             "sources_count": 1
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_530e_2024_2026_il_g60_2_0l_turbo_phev_8_speed_automatic_sedan_plug_in_hybrid",
@@ -91683,1382 +93101,8 @@
             "status": "verified",
             "sources_count": 2
           }
-        ]
-      },
-      {
-        "variant_id": "bmw_520i_1990_1995_il_e34_2_0l_i6_automatic_manual_sedan_petrol",
-        "make": "BMW",
-        "model": "520i",
-        "aliases": [],
-        "year_start": {
-          "value": 1990,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 1995,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "E34",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.0L I6",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "Automatic / Manual",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "trim": {
-          "value": "Base",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 10,
-        "created_at": "2026-05-09T01:05:07.128546+00:00",
-        "updated_at": "2026-05-09T01:05:07.128559+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "E34",
-          "year_start": 1990,
-          "year_end": 1995,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "2.0L I6",
-          "transmission": "Automatic / Manual",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Base"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Base",
-            "source_ids": [
-              "src_wiki"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_520i_1995_2003_il_e39_2_0l_i6_2_2l_i6_automatic_manual_sedan_petrol",
-        "make": "BMW",
-        "model": "520i",
-        "aliases": [],
-        "year_start": {
-          "value": 1995,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2003,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "E39",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.0L I6 / 2.2L I6",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "Automatic / Manual",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "trim": {
-          "value": "Base",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 10,
-        "created_at": "2026-05-09T01:05:07.128672+00:00",
-        "updated_at": "2026-05-09T01:05:07.128676+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "E39",
-          "year_start": 1995,
-          "year_end": 2003,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "2.0L I6 / 2.2L I6",
-          "transmission": "Automatic / Manual",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Base"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Base",
-            "source_ids": [
-              "src_wiki"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_520i_2003_2010_il_e60_2_2l_i6_2_0l_i4_automatic_sedan_petrol",
-        "make": "BMW",
-        "model": "520i",
-        "aliases": [],
-        "year_start": {
-          "value": 2003,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2010,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "E60",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.2L I6 / 2.0L I4",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "Automatic",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "trim": {
-          "value": "Base / Business",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_wiki"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 10,
-        "created_at": "2026-05-09T01:05:07.128771+00:00",
-        "updated_at": "2026-05-09T01:05:07.128775+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "E60",
-          "year_start": 2003,
-          "year_end": 2010,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "2.2L I6 / 2.0L I4",
-          "transmission": "Automatic",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Base / Business"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Base / Business",
-            "source_ids": [
-              "src_wiki"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_520i_2010_2017_il_f10_2_0l_turbo_i4_8_speed_automatic_sedan_petrol",
-        "make": "BMW",
-        "model": "520i",
-        "aliases": [],
-        "year_start": {
-          "value": 2010,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2017,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "F10",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.0L Turbo I4",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "8-speed Automatic",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "trim": {
-          "value": "Executive / Luxury",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 10,
-        "created_at": "2026-05-09T01:05:07.128865+00:00",
-        "updated_at": "2026-05-09T01:05:07.128869+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "F10",
-          "year_start": 2010,
-          "year_end": 2017,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "2.0L Turbo I4",
-          "transmission": "8-speed Automatic",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Executive / Luxury"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Executive / Luxury",
-            "source_ids": [
-              "src_auto_il"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_520i_2017_2023_il_g30_2_0l_turbo_i4_8_speed_automatic_sedan_petrol",
-        "make": "BMW",
-        "model": "520i",
-        "aliases": [],
-        "year_start": {
-          "value": 2017,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2023,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "G30",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.0L Turbo I4",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "8-speed Automatic",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "trim": {
-          "value": "Exclusive / M-Sport",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 10,
-        "created_at": "2026-05-09T01:05:07.128954+00:00",
-        "updated_at": "2026-05-09T01:05:07.128957+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "G30",
-          "year_start": 2017,
-          "year_end": 2023,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "2.0L Turbo I4",
-          "transmission": "8-speed Automatic",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Exclusive / M-Sport"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Exclusive / M-Sport",
-            "source_ids": [
-              "src_auto_il"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_520i_2023_2026_il_g60_2_0l_turbo_i4_mhev_8_speed_automatic_sedan_mild_hybrid",
-        "make": "BMW",
-        "model": "520i",
-        "aliases": [],
-        "year_start": {
-          "value": 2023,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2026,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "G60",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.0L Turbo I4 MHEV",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "8-speed Automatic",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Mild Hybrid",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "trim": {
-          "value": "M-Sport",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 10,
-        "created_at": "2026-05-09T01:05:07.129046+00:00",
-        "updated_at": "2026-05-09T01:05:07.129050+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "G60",
-          "year_start": 2023,
-          "year_end": 2026,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "2.0L Turbo I4 MHEV",
-          "transmission": "8-speed Automatic",
-          "fuel_type": "Mild Hybrid",
-          "drivetrain": "RWD",
-          "trim": "M-Sport"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "M-Sport",
-            "source_ids": [
-              "src_auto_il"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_523i_2010_2011_il_f10_2_5l_inline_6_petrol_204hp_automatic_sedan_petrol",
-        "make": "BMW",
-        "model": "523i",
-        "aliases": [],
-        "year_start": {
-          "value": 2010,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2011,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "F10",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_4"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_4"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.5L Inline-6 Petrol 204hp",
-          "status": "verified",
-          "confidence": "high",
-          "sources_count": 2,
-          "source_ids": [
-            "src_3",
-            "src_4"
-          ],
-          "used_in_compare": true,
-          "reason": "verified from 2 source(s)"
-        },
-        "transmission": {
-          "value": "Automatic",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_4"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_4"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_4"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "trim": {
-          "value": "Executive",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_3"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 12,
-        "created_at": "2026-05-09T01:06:18.304928+00:00",
-        "updated_at": "2026-05-09T01:06:18.304931+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "F10",
-          "year_start": 2010,
-          "year_end": 2011,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "2.5L Inline-6 Petrol 204hp",
-          "transmission": "Automatic",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Executive"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Executive",
-            "source_ids": [
-              "src_3"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_528i_1996_2000_il_e39_2_8l_i6_automatic_sedan_petrol",
-        "make": "BMW",
-        "model": "528i",
-        "aliases": [],
-        "year_start": {
-          "value": 1996,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2000,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "E39",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_konesonline"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.8L I6",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_konesonline"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "Automatic",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_konesonline"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_konesonline"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "unverified",
-          "confidence": "low",
-          "sources_count": 0,
-          "source_ids": [],
-          "used_in_compare": false,
-          "reason": "unverified from 0 source(s)"
-        },
-        "trim": {
-          "value": "Standard",
-          "status": "unverified",
-          "confidence": "low",
-          "sources_count": 0,
-          "source_ids": [],
-          "used_in_compare": false,
-          "reason": "unverified from 0 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 7,
-        "created_at": "2026-05-09T01:07:39.307177+00:00",
-        "updated_at": "2026-05-09T01:07:39.307190+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "E39",
-          "year_start": 1996,
-          "year_end": 2000,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "2.8L I6",
-          "transmission": "Automatic",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Standard"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Standard",
-            "source_ids": [],
-            "status": "unverified",
-            "sources_count": 0
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_528i_2010_2011_il_f10_3_0l_i6_automatic_sedan_petrol",
-        "make": "BMW",
-        "model": "528i",
-        "aliases": [],
-        "year_start": {
-          "value": 2010,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2011,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "F10",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "3.0L I6",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_walla_cars"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "Automatic",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "unverified",
-          "confidence": "low",
-          "sources_count": 0,
-          "source_ids": [],
-          "used_in_compare": false,
-          "reason": "unverified from 0 source(s)"
-        },
-        "trim": {
-          "value": "Executive",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 8,
-        "created_at": "2026-05-09T01:07:39.307295+00:00",
-        "updated_at": "2026-05-09T01:07:39.307299+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "F10",
-          "year_start": 2010,
-          "year_end": 2011,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "3.0L I6",
-          "transmission": "Automatic",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Executive"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Executive",
-            "source_ids": [
-              "src_auto_il"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_528i_2011_2016_il_f10_2_0l_i4_turbo_automatic_sedan_petrol",
-        "make": "BMW",
-        "model": "528i",
-        "aliases": [],
-        "year_start": {
-          "value": 2011,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2016,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "F10",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Sedan",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.0L I4 Turbo",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "Automatic",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "unverified",
-          "confidence": "low",
-          "sources_count": 0,
-          "source_ids": [],
-          "used_in_compare": false,
-          "reason": "unverified from 0 source(s)"
-        },
-        "trim": {
-          "value": "Luxury Line",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 8,
-        "created_at": "2026-05-09T01:07:39.307541+00:00",
-        "updated_at": "2026-05-09T01:07:39.307547+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "F10",
-          "year_start": 2011,
-          "year_end": 2016,
-          "body_type": "Sedan",
-          "seats": 5,
-          "engine": "2.0L I4 Turbo",
-          "transmission": "Automatic",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Luxury Line"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Luxury Line",
-            "source_ids": [
-              "src_auto_il"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
-      },
-      {
-        "variant_id": "bmw_528i_2012_2016_il_f11_2_0l_i4_turbo_automatic_station_wagon_petrol",
-        "make": "BMW",
-        "model": "528i",
-        "aliases": [],
-        "year_start": {
-          "value": 2012,
-          "used_in_compare": false
-        },
-        "year_end": {
-          "value": 2016,
-          "used_in_compare": false
-        },
-        "market": "IL",
-        "generation": {
-          "value": "F11",
-          "used_in_compare": false
-        },
-        "body_type": {
-          "value": "Station Wagon",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "seats": {
-          "value": 5,
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "engine": {
-          "value": "2.0L I4 Turbo",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "transmission": {
-          "value": "Automatic",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "fuel_type": {
-          "value": "Petrol",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "drivetrain": {
-          "value": "RWD",
-          "status": "unverified",
-          "confidence": "low",
-          "sources_count": 0,
-          "source_ids": [],
-          "used_in_compare": false,
-          "reason": "unverified from 0 source(s)"
-        },
-        "trim": {
-          "value": "Executive",
-          "status": "partial",
-          "confidence": "medium",
-          "sources_count": 1,
-          "source_ids": [
-            "src_auto_il"
-          ],
-          "used_in_compare": true,
-          "reason": "partial from 1 source(s)"
-        },
-        "doors": null,
-        "verification_status": "partial",
-        "confidence": "medium",
-        "sources_count": 8,
-        "created_at": "2026-05-09T01:07:39.307638+00:00",
-        "updated_at": "2026-05-09T01:07:39.307642+00:00",
-        "notes": [],
-        "candidate_raw": {
-          "generation": "F11",
-          "year_start": 2012,
-          "year_end": 2016,
-          "body_type": "Station Wagon",
-          "seats": 5,
-          "engine": "2.0L I4 Turbo",
-          "transmission": "Automatic",
-          "fuel_type": "Petrol",
-          "drivetrain": "RWD",
-          "trim": "Executive"
-        },
-        "identity_confidence": "candidate_unverified",
-        "trim_options": [
-          {
-            "value": "Executive",
-            "source_ids": [
-              "src_auto_il"
-            ],
-            "status": "partial",
-            "sources_count": 1
-          }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "abarth_124_spider_2016_2020_il_1_1_4l_turbo_6_speed_automatic_roadster_petrol",
@@ -131191,25 +131235,25 @@
       "status_rebuilt": true,
       "trim_merge_enabled": true,
       "inputs_loaded": {
-        "canonical_resume_package": 432,
+        "canonical_resume_package": 454,
         "canonical_source": "local_canonical",
         "imported_accumulated_dataset": 432,
         "combined_clean": 0,
         "combined_old": 0,
-        "vehicle_variants_verified": 11,
-        "vehicle_variants_partial": 22,
+        "vehicle_variants_verified": 0,
+        "vehicle_variants_partial": 11,
         "run_history_embedded": 0,
         "latest_batch_full_variants": 0
       },
       "accumulation_counts": {
-        "canonical_resume_package": 432,
+        "canonical_resume_package": 454,
         "canonical_source": "local_canonical",
         "imported_accumulated_dataset": 432,
-        "verified_output": 11,
-        "partial_output": 22,
+        "verified_output": 0,
+        "partial_output": 11,
         "latest_batch_full_variants": 0,
         "final_merged_variants": 454,
-        "shrink_guard_previous_count": 432,
+        "shrink_guard_previous_count": 454,
         "shrink_guard_new_count": 454
       }
     }
@@ -131229,7 +131273,8 @@
     },
     "previous_canonical_variants": 263,
     "new_unique_added": 191,
-    "pushed_to_github": false
+    "pushed_to_github": true,
+    "last_push_commit_sha": "05d0c3e4364c20d744f7c3a6a42968f9491cddce"
   },
   "counts": {
     "total_variants": 454,
