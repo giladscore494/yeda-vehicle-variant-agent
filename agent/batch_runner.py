@@ -1555,9 +1555,11 @@ def run_next_batch(
         }
     ordered = get_ordered_seed_list(market)
     if resume:
-        state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
+        _raw_state = load_batch_state(market)
+        _raw_last_completed = _raw_state.get("last_completed_seed_id")
+        state = normalize_batch_state_for_resume(_raw_state, ordered, market=market)
         first_seed = ordered[0]["seed_id"] if ordered else None
-        if len(state.get("processed_seed_ids", [])) == 0 and not state.get("last_completed_seed_id") and (state.get("next_seed_id") in {None, first_seed}):
+        if len(state.get("processed_seed_ids", [])) == 0 and not state.get("last_completed_seed_id") and not _raw_last_completed and (state.get("next_seed_id") in {None, first_seed}):
             local_canonical = load_local_canonical_resume_package()
             if isinstance(local_canonical, dict) and isinstance(local_canonical.get("batch_state"), dict):
                 canonical_state = extract_canonical_batch_state(local_canonical, ordered, market=market)
