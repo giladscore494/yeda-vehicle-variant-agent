@@ -1346,6 +1346,57 @@ def _process_seeds(
     return results, per_seed_canonical
 
 
+def repair_false_processed_seeds(package: dict, ordered_seeds: list[dict] | None = None, market: str = "IL") -> dict:
+    """Remove false-processed zero-variant seeds from processed_seed_ids and queue them for retry.
+
+    A seed is considered false-processed when it is listed in processed_seed_ids but has
+    matched_variants_count == 0, no dedupe_proof, and no no_variants_reason.
+
+    Returns a dict with:
+      ok, repaired_count, repaired_seed_ids, false_processed_seeds, package (deep-copied and repaired)
+    """
+    package = copy.deepcopy(package) if isinstance(package, dict) else {}
+    if ordered_seeds is None:
+        ordered_seeds = get_ordered_seed_list(market)
+    false_processed = find_processed_zero_variant_seeds(package, ordered_seeds=ordered_seeds)
+    if not false_processed:
+        return {"ok": True, "repaired_count": 0, "repaired_seed_ids": [], "false_processed_seeds": [], "package": package}
+
+    false_ids = {r["seed_id"] for r in false_processed}
+    batch_state = copy.deepcopy(package.get("batch_state") if isinstance(package.get("batch_state"), dict) else {})
+    _ensure_zero_variant_fields(batch_state)
+
+    # Remove false-processed seeds from processed_seed_ids
+    batch_state["processed_seed_ids"] = [sid for sid in batch_state.get("processed_seed_ids", []) if sid not in false_ids]
+
+    # Track them explicitly
+    for sid in false_ids:
+        if sid not in batch_state["needs_retry_seed_ids"]:
+            batch_state["needs_retry_seed_ids"].append(sid)
+        if sid not in batch_state["false_processed_seed_ids"]:
+            batch_state["false_processed_seed_ids"].append(sid)
+
+    # Recompute frontier fields
+    ordered_seed_ids = [s["seed_id"] for s in ordered_seeds]
+    processed_set = set(batch_state["processed_seed_ids"])
+    next_sid = next_unprocessed_seed_id(ordered_seed_ids, processed_set)
+    batch_state["next_seed_id"] = next_sid
+    if next_sid and next_sid in ordered_seed_ids:
+        idx = ordered_seed_ids.index(next_sid) - 1
+        batch_state["last_completed_seed_id"] = ordered_seed_ids[idx] if idx >= 0 else None
+    elif not next_sid:
+        batch_state["last_completed_seed_id"] = ordered_seed_ids[-1] if ordered_seed_ids else None
+
+    package["batch_state"] = batch_state
+    return {
+        "ok": True,
+        "repaired_count": len(false_ids),
+        "repaired_seed_ids": sorted(false_ids),
+        "false_processed_seeds": false_processed,
+        "package": package,
+    }
+
+
 def evaluate_continue_guard(market: str = "IL") -> dict:
     issues: list[str] = []
     ordered = get_ordered_seed_list(market)
@@ -1381,6 +1432,25 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
     if github_count > 0 and local_count > 0 and local_count < github_count:
         issues.append("canonical variant count is smaller than last known GitHub/local canonical")
         issues.append("GitHub canonical is newer/larger and local import would overwrite it without merge")
+
+    # Zero-variant false-processed seed audit — must run before allowing forward batch progress
+    false_processed: list[dict] = []
+    if isinstance(local_canonical, dict):
+        false_processed = find_processed_zero_variant_seeds(local_canonical, ordered_seeds=ordered)
+        if false_processed:
+            # Only promote to a blocking issue when the canonical already carries variants that
+            # include 'make' data.  Packages whose variants lack make/model fields (e.g. legacy
+            # or test fixtures) must not be blocked by this heuristic — they are handled by the
+            # caller via repair_required=True.
+            canonical_variants = _extract_canonical_variant_bucket(local_canonical)
+            variants_have_make = any(str(v.get("make") or "").strip() for v in canonical_variants)
+            if variants_have_make:
+                issues.append(
+                    f"false_processed_zero_variant_seeds_found: {len(false_processed)} seeds have no variants, "
+                    "no dedupe_proof, and no no_variants_reason"
+                )
+
+    repair_required = len(false_processed) > 0
     return {
         "passed": len(issues) == 0,
         "issues": issues,
@@ -1391,6 +1461,9 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
         "last_completed_seed_id": state.get("last_completed_seed_id"),
         "next_seed_id": next_seed_id,
         "coverage_audit": coverage,
+        "repair_required": repair_required,
+        "false_processed_seed_count": len(false_processed),
+        "false_processed_seeds": false_processed,
     }
 
 
@@ -1458,6 +1531,21 @@ def run_next_batch(
         batch_50_guard = evaluate_batch_50_guard(market=market, auto_push_canonical=auto_push_canonical, auto_push_per_seed=auto_push_per_seed)
         if not batch_50_guard.get("passed", False):
             return {"status": "blocked", "error": "Batch 50 blocked by canonical guard.", "guard": batch_50_guard, "results": []}
+    # Block forward batch when false-processed zero-variant seeds are present regardless of
+    # whether they reached the guard's issues list (they may not if variants lack make fields).
+    if guard.get("repair_required"):
+        return {
+            "status": "blocked",
+            "error": (
+                f"Batch blocked: {guard.get('false_processed_seed_count', 0)} false-processed zero-variant "
+                "seeds detected. Run repair_false_processed_seeds() and re-process them before continuing."
+            ),
+            "guard": guard,
+            "repair_required": True,
+            "false_processed_seed_count": guard.get("false_processed_seed_count", 0),
+            "false_processed_seeds": guard.get("false_processed_seeds", []),
+            "results": [],
+        }
     if not guard.get("passed", False):
         return {
             "status": "blocked",
@@ -2309,7 +2397,16 @@ def pull_canonical_from_github() -> dict:
     save_json(_batch_state_path(), normalized_state)
     merged = dedupe_variants_stable([*load_imported_accumulated_variants(), *_extract_resume_variants(payload)])
     save_json(project_root() / "data/output/imported_accumulated_dataset.json", {"created_at": _now(), "variants": merged})
-    return {"ok": True, "variants": canonical_variant_count(payload)}
+    # Run zero-variant false-processed seed audit on the pulled package
+    false_processed = find_processed_zero_variant_seeds(payload, ordered_seeds=ordered)
+    repair_required = len(false_processed) > 0
+    return {
+        "ok": True,
+        "variants": canonical_variant_count(payload),
+        "repair_required": repair_required,
+        "false_processed_seed_count": len(false_processed),
+        "false_processed_seeds": false_processed,
+    }
 
 
 def canonical_integrity_report(market: str = "IL") -> dict:
@@ -2582,6 +2679,11 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
             guard_issues_for_continue.append("next_seed_id is already in processed_seed_ids")
         if int(coverage.get("holes_count", 0) or 0) > 0:
             guard_issues_for_continue.append("holes exist before last_completed_seed_id")
+        # Zero-variant false-processed seed audit on the imported package (informational).
+        # Reported as repair_required but NOT added to guard_issues_for_continue so that
+        # imports of packages with legacy/simplified variants (no make fields) are not blocked.
+        false_processed_import = find_processed_zero_variant_seeds(imported_pkg, ordered_seeds=ordered)
+        import_repair_required = len(false_processed_import) > 0
         result.update(
             {
                 "detected_file_type": file_type,
@@ -2598,6 +2700,9 @@ def import_progress_json(uploaded_json: dict | list, overwrite: bool = False, ma
                 "safe_to_continue": len(guard_issues_for_continue) == 0 and len(guard_issues) == 0,
                 "continue_guard_issues": guard_issues_for_continue,
                 "validate_result": validate_result,
+                "repair_required": import_repair_required,
+                "false_processed_seed_count": len(false_processed_import),
+                "false_processed_seeds": false_processed_import,
             }
         )
     else:
