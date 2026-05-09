@@ -17,6 +17,91 @@ from core.final_export_builder import build_clean_final_export, assert_no_mock_i
 from storage.github_canonical_store import fetch_file_from_github, push_canonical_resume_package, get_github_config
 
 BATCH_STATE_SCHEMA = "batch_state_v1"
+
+ALLOWED_NO_VARIANTS_REASONS = {
+    "model_not_sold_in_market",
+    "no_reliable_sources_found",
+    "insufficient_grounded_data",
+    "duplicate_existing_variant_only",
+    "seed_out_of_scope",
+    "model_discontinued_before_market_period",
+    "source_conflict_unresolved",
+    "blocked_by_validation",
+}
+
+
+def _ensure_zero_variant_fields(state: dict) -> dict:
+    state.setdefault("needs_retry_seed_ids", [])
+    state.setdefault("zero_variant_seed_ids", [])
+    state.setdefault("false_processed_seed_ids", [])
+    state.setdefault("seed_accounting", {})
+    state.setdefault("no_variants_by_seed", {})
+    state.setdefault("dedupe_proof_by_seed", {})
+    state.setdefault("zero_variant_policy", "retry_then_block")
+    return state
+
+
+def _load_variants_from_package(package: dict) -> list[dict]:
+    acc=(package.get("accumulated_clean_export") or {}) if isinstance(package,dict) else {}
+    if isinstance(acc.get("variants"), list):
+        return [v for v in acc.get("variants",[]) if isinstance(v,dict)]
+    fin=(package.get("final_export") or {}) if isinstance(package,dict) else {}
+    if isinstance(fin.get("variants"), list):
+        return [v for v in fin.get("variants",[]) if isinstance(v,dict)]
+    if isinstance(package.get("variants"), list):
+        return [v for v in package.get("variants",[]) if isinstance(v,dict)]
+    return [v for v in (package.get("verified_variants") or []) + (package.get("partial_variants") or []) if isinstance(v,dict)]
+
+
+def can_mark_seed_processed(seed_id: str, accounting: dict) -> dict:
+    issues=[]
+    added=int(accounting.get("variants_added_to_canonical",0) or 0)
+    deduped=int(accounting.get("variants_deduped_or_merged",0) or 0)
+    proof=accounting.get("dedupe_proof") or []
+    reason=accounting.get("no_variants_reason")
+    if added>0:
+        return {"allowed":True,"reason":"variants_added","issues":issues}
+    if deduped>0 and len(proof)>0:
+        return {"allowed":True,"reason":"deduped_with_proof","issues":issues}
+    if reason in ALLOWED_NO_VARIANTS_REASONS:
+        return {"allowed":True,"reason":"no_variants_reason","issues":issues}
+    if int(accounting.get("candidates_returned",0) or 0)==0: issues.append("candidates_returned==0")
+    if int(accounting.get("valid_variants_built",0) or 0)==0: issues.append("valid_variants_built==0")
+    if added==0: issues.append("variants_added_to_canonical==0")
+    if deduped==0: issues.append("variants_deduped_or_merged==0")
+    if reason is None: issues.append("no_variants_reason is null")
+    return {"allowed":False,"reason":"zero_variants_without_explanation","issues":issues}
+
+
+def find_processed_zero_variant_seeds(package: dict, ordered_seeds: list[dict] | None = None) -> list[dict]:
+    package=package if isinstance(package,dict) else {}
+    bs=(package.get("batch_state") or {}) if isinstance(package.get("batch_state"),dict) else {}
+    processed=list(bs.get("processed_seed_ids") or [])
+    seeds=ordered_seeds or package.get("ordered_seeds") or get_ordered_seed_list("IL")
+    by={s.get("seed_id"):s for s in seeds if isinstance(s,dict) and s.get("seed_id")}
+    variants=_load_variants_from_package(package)
+    dedupe=bs.get("dedupe_proof_by_seed") or {}
+    novar=bs.get("no_variants_by_seed") or {}
+    out=[]
+    for sid in processed:
+        seed=by.get(sid,{"seed_id":sid})
+        matched=[]
+        for v in variants:
+            if sid in {v.get("seed_id"),v.get("source_seed_id"),v.get("seed_ref")}:
+                matched.append(v); continue
+            if not seed: continue
+            if str(v.get("make","")).strip().lower()!=str(seed.get("make","")).strip().lower(): continue
+            if str(v.get("model","")).strip().lower()!=str(seed.get("model","")).strip().lower(): continue
+            if str(v.get("market","")).strip().lower()!=str(seed.get("market","IL")).strip().lower(): continue
+            sys=int(seed.get("year_start",0) or 0); sye=int(seed.get("year_end",9999) or 9999)
+            vys=int(v.get("year_start",0) or 0); vye=int(v.get("year_end",9999) or 9999)
+            if sys<=vye and sye>=vys: matched.append(v)
+        reason=(novar.get(sid) or {}).get("reason") if isinstance(novar.get(sid),dict) else None
+        proof=bool((dedupe.get(sid) or {}).get("matched_variant_ids")) if isinstance(dedupe.get(sid),dict) else False
+        if len(matched)==0 and not proof and reason not in ALLOWED_NO_VARIANTS_REASONS:
+            out.append({"seed_id":sid,"make":seed.get("make"),"model":seed.get("model"),"year_start":seed.get("year_start"),"year_end":seed.get("year_end"),"matched_variants_count":0,"dedupe_proof_found":False,"no_variants_reason":reason,"repair_status":"needs_retry"})
+    return out
+
 RETRYABLE_SCHEMA_ERROR_TOKENS = ["'market'", "missing market", "keyerror: market", "missing required seed field"]
 CANONICAL_RESUME_PATH_DEFAULT = "data/canonical/resume_package_canonical.json"
 CANONICAL_BACKUP_PATH_DEFAULT = "data/canonical/resume_package_backup_previous.json"
@@ -1126,6 +1211,39 @@ def _refresh_coverage(state: dict, ordered_seeds: list[dict]):
     state["coverage_by_make"] = coverage
 
 
+
+
+def process_seed_with_variant_retry(seed: dict, state: dict | None = None, max_attempts: int = 3, market: str = "IL", use_cache: bool = True, force_refresh: bool = False) -> dict:
+    capped=max(1,min(int(max_attempts or 3),5))
+    st = _ensure_zero_variant_fields(state if isinstance(state,dict) else {})
+    sid=seed.get("seed_id")
+    last=None
+    for attempt in range(1,capped+1):
+        result = run_single_model(seed["make"], seed["model"], seed["year_start"], seed["year_end"], market=seed.get("market") or market, use_cache=use_cache, force_refresh=force_refresh)
+        last=result
+        trace=(result.get("trace") or {}) if isinstance(result,dict) else {}
+        candidates=int(trace.get("candidate_variants_count",0) or 0)
+        valid=int(result.get("variants_created", trace.get("variants_created",0)) or 0)
+        added=max(int(result.get("verified_count",0) or 0)+int(result.get("partial_count",0) or 0), int(result.get("variants_created",0) or 0))
+        no_reason=((trace.get("discovery_parsed_json_debug") or {}).get("no_variants_reason") if isinstance(trace.get("discovery_parsed_json_debug"),dict) else None)
+        accounting={"seed_id":sid,"batch_id":st.get("last_batch_id"),"attempts":attempt,"candidates_returned":candidates,"valid_variants_built":valid,"variants_added_to_canonical":added,"variants_deduped_or_merged":0,"dedupe_proof":[],"no_variants_reason":no_reason,"marked_processed":False,"status":"needs_retry","failure_reason":"zero_variants_without_explanation"}
+        decision=can_mark_seed_processed(sid,accounting)
+        if decision["allowed"]:
+            accounting["marked_processed"]=True
+            accounting["status"]="processed_added" if added>0 else ("processed_deduped" if accounting["variants_deduped_or_merged"]>0 else "processed_no_variants_reason")
+            st.setdefault("processed_seed_ids",[])
+            if sid not in st["processed_seed_ids"]: st["processed_seed_ids"].append(sid)
+            if sid in st.get("needs_retry_seed_ids",[]): st["needs_retry_seed_ids"].remove(sid)
+            if no_reason in ALLOWED_NO_VARIANTS_REASONS:
+                st.setdefault("no_variants_by_seed",{})[sid]={"reason":no_reason,"attempts":attempt,"updated_at":_now(),"sources_checked":[]}
+            st.setdefault("seed_accounting",{})[sid]=accounting
+            return {**result,"status":"completed","accounting":accounting}
+    st.setdefault("needs_retry_seed_ids",[])
+    if sid not in st["needs_retry_seed_ids"]: st["needs_retry_seed_ids"].append(sid)
+    fail={"seed_id":sid,"batch_id":st.get("last_batch_id"),"attempts":capped,"candidates_returned":0,"valid_variants_built":0,"variants_added_to_canonical":0,"variants_deduped_or_merged":0,"dedupe_proof":[],"no_variants_reason":None,"marked_processed":False,"status":"failed_after_retries","failure_reason":"zero_variants_without_explanation_after_retries"}
+    st.setdefault("seed_accounting",{})[sid]=fail
+    return {**(last or {}),"status":"failed_after_retries","accounting":fail,"blocked":True,"message":"Seed processing blocked: no variants added, no dedupe proof, and no no_variants_reason."}
+
 def _process_seeds(
     seed_queue: list[dict],
     state: dict,
@@ -1159,12 +1277,10 @@ def _process_seeds(
         if progress_callback:
             progress_callback({"index": idx, "total": min(limit, len(seed_queue)), "seed": seed, "results": list(results)})
         try:
-            result = run_single_model(seed["make"], seed["model"], seed["year_start"], seed["year_end"], market=seed["market"], use_cache=use_cache, force_refresh=force_refresh)
+            result = process_seed_with_variant_retry(seed, state=state, max_attempts=3, market=seed["market"], use_cache=use_cache, force_refresh=force_refresh)
         except Exception as exc:
             result = {"status": "error", "error": str(exc)}
         status = result.get("status")
-        if status in {"completed", "partial"} and sid not in state["processed_seed_ids"]:
-            state["processed_seed_ids"].append(sid)
         if status == "error" and sid not in state["failed_seed_ids"]:
             state["failed_seed_ids"].append(sid)
             state.setdefault("failed_details", []).append({"seed_id": sid, "reason": str(result.get("error", "")), "created_at": _now()})
@@ -2250,6 +2366,8 @@ def _normalize_imported_batch_state(imported_state: dict, market: str = "IL") ->
 
 def normalize_batch_state_for_resume(batch_state: dict, ordered_seeds: list[dict], variants: list[dict] | None = None, market: str = "IL") -> dict:
     package = {"batch_state": batch_state if isinstance(batch_state, dict) else {}}
+    if isinstance(variants, list):
+        package["accumulated_clean_export"] = {"variants": variants}
     return extract_canonical_batch_state(package, ordered_seeds, market=market)
 
 
