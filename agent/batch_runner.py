@@ -1126,14 +1126,33 @@ def _refresh_coverage(state: dict, ordered_seeds: list[dict]):
     state["coverage_by_make"] = coverage
 
 
-def _process_seeds(seed_queue: list[dict], state: dict, ordered: list[dict], limit: int, force_refresh=False, use_cache=True, progress_callback: Callable | None = None):
+def _process_seeds(
+    seed_queue: list[dict],
+    state: dict,
+    ordered: list[dict],
+    limit: int,
+    force_refresh=False,
+    use_cache=True,
+    progress_callback: Callable | None = None,
+    auto_push_per_seed: bool = False,
+    commit_message_prefix: str = "Update canonical vehicle variants",
+    market: str = "IL",
+) -> tuple[list, list]:
+    """Process a batch of seeds and return (results, per_seed_canonical).
+
+    After each successfully completed seed the canonical package is saved
+    locally (mandatory) and, when auto_push_per_seed=True, also pushed to
+    GitHub immediately with a commit message derived from commit_message_prefix.
+    Failed, skipped, or mock-contaminated results are never persisted.
+    """
     results = []
+    per_seed_canonical: list[dict] = []
     for idx, seed in enumerate(seed_queue[:limit], start=1):
         selected_market = state.get("market")
         seed["market"] = seed.get("market") or selected_market or "IL"
-        market = seed["market"]
+        seed_market = seed["market"]
         if not seed.get("seed_id"):
-            seed["seed_id"] = build_seed_id(seed.get("make"), seed.get("model"), seed.get("year_start"), seed.get("year_end"), market)
+            seed["seed_id"] = build_seed_id(seed.get("make"), seed.get("model"), seed.get("year_start"), seed.get("year_end"), seed_market)
         sid = seed["seed_id"]
         state["in_progress_seed_id"] = sid
         _save_state(state)
@@ -1155,7 +1174,17 @@ def _process_seeds(seed_queue: list[dict], state: dict, ordered: list[dict], lim
         results.append({"seed": seed, "result": result})
         _refresh_coverage(state, ordered)
         _save_state(state)
-    return results
+        # Per-seed canonical persistence: local save is mandatory; GitHub push is optional.
+        if status in {"completed", "partial"}:
+            seed_persist = persist_canonical_after_seed(
+                seed=seed,
+                batch_state=copy.deepcopy(state),
+                push_to_github=auto_push_per_seed,
+                commit_message_prefix=commit_message_prefix,
+                market=seed_market,
+            )
+            per_seed_canonical.append({"seed_id": sid, "canonical_persist": seed_persist})
+    return results, per_seed_canonical
 
 
 def evaluate_continue_guard(market: str = "IL") -> dict:
@@ -1206,7 +1235,19 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
     }
 
 
-def run_next_batch(limit=5, market="IL", make_filter=None, force_refresh=False, use_cache=True, resume=True, include_failed=False, progress_callback: Callable | None = None, auto_push_canonical: bool = False):
+def run_next_batch(
+    limit=5,
+    market="IL",
+    make_filter=None,
+    force_refresh=False,
+    use_cache=True,
+    resume=True,
+    include_failed=False,
+    progress_callback: Callable | None = None,
+    auto_push_canonical: bool = False,
+    auto_push_per_seed: bool = False,
+    commit_message_prefix: str = "Update canonical vehicle variants",
+):
     guard = evaluate_continue_guard(market=market)
     if not guard.get("passed", False):
         return {
@@ -1240,7 +1281,12 @@ def run_next_batch(limit=5, market="IL", make_filter=None, force_refresh=False, 
         return {"status": "completed_all", "batch_mode": "completed_all", "processed": 0, "remaining": 0, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": 0, "coverage_audit_after_batch": coverage}
     batch_id = str(uuid.uuid4())
     state["last_batch_id"] = batch_id
-    results = _process_seeds(queue, state, ordered, limit, force_refresh, use_cache, progress_callback)
+    results, per_seed_canonical = _process_seeds(
+        queue, state, ordered, limit, force_refresh, use_cache, progress_callback,
+        auto_push_per_seed=auto_push_per_seed,
+        commit_message_prefix=commit_message_prefix,
+        market=market,
+    )
     outputs_after = _load_outputs()
     coverage_after = audit_coverage_until_last_completed(candidates, state, outputs_after)
     remaining = len(queue) - min(limit, len(queue))
@@ -1250,7 +1296,7 @@ def run_next_batch(limit=5, market="IL", make_filter=None, force_refresh=False, 
     canonical_result = None
     if len(results) > 0:
         canonical_result = persist_canonical_resume_package(batch_id=batch_id, push_to_github=auto_push_canonical, market=market)
-    return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result}
+    return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result, "per_seed_canonical": per_seed_canonical}
 
 
 def repair_coverage_until_clean(limit_per_pass=20, max_passes=10, market="IL"):
@@ -1856,6 +1902,112 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
         "push_result": pushed,
         "commit_sha": ((pushed or {}).get("canonical") or {}).get("commit_sha"),
         "post_save_validation": post_save,
+    }
+
+
+def persist_canonical_after_seed(
+    seed: dict,
+    batch_state: dict,
+    push_to_github: bool = False,
+    commit_message_prefix: str = "Update canonical vehicle variants",
+    market: str = "IL",
+) -> dict:
+    """Persist canonical package after a single successfully completed seed.
+
+    Local save is always performed.  GitHub push is attempted only when
+    push_to_github=True.  If the GitHub push fails the local save is NOT
+    rolled back — ok=True is returned together with github_push_failed=True
+    and the push error details.
+    """
+    make = str(seed.get("make") or "").strip()
+    model = str(seed.get("model") or "").strip()
+    commit_msg = (
+        f"{commit_message_prefix}: {make} {model} completed"
+        if (make and model)
+        else commit_message_prefix
+    )
+
+    previous_local = load_local_canonical_resume_package()
+    previous_github = fetch_file_from_github(get_github_config().get("canonical_path") or CANONICAL_RESUME_PATH_DEFAULT)
+    previous = previous_local if isinstance(previous_local, dict) else previous_github
+
+    final_export = build_final_export()
+    merged_variants = [v for v in (final_export.get("variants") or []) if isinstance(v, dict)] if isinstance(final_export, dict) else []
+
+    package = build_canonical_candidate(
+        previous,
+        merged_variants,
+        new_batch_state=batch_state if isinstance(batch_state, dict) else None,
+        source=CANDIDATE_SOURCE_MERGED,
+    )
+    package_acc = package.get("accumulated_clean_export") if isinstance(package.get("accumulated_clean_export"), dict) else {}
+    package_acc["quality_gate"] = final_export.get("quality_gate") if isinstance(final_export, dict) else None
+    package_acc["audit"] = final_export.get("audit") if isinstance(final_export, dict) else None
+    package["accumulated_clean_export"] = package_acc
+    package.setdefault("merge_metadata", {}).setdefault(
+        "previous_canonical_variants",
+        len(_extract_resume_variants(previous if isinstance(previous, dict) else {})),
+    )
+    package["merge_metadata"]["final_variants"] = len(merged_variants)
+    package["merge_metadata"]["new_unique_added"] = max(
+        0,
+        len(merged_variants) - int(package["merge_metadata"].get("previous_canonical_variants", 0) or 0),
+    )
+    package["merge_metadata"].setdefault("pushed_to_github", False)
+
+    package = rebuild_canonical_metadata_from_accumulated(package, get_ordered_seed_list(market))
+
+    validate_result = validate_canonical_update(previous, package, market=market)
+    issues = list(validate_result.get("issues") or [])
+    if issues:
+        _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source=CANDIDATE_SOURCE_MERGED)
+        return {
+            "ok": False,
+            "local_saved": False,
+            "github_push_failed": False,
+            "issues": issues,
+            "validate_result": validate_result,
+        }
+
+    if isinstance(previous, dict):
+        save_local_canonical_backup(previous)
+    save_local_canonical_resume_package(package)
+    post_save = _validate_saved_canonical(_canonical_resume_path())
+    if not post_save.get("ok"):
+        print(f"[canonical] per-seed post-save validation warnings: {post_save.get('issues')}")
+
+    push_result = None
+    push_error = None
+    if push_to_github:
+        push_result = push_canonical_resume_package(package, previous_package=previous, commit_message=commit_msg)
+        if not push_result.get("ok"):
+            push_error = push_result.get("error") or "Failed to push canonical to GitHub."
+            _set_last_canonical_update_attempt(failed=True, validate_result=validate_result, candidate_source=CANDIDATE_SOURCE_MERGED)
+            # Local save already succeeded — do NOT roll back.
+            return {
+                "ok": True,
+                "local_saved": True,
+                "github_push_failed": True,
+                "push_error": push_error,
+                "push_result": push_result,
+                "validate_result": validate_result,
+                "post_save_validation": post_save,
+            }
+
+    if push_to_github and push_result and push_result.get("ok"):
+        package.setdefault("merge_metadata", {})["pushed_to_github"] = True
+        package["merge_metadata"]["last_push_commit_sha"] = ((push_result.get("canonical") or {}).get("commit_sha"))
+        save_local_canonical_resume_package(package)
+
+    _set_last_canonical_update_attempt(failed=False, validate_result=validate_result, candidate_source=CANDIDATE_SOURCE_MERGED)
+    return {
+        "ok": True,
+        "local_saved": True,
+        "github_push_failed": False,
+        "push_result": push_result,
+        "validate_result": validate_result,
+        "post_save_validation": post_save,
+        "commit_sha": ((push_result or {}).get("canonical") or {}).get("commit_sha"),
     }
 
 

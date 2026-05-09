@@ -76,7 +76,7 @@ def test_market_error_not_marked_processed(monkeypatch):
     monkeypatch.setattr(batch_runner, "_save_state", lambda state: None)
     monkeypatch.setattr(batch_runner, "_refresh_coverage", lambda state, ordered: None)
     monkeypatch.setattr(batch_runner, "run_single_model", lambda *args, **kwargs: (_ for _ in ()).throw(KeyError("market")))
-    results = batch_runner._process_seeds([seed], state, [dict(seed, market="IL")], 1)
+    results, _per_seed = batch_runner._process_seeds([seed], state, [dict(seed, market="IL")], 1)
     assert results[0]["result"]["status"] == "error"
     assert "s1" not in state["processed_seed_ids"]
     assert "s1" in state["failed_seed_ids"]

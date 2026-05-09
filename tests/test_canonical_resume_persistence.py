@@ -130,6 +130,8 @@ def _make_batch_env(monkeypatch, seeds, initial_state, persist_side_effect):
     monkeypatch.setattr(batch_runner, "evaluate_continue_guard", lambda market="IL": {"passed": True, "issues": [], "coverage_audit": {"holes_count": 0}})
     monkeypatch.setattr(batch_runner, "run_single_model", lambda make, model, year_start, year_end, market, **kw: {"status": "completed", "variants_created": 1})
     monkeypatch.setattr(batch_runner, "persist_canonical_resume_package", persist_side_effect)
+    # Prevent per-seed I/O in tests that don't specifically test per-seed persistence
+    monkeypatch.setattr(batch_runner, "persist_canonical_after_seed", lambda *a, **kw: {"ok": True, "local_saved": True, "github_push_failed": False, "push_result": None})
 
 
 def test_run_next_batch_auto_push_false_still_persists_local(monkeypatch):
