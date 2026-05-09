@@ -11,7 +11,7 @@ from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
-    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync
 except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -99,6 +99,12 @@ except ImportError as exc:
     
     def canonical_variant_count(*args, **kwargs):
         return 0
+
+    def rebuild_canonical_metadata_from_accumulated(*args, **kwargs):
+        return args[0] if args else {}
+
+    def _validate_canonical_coverage_sync(*args, **kwargs):
+        return []
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -289,6 +295,13 @@ with tabs[2]:
             "status": checkpoint_status,
         }
     )
+    if local_checkpoint:
+        _sync_warnings = _validate_canonical_coverage_sync(local_checkpoint)
+        if _sync_warnings:
+            st.warning(
+                "⚠️ Canonical metadata was repaired from accumulated_clean_export.variants. "
+                + " | ".join(_sync_warnings)
+            )
 
     progress = get_batch_progress(market=market)
     st.progress((progress.get("percent_complete", 0.0))/100.0)
