@@ -295,3 +295,48 @@ def test_evaluate_continue_guard_issues_include_zero_variant_msg_when_variants_h
     assert guard["passed"] is False
     assert any("false_processed_zero_variant_seeds_found" in issue for issue in guard["issues"])
 
+
+# ---------------------------------------------------------------------------
+# Scalar value helpers
+# ---------------------------------------------------------------------------
+
+def test_scalar_value_plain():
+    assert br.scalar_value(2008) == 2008
+    assert br.scalar_value(None, default=0) == 0
+
+
+def test_scalar_value_wrapped_field():
+    assert br.scalar_value({"value": 2008, "used_in_compare": False}) == 2008
+    assert br.scalar_value({"value": None}, default=99) is None
+
+
+def test_safe_int_value_plain():
+    assert br.safe_int_value(2018) == 2018
+    assert br.safe_int_value(None, default=0) == 0
+
+
+def test_safe_int_value_wrapped_field():
+    assert br.safe_int_value({"value": 2018, "used_in_compare": False}) == 2018
+    assert br.safe_int_value({"value": None}, default=0) == 0
+
+
+def test_find_processed_zero_variant_seeds_handles_wrapped_year_fields(monkeypatch):
+    """find_processed_zero_variant_seeds must match variants with wrapped year_start/year_end fields."""
+    seed = _seed("s1", ys=2018, ye=2026)
+    # Variant with wrapped year fields — must match the seed
+    variant = {
+        "make": "Honda",
+        "model": "Civic",
+        "market": "IL",
+        "year_start": {"value": 2018, "used_in_compare": False},
+        "year_end": {"value": 2026, "used_in_compare": False},
+    }
+    pkg = {
+        "batch_state": {"processed_seed_ids": ["s1"]},
+        "accumulated_clean_export": {"variants": [variant]},
+    }
+    monkeypatch.setattr(br, "get_ordered_seed_list", lambda market="IL": [seed])
+    result = br.find_processed_zero_variant_seeds(pkg, ordered_seeds=[seed])
+    # Variant matches → seed should NOT be flagged
+    assert result == [], f"Expected no false-processed seeds, got {result}"
+

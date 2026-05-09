@@ -18,6 +18,26 @@ from storage.github_canonical_store import fetch_file_from_github, push_canonica
 
 BATCH_STATE_SCHEMA = "batch_state_v1"
 
+# ---------------------------------------------------------------------------
+# Field helpers — handle both plain scalars and wrapped field objects such as
+# {"value": 2008, "used_in_compare": false}
+# ---------------------------------------------------------------------------
+
+def scalar_value(x, default=None):
+    """Return the scalar from a plain value or a wrapped field dict."""
+    if isinstance(x, dict):
+        return x.get("value", default)
+    return x if x is not None else default
+
+
+def safe_int_value(x, default=0):
+    """Return int from plain value or wrapped field dict; return default on error."""
+    try:
+        return int(scalar_value(x, default) or default)
+    except Exception:
+        return int(default)
+
+
 ALLOWED_NO_VARIANTS_REASONS = {
     "model_not_sold_in_market",
     "no_reliable_sources_found",
@@ -97,11 +117,11 @@ def find_processed_zero_variant_seeds(package: dict, ordered_seeds: list[dict] |
             if sid in {v.get("seed_id"),v.get("source_seed_id"),v.get("seed_ref")}:
                 matched.append(v); continue
             if not seed: continue
-            if str(v.get("make","")).strip().lower()!=str(seed.get("make","")).strip().lower(): continue
-            if str(v.get("model","")).strip().lower()!=str(seed.get("model","")).strip().lower(): continue
-            if str(v.get("market","")).strip().lower()!=str(seed.get("market","IL")).strip().lower(): continue
-            sys=int(seed.get("year_start",0) or 0); sye=int(seed.get("year_end",9999) or 9999)
-            vys=int(v.get("year_start",0) or 0); vye=int(v.get("year_end",9999) or 9999)
+            if str(scalar_value(v.get("make"),"")).strip().lower()!=str(seed.get("make","")).strip().lower(): continue
+            if str(scalar_value(v.get("model"),"")).strip().lower()!=str(seed.get("model","")).strip().lower(): continue
+            if str(scalar_value(v.get("market"),"")).strip().lower()!=str(seed.get("market","IL")).strip().lower(): continue
+            sys=safe_int_value(seed.get("year_start"),0); sye=safe_int_value(seed.get("year_end"),9999)
+            vys=safe_int_value(v.get("year_start"),0); vye=safe_int_value(v.get("year_end"),9999)
             if sys<=vye and sye>=vys: matched.append(v)
         reason=(novar.get(sid) or {}).get("reason") if isinstance(novar.get(sid),dict) else None
         proof=bool((dedupe.get(sid) or {}).get("matched_variant_ids")) if isinstance(dedupe.get(sid),dict) else False
@@ -805,20 +825,20 @@ def extract_canonical_batch_state(package: dict, ordered_seeds: list[dict], mark
             smake = str(seed.get("make", "")).strip().lower()
             smodel = str(seed.get("model", "")).strip().lower()
             smarket = str(seed.get("market") or market or "IL").strip().lower()
-            sys = int(seed.get("year_start", 0) or 0)
-            sye = int(seed.get("year_end", 9999) or 9999)
+            sys = safe_int_value(seed.get("year_start"), 0)
+            sye = safe_int_value(seed.get("year_end"), 9999)
             if not any((smake in lp and smodel in lp) for lp in legacy_processed_ids):
                 continue
             for v in variants:
-                if str(v.get("make", "")).strip().lower() != smake:
+                if str(scalar_value(v.get("make"), "")).strip().lower() != smake:
                     continue
-                if str(v.get("model", "")).strip().lower() != smodel:
+                if str(scalar_value(v.get("model"), "")).strip().lower() != smodel:
                     continue
-                vmarket = str(v.get("market") or market or "IL").strip().lower()
+                vmarket = str(scalar_value(v.get("market"), market or "IL")).strip().lower()
                 if vmarket != smarket:
                     continue
-                vys = int(v.get("year_start", 0) or 0)
-                vye = int(v.get("year_end", 9999) or 9999)
+                vys = safe_int_value(v.get("year_start"), 0)
+                vye = safe_int_value(v.get("year_end"), 9999)
                 if sys <= vye and sye >= vys:
                     incoming_ids.append(seed["seed_id"])
                     break
@@ -1269,7 +1289,9 @@ def process_seed_with_variant_retry(seed: dict, state: dict | None = None, max_a
     sid=seed.get("seed_id")
     last=None
     for attempt in range(1,capped+1):
-        result = run_single_model(seed["make"], seed["model"], seed["year_start"], seed["year_end"], market=seed.get("market") or market, use_cache=use_cache, force_refresh=force_refresh)
+        # Part E: on attempt 2+ send the retry prompt that demands a no_variants_reason
+        retry_hint = attempt > 1
+        result = run_single_model(seed["make"], seed["model"], seed["year_start"], seed["year_end"], market=seed.get("market") or market, use_cache=use_cache, force_refresh=force_refresh, retry_hint=retry_hint)
         last=result
         trace=(result.get("trace") or {}) if isinstance(result,dict) else {}
         candidates=int(trace.get("candidate_variants_count",0) or 0)
@@ -1305,6 +1327,7 @@ def _process_seeds(
     auto_push_per_seed: bool = False,
     commit_message_prefix: str = "Update canonical vehicle variants",
     market: str = "IL",
+    batch_mode: str = "resume_forward",
 ) -> tuple[list, list, list]:
     """Process a batch of seeds and return (results, per_seed_canonical, execution_trace).
 
@@ -1312,7 +1335,18 @@ def _process_seeds(
     locally (mandatory) and, when auto_push_per_seed=True, also pushed to
     GitHub immediately with a commit message derived from commit_message_prefix.
     Failed, skipped, or mock-contaminated results are never persisted.
+
+    For zero_variant_repair and needs_retry queues the cache is bypassed so
+    that every attempt actually calls Gemini (unless the caller explicitly sets
+    allow_cache_during_repair=True via the use_cache kwarg).
     """
+    # Issue 1: Force fresh Gemini calls for repair/retry queues
+    effective_force_refresh = force_refresh
+    effective_use_cache = use_cache
+    if batch_mode in {"zero_variant_repair", "needs_retry", "hole_repair"} and not force_refresh:
+        effective_force_refresh = True
+        effective_use_cache = False
+
     results = []
     per_seed_canonical: list[dict] = []
     execution_trace: list[dict] = []
@@ -1329,14 +1363,19 @@ def _process_seeds(
         _save_state(state)
         if progress_callback:
             progress_callback({"index": idx, "total": min(limit, len(seed_queue)), "seed": seed, "results": list(results)})
-        did_call_model = False
+        processor_called = False
         try:
-            result = process_seed_with_variant_retry(seed, state=state, max_attempts=3, market=seed["market"], use_cache=use_cache, force_refresh=force_refresh)
-            did_call_model = True
+            result = process_seed_with_variant_retry(seed, state=state, max_attempts=3, market=seed["market"], use_cache=effective_use_cache, force_refresh=effective_force_refresh)
+            processor_called = True
         except Exception as exc:
             result = {"status": "error", "error": str(exc)}
         status = result.get("status")
         accounting = result.get("accounting") or {}
+        # Extract real Gemini call metadata from trace
+        result_trace = result.get("trace") or {}
+        actual_gemini_call = bool(result_trace.get("gemini_attempted")) and not bool(result_trace.get("final_cache_hit"))
+        final_cache_hit = bool(result_trace.get("final_cache_hit"))
+        discovery_cache_hit = bool(result_trace.get("discovery_cache_hit"))
         if status == "error" and sid not in state["failed_seed_ids"]:
             state["failed_seed_ids"].append(sid)
             state.setdefault("failed_details", []).append({"seed_id": sid, "reason": str(result.get("error", "")), "created_at": _now()})
@@ -1350,6 +1389,7 @@ def _process_seeds(
         _refresh_coverage(state, ordered)
         _save_state(state)
         # Per-seed canonical persistence: local save is mandatory; GitHub push is optional.
+        # Issue 4: also persist when failed_after_retries to record seed_accounting in canonical
         saved_canonical = False
         if status in {"completed", "partial"}:
             seed_persist = persist_canonical_after_seed(
@@ -1361,16 +1401,32 @@ def _process_seeds(
             )
             per_seed_canonical.append({"seed_id": sid, "canonical_persist": seed_persist})
             saved_canonical = bool(isinstance(seed_persist, dict) and seed_persist.get("ok"))
+        elif status == "failed_after_retries":
+            # Persist batch_state fields (seed_accounting, failed_seed_ids) into canonical
+            # without adding new variants, so the state survives canonical reloads.
+            try:
+                _persist_batch_state_into_canonical(copy.deepcopy(state), market=seed_market)
+                saved_canonical = True
+            except Exception:
+                saved_canonical = False
         execution_trace.append({
             "seed_id": sid,
+            "queue_reason": batch_mode,
             "attempt_before": attempt_before,
             "attempt_after": int(accounting.get("attempts", attempt_before) or attempt_before),
-            "did_call_model": did_call_model,
-            "model_response_received": did_call_model and status != "error",
+            "processor_called": processor_called,
+            "did_call_model": processor_called,  # backward-compat alias
+            "actual_gemini_call": actual_gemini_call,
+            "final_cache_hit": final_cache_hit,
+            "discovery_cache_hit": discovery_cache_hit,
+            "force_refresh_used": effective_force_refresh,
+            "use_cache_used": effective_use_cache,
+            "model_response_received": processor_called and status != "error",
             "candidates_returned": int(accounting.get("candidates_returned", 0) or 0),
             "valid_variants_built": int(accounting.get("valid_variants_built", 0) or 0),
             "variants_added_to_canonical": int(accounting.get("variants_added_to_canonical", 0) or 0),
             "variants_deduped_or_merged": int(accounting.get("variants_deduped_or_merged", 0) or 0),
+            "dedupe_proof_count": len(accounting.get("dedupe_proof") or []),
             "no_variants_reason": accounting.get("no_variants_reason"),
             "final_status": status,
             "saved_canonical": saved_canonical,
@@ -1435,13 +1491,44 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
     ordered = get_ordered_seed_list(market)
     local_canonical = load_local_canonical_resume_package()
     local_canonical_exists = isinstance(local_canonical, dict) and isinstance(local_canonical.get("batch_state"), dict)
+
+    # Volatile repair fields that must be preserved from local batch_state
+    _VOLATILE_FIELDS = [
+        "seed_accounting", "needs_retry_seed_ids", "failed_seed_ids", "failed_details",
+        "false_processed_seed_ids", "zero_variant_seed_ids", "no_variants_by_seed",
+        "dedupe_proof_by_seed", "_last_queue_seed_ids", "_last_total_attempts",
+    ]
+
     if not isinstance(local_canonical, dict):
         issues.append("canonical package missing")
         canonical_variants_count = 0
         state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
     else:
         canonical_variants_count = canonical_variant_count(local_canonical)
-        state = extract_canonical_batch_state(local_canonical, ordered, market=market)
+        canonical_state = extract_canonical_batch_state(local_canonical, ordered, market=market)
+        # Merge volatile repair fields from local batch_state so that repair attempts
+        # (needs_retry, failed_after_retries, seed_accounting) are never overwritten.
+        local_bs = load_batch_state(market)
+        _ensure_zero_variant_fields(canonical_state)
+        for field in _VOLATILE_FIELDS:
+            local_val = local_bs.get(field)
+            canonical_val = canonical_state.get(field)
+            if local_val is None:
+                continue
+            if isinstance(local_val, dict) and isinstance(canonical_val, dict):
+                # Merge: local takes precedence for seed-level accounting
+                merged = dict(canonical_val)
+                merged.update(local_val)
+                canonical_state[field] = merged
+            elif isinstance(local_val, list) and isinstance(canonical_val, list):
+                # Union lists preserving order
+                seen = set(canonical_val)
+                extras = [v for v in local_val if v not in seen]
+                canonical_state[field] = list(canonical_val) + extras
+            elif field.startswith("_last_") and local_val is not None:
+                # Preserve local stall-detection counters
+                canonical_state[field] = local_val
+        state = canonical_state
         _save_state(state)
     batch_state_exists = _batch_state_path().exists()
     processed = list(state.get("processed_seed_ids") or [])
@@ -1678,6 +1765,7 @@ def run_next_batch(
         auto_push_per_seed=auto_push_per_seed,
         commit_message_prefix=commit_message_prefix,
         market=market,
+        batch_mode=batch_mode,
     )
     outputs_after = _load_outputs()
     coverage_after = audit_coverage_until_last_completed(candidates, state, outputs_after)
@@ -2295,6 +2383,39 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
         "commit_sha": ((pushed or {}).get("canonical") or {}).get("commit_sha"),
         "post_save_validation": post_save,
     }
+
+
+def _persist_batch_state_into_canonical(batch_state: dict, market: str = "IL") -> None:
+    """Persist seed_accounting / failed_seed_ids / needs_retry_seed_ids into the local canonical
+    package without adding or removing variants.  Used when a seed reaches failed_after_retries
+    so that the repair state survives a canonical reload.
+    """
+    local_canonical = load_local_canonical_resume_package()
+    if not isinstance(local_canonical, dict):
+        return
+    pkg = copy.deepcopy(local_canonical)
+    canonical_bs = pkg.get("batch_state") if isinstance(pkg.get("batch_state"), dict) else {}
+    _MERGE_FIELDS = [
+        "seed_accounting", "needs_retry_seed_ids", "failed_seed_ids", "failed_details",
+        "false_processed_seed_ids", "zero_variant_seed_ids", "no_variants_by_seed",
+        "dedupe_proof_by_seed",
+    ]
+    for field in _MERGE_FIELDS:
+        incoming = batch_state.get(field)
+        existing = canonical_bs.get(field)
+        if incoming is None:
+            continue
+        if isinstance(incoming, dict) and isinstance(existing, dict):
+            merged = dict(existing)
+            merged.update(incoming)
+            canonical_bs[field] = merged
+        elif isinstance(incoming, list) and isinstance(existing, list):
+            seen = set(existing)
+            canonical_bs[field] = list(existing) + [v for v in incoming if v not in seen]
+        else:
+            canonical_bs[field] = incoming
+    pkg["batch_state"] = canonical_bs
+    save_local_canonical_resume_package(pkg)
 
 
 def persist_canonical_after_seed(
