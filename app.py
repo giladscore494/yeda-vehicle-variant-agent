@@ -11,7 +11,7 @@ from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
-    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, persist_canonical_after_seed, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync
 except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -63,6 +63,9 @@ except ImportError as exc:
         return _get_batch_runner_error_result()
 
     def persist_canonical_resume_package(*args, **kwargs):
+        return _get_batch_runner_error_result()
+
+    def persist_canonical_after_seed(*args, **kwargs):
         return _get_batch_runner_error_result()
 
     def push_local_canonical_to_github(*args, **kwargs):
@@ -322,7 +325,17 @@ with tabs[2]:
     include_failed_ui = st.checkbox("Include failed retries", value=False)
     use_cache_ui = st.checkbox("Use cache (batch)", value=True)
     force_refresh_ui = st.checkbox("Force refresh (batch)", value=False)
-    st.info("Local canonical is saved automatically after every successful batch. GitHub push is optional.")
+    st.info("Local canonical is saved automatically after every completed model. GitHub push is optional.")
+    auto_push_per_seed_ui = st.checkbox(
+        "Auto-save canonical to GitHub after every completed model",
+        value=False,
+        help="When enabled, every successfully completed vehicle seed is merged into the canonical package and pushed to GitHub immediately. This reduces data-loss risk but creates more commits.",
+    )
+    commit_message_prefix_ui = st.text_input(
+        "Commit message prefix",
+        value="Update canonical vehicle variants",
+        help="Prefix for per-model auto-save commit messages. Example: 'Update canonical vehicle variants: BMW 520d completed'",
+    )
     auto_push_canonical_ui = st.checkbox("Also push canonical to GitHub after successful batch", value=False)
     make_filter_ui = st.selectbox("Make filter (optional)", [""] + get_makes(), key='batch_make_filter_ui')
 
@@ -386,7 +399,7 @@ with tabs[2]:
             st.error("Coverage audit failed. Process holes first.")
             st.json(guard_now.get("coverage_audit", {}))
         else:
-            result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=include_failed_ui, progress_callback=_on_progress, auto_push_canonical=auto_push_canonical_ui)
+            result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=include_failed_ui, progress_callback=_on_progress, auto_push_canonical=auto_push_canonical_ui, auto_push_per_seed=auto_push_per_seed_ui, commit_message_prefix=commit_message_prefix_ui)
             st.json(result)
 
     candidate_rows = []
@@ -440,23 +453,47 @@ with tabs[2]:
     st.dataframe(pd.DataFrame(candidate_rows))
 
     if st.button("Run next batch"):
-        result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=resume_ui, include_failed=include_failed_ui, progress_callback=_on_progress, auto_push_canonical=auto_push_canonical_ui)
+        result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=resume_ui, include_failed=include_failed_ui, progress_callback=_on_progress, auto_push_canonical=auto_push_canonical_ui, auto_push_per_seed=auto_push_per_seed_ui, commit_message_prefix=commit_message_prefix_ui)
         for item in result.get("results", []):
             seed=item.get("seed", {}); r=item.get("result", {})
             run_rows.append({"make":seed.get("make"), "model":seed.get("model"), "status":r.get("status"), "variants":r.get("variants_created",0)})
         results_placeholder.dataframe(pd.DataFrame(run_rows) if run_rows else pd.DataFrame())
         st.json(result)
-        canonical_persist = result.get("canonical_persist")
-        if isinstance(canonical_persist, dict):
-            if canonical_persist.get("ok"):
-                pushed_to_github = isinstance(canonical_persist.get("push_result"), dict) and canonical_persist["push_result"].get("ok")
-                if pushed_to_github:
-                    st.success("Local canonical saved and pushed to GitHub.")
+        # Per-seed canonical persistence results
+        per_seed_canonical = result.get("per_seed_canonical", [])
+        if per_seed_canonical:
+            blocked_saves = [p for p in per_seed_canonical if not p.get("canonical_persist", {}).get("ok")]
+            github_push_failures = [p for p in per_seed_canonical if p.get("canonical_persist", {}).get("github_push_failed")]
+            saved_count = sum(1 for p in per_seed_canonical if p.get("canonical_persist", {}).get("ok"))
+            if blocked_saves:
+                for b in blocked_saves:
+                    st.error(f"Canonical resume package update blocked for seed {b.get('seed_id')} — local file was NOT updated.")
+                    st.json((b.get("canonical_persist") or {}).get("validate_result") or b.get("canonical_persist") or {})
+            elif github_push_failures:
+                st.warning("⚠️ Local canonical saved, GitHub push failed.")
+                with st.expander("GitHub push failure details"):
+                    for f in github_push_failures:
+                        st.write(f"Seed: {f.get('seed_id')} — {f.get('canonical_persist', {}).get('push_error', '')}")
+                        st.json(f.get("canonical_persist", {}).get("push_result") or {})
+            elif saved_count > 0:
+                pushed_any = any(p.get("canonical_persist", {}).get("push_result", {}).get("ok") for p in per_seed_canonical)
+                if pushed_any:
+                    st.success(f"Local canonical saved and pushed to GitHub after {saved_count} completed model(s).")
                 else:
-                    st.success("Local canonical saved automatically.")
-            else:
-                st.error("Canonical resume package update blocked — local file was NOT updated.")
-                st.json(canonical_persist.get("validate_result") or canonical_persist)
+                    st.success(f"Local canonical saved automatically after {saved_count} completed model(s).")
+        else:
+            # Fallback: show end-of-batch canonical result
+            canonical_persist = result.get("canonical_persist")
+            if isinstance(canonical_persist, dict):
+                if canonical_persist.get("ok"):
+                    pushed_to_github = isinstance(canonical_persist.get("push_result"), dict) and canonical_persist["push_result"].get("ok")
+                    if pushed_to_github:
+                        st.success("Local canonical saved and pushed to GitHub.")
+                    else:
+                        st.success("Local canonical saved automatically.")
+                else:
+                    st.error("Canonical resume package update blocked — local file was NOT updated.")
+                    st.json(canonical_persist.get("validate_result") or canonical_persist)
 
     if st.button("Retry failed only"):
         st.json(run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=True))
