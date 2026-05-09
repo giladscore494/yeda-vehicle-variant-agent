@@ -1235,6 +1235,52 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
     }
 
 
+def evaluate_batch_50_guard(market: str = "IL", auto_push_canonical: bool = False, auto_push_per_seed: bool = False) -> dict:
+    issues: list[str] = []
+    continue_guard = evaluate_continue_guard(market=market)
+    issues.extend(list(continue_guard.get("issues") or []))
+    ordered = get_ordered_seed_list(market)
+    local_canonical = load_local_canonical_resume_package()
+    local_exists = isinstance(local_canonical, dict)
+    if not local_exists:
+        issues.append("canonical package missing")
+        state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
+        canonical_count = 0
+    else:
+        state = extract_canonical_batch_state(local_canonical, ordered, market=market)
+        canonical_count = canonical_variant_count(local_canonical)
+    processed = list(state.get("processed_seed_ids") or [])
+    next_seed_id = state.get("next_seed_id")
+    if canonical_count <= 0:
+        issues.append("canonical variants count must be > 0")
+    if len(processed) <= 0:
+        issues.append("processed_seed_ids count must be > 0")
+    if not next_seed_id:
+        issues.append("next_seed_id missing")
+    elif next_seed_id in set(processed):
+        issues.append("next_seed_id is already in processed_seed_ids")
+    coverage = continue_guard.get("coverage_audit") if isinstance(continue_guard.get("coverage_audit"), dict) else audit_coverage_until_last_completed(ordered, state, _load_outputs())
+    if int(coverage.get("holes_count", 0) or 0) != 0:
+        issues.append("coverage audit holes_count must be 0")
+    integrity = canonical_integrity_report(market=market)
+    sync_status = str(integrity.get("sync_status") or "unknown")
+    if sync_status not in {"in_sync", "pending_push"}:
+        issues.append(f"GitHub/local canonical sync status is '{sync_status}' (expected in_sync or pending_push)")
+    previous_known = bool(isinstance(local_canonical, dict) and isinstance(local_canonical.get("merge_metadata"), dict) and local_canonical.get("merge_metadata", {}).get("previous_canonical_variants") is not None)
+    if not previous_known:
+        issues.append("previous canonical count is unknown")
+    if not (auto_push_per_seed or auto_push_canonical or local_exists):
+        issues.append("no safe persistence path: enable auto-save/push or provide local canonical")
+    return {
+        "passed": len(issues) == 0,
+        "issues": sorted(set(issues)),
+        "next_seed_id": next_seed_id,
+        "processed_seed_count": len(processed),
+        "canonical_variant_count": canonical_count,
+        "coverage_audit": coverage,
+        "sync_status": sync_status,
+    }
+
 def run_next_batch(
     limit=5,
     market="IL",
@@ -1249,6 +1295,10 @@ def run_next_batch(
     commit_message_prefix: str = "Update canonical vehicle variants",
 ):
     guard = evaluate_continue_guard(market=market)
+    if int(limit or 0) == 50:
+        batch_50_guard = evaluate_batch_50_guard(market=market, auto_push_canonical=auto_push_canonical, auto_push_per_seed=auto_push_per_seed)
+        if not batch_50_guard.get("passed", False):
+            return {"status": "blocked", "error": "Batch 50 blocked by canonical guard.", "guard": batch_50_guard, "results": []}
     if not guard.get("passed", False):
         return {
             "status": "blocked",

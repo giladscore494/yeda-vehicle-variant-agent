@@ -254,3 +254,46 @@ def test_next_batch_starts_from_next_seed_not_from_beginning(monkeypatch):
     out = batch_runner.run_next_batch(limit=1, market="IL", resume=True, auto_push_canonical=False)
     assert out["status"] == "completed"
     assert called["seed"] == "Audi::RS6"
+
+def test_batch_limit_50_is_allowed_with_guard(monkeypatch):
+    monkeypatch.setattr(batch_runner, "evaluate_continue_guard", lambda market="IL": {"passed": True, "issues": [], "coverage_audit": {"holes_count": 0}})
+    monkeypatch.setattr(batch_runner, "evaluate_batch_50_guard", lambda **kwargs: {"passed": True, "issues": []})
+    monkeypatch.setattr(batch_runner, "get_ordered_seed_list", lambda market="IL": [{"seed_id": "audi__rs6__2008__2026__il", "make": "Audi", "model": "RS6", "year_start": 2008, "year_end": 2026, "market": "IL"}])
+    monkeypatch.setattr(batch_runner, "load_local_canonical_resume_package", lambda: {"batch_state": {"processed_seed_ids": [], "failed_seed_ids": [], "next_seed_id": "audi__rs6__2008__2026__il"}})
+    monkeypatch.setattr(batch_runner, "_load_outputs", lambda: {"run_history": [], "unresolved": [], "conflicts": [], "verified": [], "partial": [], "sources": []})
+    monkeypatch.setattr(batch_runner, "_save_state", lambda state: None)
+    monkeypatch.setattr(batch_runner, "_refresh_coverage", lambda state, ordered: None)
+    monkeypatch.setattr(batch_runner, "save_json", lambda *args, **kwargs: None)
+    monkeypatch.setattr(batch_runner, "persist_canonical_resume_package", lambda **kwargs: {"ok": True})
+    monkeypatch.setattr(batch_runner, "run_single_model", lambda *args, **kwargs: {"status": "completed"})
+    out = batch_runner.run_next_batch(limit=50, market="IL", resume=True)
+    assert out["status"] == "completed"
+
+
+def test_batch_50_blocked_if_guard_fails(monkeypatch):
+    monkeypatch.setattr(batch_runner, "evaluate_continue_guard", lambda market="IL": {"passed": True, "issues": [], "coverage_audit": {"holes_count": 0}})
+    monkeypatch.setattr(batch_runner, "evaluate_batch_50_guard", lambda **kwargs: {"passed": False, "issues": ["coverage audit holes_count must be 0"]})
+    out = batch_runner.run_next_batch(limit=50, market="IL", resume=True)
+    assert out["status"] == "blocked"
+    assert "coverage audit holes_count must be 0" in out["guard"]["issues"]
+
+
+def test_batch_50_keeps_canonical_merge_flow(monkeypatch):
+    called = {"persist": 0}
+    monkeypatch.setattr(batch_runner, "evaluate_continue_guard", lambda market="IL": {"passed": True, "issues": [], "coverage_audit": {"holes_count": 0}})
+    monkeypatch.setattr(batch_runner, "evaluate_batch_50_guard", lambda **kwargs: {"passed": True, "issues": []})
+    ordered = [{"seed_id": "audi__rs6__2008__2026__il", "make": "Audi", "model": "RS6", "year_start": 2008, "year_end": 2026, "market": "IL"}]
+    monkeypatch.setattr(batch_runner, "get_ordered_seed_list", lambda market="IL": ordered)
+    monkeypatch.setattr(batch_runner, "load_local_canonical_resume_package", lambda: {"batch_state": {"processed_seed_ids": [], "failed_seed_ids": [], "next_seed_id": ordered[0]["seed_id"]}})
+    monkeypatch.setattr(batch_runner, "_load_outputs", lambda: {"run_history": [], "unresolved": [], "conflicts": [], "verified": [], "partial": [], "sources": []})
+    monkeypatch.setattr(batch_runner, "_save_state", lambda state: None)
+    monkeypatch.setattr(batch_runner, "_refresh_coverage", lambda state, ordered: None)
+    monkeypatch.setattr(batch_runner, "save_json", lambda *args, **kwargs: None)
+    monkeypatch.setattr(batch_runner, "run_single_model", lambda *args, **kwargs: {"status": "completed"})
+    def _persist(**kwargs):
+        called["persist"] += 1
+        return {"ok": True}
+    monkeypatch.setattr(batch_runner, "persist_canonical_resume_package", _persist)
+    out = batch_runner.run_next_batch(limit=50, market="IL", resume=True, auto_push_canonical=True)
+    assert out["status"] == "completed"
+    assert called["persist"] == 1

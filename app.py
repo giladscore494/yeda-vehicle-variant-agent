@@ -11,7 +11,7 @@ from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
-    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, persist_canonical_after_seed, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, persist_canonical_after_seed, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync, evaluate_batch_50_guard
 except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -108,6 +108,9 @@ except ImportError as exc:
 
     def _validate_canonical_coverage_sync(*args, **kwargs):
         return []
+
+    def evaluate_batch_50_guard(*args, **kwargs):
+        return {"passed": False, "issues": [_BATCH_RUNNER_IMPORT_ERROR]}
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -320,7 +323,14 @@ with tabs[2]:
     st.dataframe(pd.DataFrame(audit.get("missing_seeds", [])))
     st.write({"continue_guard_passed": continue_guard.get("passed"), "continue_guard_issues": continue_guard.get("issues", [])})
 
-    batch_limit_ui = st.selectbox("Batch limit", [1,3,5,10,20], index=2, key='batch_limit_ui')
+    batch_limit_ui = st.selectbox("Batch limit", [1,3,5,10,20,50], index=4, key='batch_limit_ui')
+    st.caption("Batch size does not reduce API cost per vehicle. Cost is mainly token/model dependent. Batch 50 mainly reduces manual overhead.")
+    if batch_limit_ui == 50:
+        st.warning("Batch 50 is operationally heavier. Use only after canonical checkpoint is Ready.")
+        guard_50 = evaluate_batch_50_guard(market=market, auto_push_canonical=auto_push_canonical_ui if "auto_push_canonical_ui" in locals() else False, auto_push_per_seed=auto_push_per_seed_ui if "auto_push_per_seed_ui" in locals() else False)
+        if not guard_50.get("passed"):
+            st.error("Batch 50 blocked by canonical guard.")
+            st.json(guard_50)
     resume_ui = st.checkbox("Resume from last position", value=True)
     include_failed_ui = st.checkbox("Include failed retries", value=False)
     use_cache_ui = st.checkbox("Use cache (batch)", value=True)
@@ -389,6 +399,8 @@ with tabs[2]:
     if import_col4.button("Run coverage audit before continue"):
         refreshed = get_batch_progress(market=market)
         st.json(refreshed.get("coverage_audit", {}))
+    batch_50_blocked = batch_limit_ui == 50 and not evaluate_batch_50_guard(market=market, auto_push_canonical=auto_push_canonical_ui, auto_push_per_seed=auto_push_per_seed_ui).get("passed", False)
+
     if import_col5.button("Continue next batch"):
         guard_now = evaluate_continue_guard(market=market)
         holes_now = int(((guard_now.get("coverage_audit") or {}).get("holes_count", 0) or 0))
@@ -398,6 +410,8 @@ with tabs[2]:
         elif holes_now > 0:
             st.error("Coverage audit failed. Process holes first.")
             st.json(guard_now.get("coverage_audit", {}))
+        elif batch_50_blocked:
+            st.error("Batch 50 blocked by canonical guard.")
         else:
             result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=include_failed_ui, progress_callback=_on_progress, auto_push_canonical=auto_push_canonical_ui, auto_push_per_seed=auto_push_per_seed_ui, commit_message_prefix=commit_message_prefix_ui)
             st.json(result)
@@ -453,6 +467,10 @@ with tabs[2]:
     st.dataframe(pd.DataFrame(candidate_rows))
 
     if st.button("Run next batch"):
+        if batch_50_blocked:
+            st.error("Batch 50 blocked by canonical guard.")
+            st.json(evaluate_batch_50_guard(market=market, auto_push_canonical=auto_push_canonical_ui, auto_push_per_seed=auto_push_per_seed_ui))
+            st.stop()
         result = run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=resume_ui, include_failed=include_failed_ui, progress_callback=_on_progress, auto_push_canonical=auto_push_canonical_ui, auto_push_per_seed=auto_push_per_seed_ui, commit_message_prefix=commit_message_prefix_ui)
         for item in result.get("results", []):
             seed=item.get("seed", {}); r=item.get("result", {})
