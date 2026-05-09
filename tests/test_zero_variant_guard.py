@@ -62,3 +62,29 @@ def test_repair_zero_variant_processed_seeds_detects_honda_hyundai(monkeypatch):
     pkg={"batch_state":{"processed_seed_ids":[s["seed_id"] for s in seeds]},"accumulated_clean_export":{"variants":[]}}
     out=br.find_processed_zero_variant_seeds(pkg,ordered_seeds=seeds)
     assert len(out)==2
+
+def test_normalize_does_not_require_seed_accounting():
+    ordered=[{"seed_id":"s1","make":"A","model":"M","year_start":2010,"year_end":2012,"market":"IL"},{"seed_id":"s2","make":"A","model":"N","year_start":2013,"year_end":2015,"market":"IL"}]
+    out=br.normalize_batch_state_for_resume({"processed_seed_ids":["s1"]},ordered,market="IL")
+    assert out["processed_seed_ids"]==["s1"]
+
+
+def test_zero_variant_guard_only_applies_on_new_seed_completion(monkeypatch):
+    ordered=[{"seed_id":"s1","make":"A","model":"M","year_start":2010,"year_end":2012,"market":"IL"}]
+    out=br.normalize_batch_state_for_resume({"processed_seed_ids":["s1"]},ordered,market="IL")
+    assert out["processed_seed_ids"]==["s1"]
+    state={"processed_seed_ids":[],"failed_seed_ids":[]}
+    monkeypatch.setattr(br,"run_single_model",lambda *a,**k:{"variants_created":0,"verified_count":0,"partial_count":0,"trace":{"candidate_variants_count":0}})
+    res=br.process_seed_with_variant_retry(dict(ordered[0]),state=state,max_attempts=1)
+    assert res["status"]=="failed_after_retries"
+    assert "s1" not in state["processed_seed_ids"]
+
+
+def test_strict_audit_reports_but_does_not_mutate_by_default():
+    ordered=[{"seed_id":"s1","make":"A","model":"M","year_start":2010,"year_end":2012,"market":"IL"}]
+    base={"processed_seed_ids":["s1"]}
+    relaxed=br.normalize_batch_state_for_resume(base,ordered,variants=[],market="IL")
+    strict=br.normalize_batch_state_for_resume(base,ordered,variants=[],market="IL",strict_zero_variant_audit=True)
+    assert relaxed["processed_seed_ids"]==["s1"]
+    assert strict["processed_seed_ids"]==["s1"]
+    assert strict["false_processed_seed_ids"]
