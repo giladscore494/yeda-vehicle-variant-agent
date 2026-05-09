@@ -1,12 +1,12 @@
 {
   "schema_version": "resume_package_v1",
-  "created_at": "2026-05-09T01:54:05.251271+00:00",
+  "created_at": "2026-05-09T01:55:53.042024+00:00",
   "description": "Clean manually merged resume package: previous 258-variant accumulated dataset + latest RS5 resume additions; continues from Audi RS6.",
   "batch_state": {
     "schema_version": "batch_state_v1",
     "market": "IL",
     "created_at": "2026-05-08T16:44:55.429137+00:00",
-    "updated_at": "2026-05-09T01:54:05.296321+00:00",
+    "updated_at": "2026-05-09T01:55:53.101777+00:00",
     "last_batch_id": "25d75412-96c4-4f4e-9c7b-7d108b6c7a61",
     "total_seeds": 993,
     "processed_seed_ids": [
