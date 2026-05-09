@@ -27,7 +27,7 @@
       "conflict_count": 0,
       "unresolved_count": 1,
       "trace": {
-        "run_id": "131338d8-607f-4019-8690-2ef77b1fb73b",
+        "run_id": "6610b47f-7da0-4a82-908c-ad174a7c0e94",
         "batch_id": null,
         "seed_id": "toyota__corolla__2000__2005__il",
         "make": "Toyota",
@@ -176,7 +176,7 @@
       }
     },
     "trace": {
-      "run_id": "131338d8-607f-4019-8690-2ef77b1fb73b",
+      "run_id": "6610b47f-7da0-4a82-908c-ad174a7c0e94",
       "batch_id": null,
       "seed_id": "toyota__corolla__2000__2005__il",
       "make": "Toyota",
@@ -373,7 +373,7 @@
       "conflict_count": 0,
       "unresolved_count": 1,
       "trace": {
-        "run_id": "528918df-fdb1-4585-8c74-f3535c04c1c5",
+        "run_id": "9fdc1bc6-f626-4d67-b855-5510356d2bb6",
         "batch_id": null,
         "seed_id": "toyota__avensis__1997__2018__il",
         "make": "Toyota",
@@ -516,7 +516,7 @@
       }
     },
     "trace": {
-      "run_id": "528918df-fdb1-4585-8c74-f3535c04c1c5",
+      "run_id": "9fdc1bc6-f626-4d67-b855-5510356d2bb6",
       "batch_id": null,
       "seed_id": "toyota__avensis__1997__2018__il",
       "make": "Toyota",
@@ -700,7 +700,7 @@
       "conflict_count": 0,
       "unresolved_count": 0,
       "trace": {
-        "run_id": "c4eea65c-f009-41a9-91fc-29f5e553a238",
+        "run_id": "9223d2ba-6b4d-4336-ad3a-9296cc53a830",
         "batch_id": null,
         "seed_id": "toyota__c-hr__2017__2023__il",
         "make": "Toyota",
@@ -769,7 +769,7 @@
       }
     },
     "trace": {
-      "run_id": "c4eea65c-f009-41a9-91fc-29f5e553a238",
+      "run_id": "9223d2ba-6b4d-4336-ad3a-9296cc53a830",
       "batch_id": null,
       "seed_id": "toyota__c-hr__2017__2023__il",
       "make": "Toyota",
@@ -862,7 +862,7 @@
       "conflict_count": 0,
       "unresolved_count": 5,
       "trace": {
-        "run_id": "b63f6eff-859d-4c4f-a20c-e7fb70167a74",
+        "run_id": "c9e16277-0487-442a-8deb-e6f869942258",
         "batch_id": null,
         "seed_id": "fiat__bravo__1995__2014__il",
         "make": "Fiat",
@@ -1072,7 +1072,7 @@
       }
     },
     "trace": {
-      "run_id": "b63f6eff-859d-4c4f-a20c-e7fb70167a74",
+      "run_id": "c9e16277-0487-442a-8deb-e6f869942258",
       "batch_id": null,
       "seed_id": "fiat__bravo__1995__2014__il",
       "make": "Fiat",
@@ -1336,7 +1336,7 @@
       "conflict_count": 0,
       "unresolved_count": 3,
       "trace": {
-        "run_id": "cf0bd723-4d88-40fc-9ecd-998f4225ec7b",
+        "run_id": "d78646e3-853e-4182-8647-cfdc88a3aac2",
         "batch_id": null,
         "seed_id": "toyota__c-hr__2017__2023__il",
         "make": "Toyota",
@@ -1555,7 +1555,7 @@
       }
     },
     "trace": {
-      "run_id": "cf0bd723-4d88-40fc-9ecd-998f4225ec7b",
+      "run_id": "d78646e3-853e-4182-8647-cfdc88a3aac2",
       "batch_id": null,
       "seed_id": "toyota__c-hr__2017__2023__il",
       "make": "Toyota",
@@ -1806,7 +1806,7 @@
       "conflict_count": 0,
       "unresolved_count": 1,
       "trace": {
-        "run_id": "ce13fef8-6020-49ea-a661-cb43236a5361",
+        "run_id": "eb59a151-01b8-4090-8c66-a6248d5d083c",
         "batch_id": null,
         "seed_id": "toyota__corolla__1992__2026__il",
         "make": "Toyota",
@@ -1955,7 +1955,7 @@
       }
     },
     "trace": {
-      "run_id": "ce13fef8-6020-49ea-a661-cb43236a5361",
+      "run_id": "eb59a151-01b8-4090-8c66-a6248d5d083c",
       "batch_id": null,
       "seed_id": "toyota__corolla__1992__2026__il",
       "make": "Toyota",
@@ -2140,7 +2140,7 @@
       "conflict_count": 0,
       "unresolved_count": 1,
       "trace": {
-        "run_id": "e04ae5db-50ec-4f73-ab27-60dfabed9189",
+        "run_id": "1bdf3e3e-dde2-4a12-8b88-a1e1984fea78",
         "batch_id": null,
         "seed_id": "toyota__corolla__1992__2026__il",
         "make": "Toyota",
@@ -2289,7 +2289,7 @@
       }
     },
     "trace": {
-      "run_id": "e04ae5db-50ec-4f73-ab27-60dfabed9189",
+      "run_id": "1bdf3e3e-dde2-4a12-8b88-a1e1984fea78",
       "batch_id": null,
       "seed_id": "toyota__corolla__1992__2026__il",
       "make": "Toyota",
@@ -2470,7 +2470,7 @@
       "conflict_count": 0,
       "unresolved_count": 1,
       "trace": {
-        "run_id": "29fb011a-d802-4f20-a6d1-9a814909fe6c",
+        "run_id": "2b4cb7a6-363e-4483-82b2-84670fd2af16",
         "batch_id": null,
         "seed_id": "toyota__corolla__1992__2026__il",
         "make": "Toyota",
@@ -2619,7 +2619,7 @@
       }
     },
     "trace": {
-      "run_id": "29fb011a-d802-4f20-a6d1-9a814909fe6c",
+      "run_id": "2b4cb7a6-363e-4483-82b2-84670fd2af16",
       "batch_id": null,
       "seed_id": "toyota__corolla__1992__2026__il",
       "make": "Toyota",
@@ -2858,7 +2858,7 @@
       "conflict_count": 0,
       "unresolved_count": 0,
       "trace": {
-        "run_id": "06ffac58-257f-4012-9ccb-c7a553f50a6a",
+        "run_id": "e55ba113-1132-4b0e-b4a4-748635b8f562",
         "batch_id": null,
         "seed_id": "abarth__500__2018__2023__il",
         "make": "Abarth",
@@ -3147,7 +3147,7 @@
       }
     },
     "trace": {
-      "run_id": "06ffac58-257f-4012-9ccb-c7a553f50a6a",
+      "run_id": "e55ba113-1132-4b0e-b4a4-748635b8f562",
       "batch_id": null,
       "seed_id": "abarth__500__2018__2023__il",
       "make": "Abarth",
@@ -3528,7 +3528,7 @@
       "conflict_count": 0,
       "unresolved_count": 0,
       "trace": {
-        "run_id": "27d5f090-d0d9-42c2-8a32-75125abf204d",
+        "run_id": "a2195bfc-add1-4b30-9d2d-e20f234a4e52",
         "batch_id": null,
         "seed_id": "abarth__600e__2024__2026__il",
         "make": "Abarth",
@@ -3805,7 +3805,7 @@
       }
     },
     "trace": {
-      "run_id": "27d5f090-d0d9-42c2-8a32-75125abf204d",
+      "run_id": "a2195bfc-add1-4b30-9d2d-e20f234a4e52",
       "batch_id": null,
       "seed_id": "abarth__600e__2024__2026__il",
       "make": "Abarth",
@@ -4251,6 +4251,175 @@
     }
   },
   "verification:Audi:RS5:2010:2026:IL:gemini-3-pro-preview:skip_second_pass": {
+    "schema_version": "vehicle_variant_agent_v2",
+    "skipped": true
+  },
+  "discovery:Honda:Civic:2017:2026:IL:gemini-3-pro-preview:pro_only": {
+    "schema_version": "vehicle_variant_agent_v2",
+    "discovery_result": {
+      "ok": false,
+      "data": null,
+      "error": "Failed to parse Gemini discovery JSON",
+      "gemini_metadata": {
+        "model": "gemini-3-pro-preview",
+        "grounding_requested": true,
+        "request_attempted": false,
+        "error": "GEMINI_API_KEY missing",
+        "raw_text": null,
+        "parsed_json": null,
+        "parse_error": null,
+        "discovery_raw_text_debug_available": false,
+        "discovery_parsed_top_level_keys": [],
+        "candidate_extraction_path": "none",
+        "candidate_extraction_warning": "parse_failed",
+        "raw_candidates_count_before_normalization": 0,
+        "candidate_variants_count_after_extraction": 0,
+        "json_salvage_used": false,
+        "dropped_incomplete_candidate": false,
+        "salvaged_candidate_count": 0
+      }
+    }
+  },
+  "final:Honda:Civic:2017:2026:IL:gemini-3-pro-preview:pro_only:skip_second_pass": {
+    "schema_version": "vehicle_variant_agent_v2",
+    "result": {
+      "status": "completed",
+      "variants_created": 0,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 0,
+      "trace": {
+        "run_id": "ed28f7d6-0866-4bca-a475-3e0e261f05e8",
+        "batch_id": null,
+        "seed_id": "honda__civic__2017__2026__il",
+        "make": "Honda",
+        "model": "Civic",
+        "year_start": 2017,
+        "year_end": 2026,
+        "market": "IL",
+        "cache_key": "final:Honda:Civic:2017:2026:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+        "gemini_calls_count": 1,
+        "grounded_calls_count": 1,
+        "gemini_attempted": true,
+        "grounding_requested": true,
+        "model_mode": "pro_only",
+        "verification_mode": "skip_second_pass",
+        "input": {
+          "make": "Honda",
+          "model": "Civic",
+          "year_start": 2017,
+          "year_end": 2026,
+          "market": "IL",
+          "model_mode": "pro_only"
+        },
+        "discovery_model_used": "gemini-3-pro-preview",
+        "verification_model_used": "not_used",
+        "escalated_to_strong": false,
+        "escalation_reason": null,
+        "final_cache_hit": false,
+        "discovery_cache_hit": false,
+        "verification_cache_hit": false,
+        "cache_record_schema_version": "vehicle_variant_agent_v2",
+        "sources_required_min": 2,
+        "raw_candidate_values_preserved": true,
+        "dedupe_keys_used": [],
+        "discovery_raw_text_debug_available": false,
+        "discovery_parsed_json_debug": {},
+        "discovery_raw_text": null,
+        "discovery_parse_error": null,
+        "repair_attempted": false,
+        "repair_success": false,
+        "json_salvage_used": false,
+        "dropped_incomplete_candidate": false,
+        "discovery_parsed_top_level_keys": [],
+        "candidate_extraction_path": "none",
+        "candidate_variants_count": 0,
+        "discovery_candidates_preview": [],
+        "variants_built_before_dedupe": 0,
+        "variants_after_dedupe": 0,
+        "verification_mapping_mode": "candidate_index",
+        "field_verifications": {},
+        "final_decision": {
+          "classification": "partial",
+          "possible_under_split": false
+        },
+        "variants_created": 0,
+        "verified_count": 0,
+        "partial_count": 0,
+        "conflict_count": 0,
+        "unresolved_count": 0,
+        "variants_saved_to_verified": 0,
+        "variants_saved_to_partial": 0,
+        "verification_calls_count": 0
+      }
+    },
+    "trace": {
+      "run_id": "ed28f7d6-0866-4bca-a475-3e0e261f05e8",
+      "batch_id": null,
+      "seed_id": "honda__civic__2017__2026__il",
+      "make": "Honda",
+      "model": "Civic",
+      "year_start": 2017,
+      "year_end": 2026,
+      "market": "IL",
+      "cache_key": "final:Honda:Civic:2017:2026:IL:gemini-3-pro-preview:pro_only:skip_second_pass",
+      "gemini_calls_count": 1,
+      "grounded_calls_count": 1,
+      "gemini_attempted": true,
+      "grounding_requested": true,
+      "model_mode": "pro_only",
+      "verification_mode": "skip_second_pass",
+      "input": {
+        "make": "Honda",
+        "model": "Civic",
+        "year_start": 2017,
+        "year_end": 2026,
+        "market": "IL",
+        "model_mode": "pro_only"
+      },
+      "discovery_model_used": "gemini-3-pro-preview",
+      "verification_model_used": "not_used",
+      "escalated_to_strong": false,
+      "escalation_reason": null,
+      "final_cache_hit": false,
+      "discovery_cache_hit": false,
+      "verification_cache_hit": false,
+      "cache_record_schema_version": "vehicle_variant_agent_v2",
+      "sources_required_min": 2,
+      "raw_candidate_values_preserved": true,
+      "dedupe_keys_used": [],
+      "discovery_raw_text_debug_available": false,
+      "discovery_parsed_json_debug": {},
+      "discovery_raw_text": null,
+      "discovery_parse_error": null,
+      "repair_attempted": false,
+      "repair_success": false,
+      "json_salvage_used": false,
+      "dropped_incomplete_candidate": false,
+      "discovery_parsed_top_level_keys": [],
+      "candidate_extraction_path": "none",
+      "candidate_variants_count": 0,
+      "discovery_candidates_preview": [],
+      "variants_built_before_dedupe": 0,
+      "variants_after_dedupe": 0,
+      "verification_mapping_mode": "candidate_index",
+      "field_verifications": {},
+      "final_decision": {
+        "classification": "partial",
+        "possible_under_split": false
+      },
+      "variants_created": 0,
+      "verified_count": 0,
+      "partial_count": 0,
+      "conflict_count": 0,
+      "unresolved_count": 0,
+      "variants_saved_to_verified": 0,
+      "variants_saved_to_partial": 0,
+      "verification_calls_count": 0
+    }
+  },
+  "verification:Honda:Civic:2017:2026:IL:gemini-3-pro-preview:skip_second_pass": {
     "schema_version": "vehicle_variant_agent_v2",
     "skipped": true
   }

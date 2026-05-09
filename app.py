@@ -476,6 +476,45 @@ with tabs[2]:
             seed=item.get("seed", {}); r=item.get("result", {})
             run_rows.append({"make":seed.get("make"), "model":seed.get("model"), "status":r.get("status"), "variants":r.get("variants_created",0)})
         results_placeholder.dataframe(pd.DataFrame(run_rows) if run_rows else pd.DataFrame())
+        # Status-specific feedback
+        _result_status = result.get("status")
+        if _result_status == "stall_detected":
+            st.error(f"⚠️ {result.get('error', 'Stall detected.')}")
+            st.info("Same seeds were selected with no processing attempts recorded. Check seed_accounting in batch state.")
+        elif _result_status == "blocked":
+            st.error(f"🚫 Batch blocked: {result.get('error', '')}")
+        elif _result_status == "completed" and result.get("batch_mode") == "zero_variant_repair":
+            st.warning(f"🔧 Repair batch ran for {result.get('processed', 0)} zero-variant seed(s).")
+        # Queue diagnostics
+        _queue_diag = result.get("queue_diagnostics")
+        if isinstance(_queue_diag, dict):
+            with st.expander("Queue diagnostics"):
+                st.json(_queue_diag)
+        # Batch Execution Trace
+        _trace = result.get("batch_execution_trace", [])
+        if _trace:
+            st.subheader("Batch Execution Trace")
+            _trace_rows = []
+            for t in _trace:
+                _trace_rows.append({
+                    "seed_id": t.get("seed_id"),
+                    "queue_reason": result.get("batch_mode"),
+                    "attempt_before": t.get("attempt_before"),
+                    "attempt_after": t.get("attempt_after"),
+                    "model_called": t.get("did_call_model"),
+                    "candidates": t.get("candidates_returned"),
+                    "valid_variants": t.get("valid_variants_built"),
+                    "added": t.get("variants_added_to_canonical"),
+                    "deduped": t.get("variants_deduped_or_merged"),
+                    "no_variants_reason": t.get("no_variants_reason"),
+                    "final_status": t.get("final_status"),
+                })
+            st.dataframe(pd.DataFrame(_trace_rows))
+            # Hard-bug warning: model was not called for a queued seed
+            _skipped = [t for t in _trace if not t.get("did_call_model")]
+            if _skipped:
+                for s in _skipped:
+                    st.error(f"Queued seed was not processed: model call was skipped for {s.get('seed_id')}.")
         st.json(result)
         # Per-seed canonical persistence results
         per_seed_canonical = result.get("per_seed_canonical", [])
@@ -512,6 +551,34 @@ with tabs[2]:
                 else:
                     st.error("Canonical resume package update blocked — local file was NOT updated.")
                     st.json(canonical_persist.get("validate_result") or canonical_persist)
+
+    if st.button("Repair zero-variant processed seeds"):
+        st.info("Scanning for false-processed zero-variant seeds and reprocessing them…")
+        repair_result = run_next_batch(limit=batch_limit_ui, market=market, resume=True, include_failed=True, auto_push_canonical=auto_push_canonical_ui, auto_push_per_seed=auto_push_per_seed_ui, commit_message_prefix=commit_message_prefix_ui)
+        _rmode = repair_result.get("batch_mode")
+        _rstatus = repair_result.get("status")
+        if _rstatus == "stall_detected":
+            st.error(f"⚠️ Stall detected during repair: {repair_result.get('error', '')}")
+        elif _rmode == "zero_variant_repair":
+            st.success(f"Repair batch completed: {repair_result.get('processed', 0)} seed(s) processed.")
+        else:
+            st.write(f"Result mode: {_rmode} / status: {_rstatus}")
+        _rtrace = repair_result.get("batch_execution_trace", [])
+        if _rtrace:
+            st.subheader("Repair Execution Trace")
+            _rtrace_rows = [{
+                "seed_id": t.get("seed_id"),
+                "attempt_before": t.get("attempt_before"),
+                "attempt_after": t.get("attempt_after"),
+                "model_called": t.get("did_call_model"),
+                "candidates": t.get("candidates_returned"),
+                "valid_variants": t.get("valid_variants_built"),
+                "added": t.get("variants_added_to_canonical"),
+                "no_variants_reason": t.get("no_variants_reason"),
+                "final_status": t.get("final_status"),
+            } for t in _rtrace]
+            st.dataframe(pd.DataFrame(_rtrace_rows))
+        st.json(repair_result)
 
     if st.button("Retry failed only"):
         st.json(run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=True))
