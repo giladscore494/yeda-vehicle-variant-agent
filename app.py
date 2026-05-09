@@ -568,14 +568,19 @@ with tabs[2]:
             st.subheader("Repair Execution Trace")
             _rtrace_rows = [{
                 "seed_id": t.get("seed_id"),
+                "processor_called": t.get("processor_called"),
+                "actual_gemini_call": t.get("actual_gemini_call"),
+                "final_cache_hit": t.get("final_cache_hit"),
+                "discovery_cache_hit": t.get("discovery_cache_hit"),
+                "force_refresh_used": t.get("force_refresh_used"),
                 "attempt_before": t.get("attempt_before"),
                 "attempt_after": t.get("attempt_after"),
-                "model_called": t.get("did_call_model"),
-                "candidates": t.get("candidates_returned"),
-                "valid_variants": t.get("valid_variants_built"),
-                "added": t.get("variants_added_to_canonical"),
+                "variants_added_to_canonical": t.get("variants_added_to_canonical"),
+                "dedupe_proof_count": t.get("dedupe_proof_count"),
                 "no_variants_reason": t.get("no_variants_reason"),
                 "final_status": t.get("final_status"),
+                "saved_batch_state": t.get("saved_batch_state"),
+                "saved_canonical": t.get("saved_canonical"),
             } for t in _rtrace]
             st.dataframe(pd.DataFrame(_rtrace_rows))
         st.json(repair_result)

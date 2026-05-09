@@ -94,7 +94,7 @@ def _save_raw_debug(trace):
     save_json(raw_runs, runs)
     save_json(raw_candidates, cands)
 
-def run_single_model(make, model, year_start=None, year_end=None, market='IL', force_mock=False, allow_mock_fallback=True, model_mode='pro_only', use_cache=True, force_refresh=False, max_sources=6, max_snippets_per_source=2, max_snippet_chars=220, max_candidate_variants=12, verification_mode='skip_second_pass', max_gemini_calls_per_model_run=3, max_grounded_calls_per_model_run=1, batch_id=None):
+def run_single_model(make, model, year_start=None, year_end=None, market='IL', force_mock=False, allow_mock_fallback=True, model_mode='pro_only', use_cache=True, force_refresh=False, max_sources=6, max_snippets_per_source=2, max_snippet_chars=220, max_candidate_variants=12, verification_mode='skip_second_pass', max_gemini_calls_per_model_run=3, max_grounded_calls_per_model_run=1, batch_id=None, retry_hint: bool = False):
     ensure_output_files(); run_id = str(uuid.uuid4()); seed = find_seed(make, model)
     if not seed:
         return {'status': 'error', 'error': 'seed not found'}
@@ -132,13 +132,13 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         discovery_result = cache[discovery_cache_key]['discovery_result']; trace['discovery_cache_hit'] = True
     else:
         trace['gemini_attempted']=True; trace['grounding_requested']=True
-        discovery_result = run_discovery(seed, market, model_name=selected_model)
+        discovery_result = run_discovery(seed, market, model_name=selected_model, retry_hint=retry_hint)
         trace['gemini_calls_count'] += 1; trace['grounded_calls_count'] += 1
         if model_mode == 'auto' and len((discovery_result.get('data', {}) or {}).get('sources', []) or []) < 2:
             trace['escalated_to_strong'] = True
             trace['escalation_reason'] = 'sources_found < 2'
             selected_model = strong
-            discovery_result = run_discovery(seed, market, model_name=selected_model)
+            discovery_result = run_discovery(seed, market, model_name=selected_model, retry_hint=retry_hint)
             trace['gemini_calls_count'] += 1; trace['grounded_calls_count'] += 1
         cache[discovery_cache_key] = {'schema_version': CACHE_SCHEMA_VERSION, 'discovery_result': discovery_result}
 

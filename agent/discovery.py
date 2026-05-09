@@ -1,4 +1,4 @@
-from agent.prompts import build_discovery_prompt
+from agent.prompts import build_discovery_prompt, build_retry_discovery_prompt
 from tools.gemini_client import GeminiClient, parse_json_from_gemini_text, salvage_candidate_variants_from_raw
 
 NORMALIZED_KEYS = [
@@ -61,8 +61,8 @@ def extract_candidate_variants(parsed_json):
     return [], "none", "no candidate list found in known paths", 0
 
 
-def run_discovery(seed, market='IL', model_name=None) -> dict:
-    prompt = build_discovery_prompt(seed, market)
+def run_discovery(seed, market='IL', model_name=None, retry_hint: bool = False) -> dict:
+    prompt = build_retry_discovery_prompt(seed, market) if retry_hint else build_discovery_prompt(seed, market)
     res = GeminiClient().grounded_generate_json(prompt=prompt, model_override=model_name)
     if not isinstance(res, dict):
         return {'ok': False, 'data': None, 'error': f'Gemini client returned non-dict: {type(res).__name__}', 'gemini_metadata': {'model': None, 'grounding_requested': True, 'request_attempted': False, 'error': 'non-dict gemini response', 'raw_text': None, 'parsed_json': None, 'parse_error': None}}

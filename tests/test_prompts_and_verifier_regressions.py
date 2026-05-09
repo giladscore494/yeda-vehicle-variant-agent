@@ -1,4 +1,4 @@
-from agent.prompts import build_discovery_prompt, build_verification_prompt
+from agent.prompts import build_discovery_prompt, build_verification_prompt, build_retry_discovery_prompt
 from agent.verifier import verify_candidates_batch
 
 
@@ -22,6 +22,37 @@ def test_build_discovery_prompt_contains_required_candidate_fields():
     prompt = build_discovery_prompt(Seed(), market="IL")
     for field in ["engine", "transmission", "fuel_type", "body_type", "seats", "drivetrain", "generation"]:
         assert field in prompt
+
+
+def test_build_retry_discovery_prompt_contains_retry_hint():
+    """build_retry_discovery_prompt must include the retry instruction and no_variants_reason guidance."""
+    class Seed:
+        make = "Honda"
+        model = "Civic"
+        year_start = 2017
+        year_end = 2026
+
+    prompt = build_retry_discovery_prompt(Seed(), market="IL")
+    assert "RETRY ATTEMPT" in prompt
+    assert "no_variants_reason" in prompt
+    assert "no_reliable_sources_found" in prompt
+    # Base prompt fields still present
+    assert "candidate_variants" in prompt
+    assert "JSON only" in prompt
+
+
+def test_build_retry_discovery_prompt_is_superset_of_base():
+    """Retry prompt must include everything in the base prompt plus extras."""
+    class Seed:
+        make = "Hyundai"
+        model = "Kona"
+        year_start = 2018
+        year_end = 2026
+
+    base = build_discovery_prompt(Seed(), market="IL")
+    retry = build_retry_discovery_prompt(Seed(), market="IL")
+    assert base in retry, "retry prompt must be a superset of the base prompt"
+    assert len(retry) > len(base)
 
 
 def test_verify_candidates_batch_uses_prompt_with_candidate_data(monkeypatch):
