@@ -1,12 +1,12 @@
 {
   "schema_version": "resume_package_v1",
-  "created_at": "2026-05-09T01:53:58.108555+00:00",
+  "created_at": "2026-05-09T01:54:05.251271+00:00",
   "description": "Clean manually merged resume package: previous 258-variant accumulated dataset + latest RS5 resume additions; continues from Audi RS6.",
   "batch_state": {
     "schema_version": "batch_state_v1",
     "market": "IL",
     "created_at": "2026-05-08T16:44:55.429137+00:00",
-    "updated_at": "2026-05-09T01:53:58.198999+00:00",
+    "updated_at": "2026-05-09T01:54:05.296321+00:00",
     "last_batch_id": "25d75412-96c4-4f4e-9c7b-7d108b6c7a61",
     "total_seeds": 993,
     "processed_seed_ids": [
@@ -2072,7 +2072,8 @@
           "status": "verified",
           "sources_count": 2
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_840i_2019_2026_il_g14_3_0l_i6_turbo_8_speed_automatic_convertible_petrol",
@@ -2204,7 +2205,8 @@
           "status": "verified",
           "sources_count": 2
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_840i_2019_2026_il_g16_3_0l_i6_turbo_8_speed_automatic_gran_coupe_petrol",
@@ -2336,7 +2338,8 @@
           "status": "verified",
           "sources_count": 2
         }
-      ]
+      ],
+      "source_ids": []
     },
     {
       "variant_id": "bmw_760i_2009_2015_il_f01_6_0l_v12_twin_turbo_8_speed_automatic_sedan_petrol",
@@ -105501,7 +105504,8 @@
             "status": "verified",
             "sources_count": 2
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_840i_2019_2026_il_g14_3_0l_i6_turbo_8_speed_automatic_convertible_petrol",
@@ -105633,7 +105637,8 @@
             "status": "verified",
             "sources_count": 2
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_840i_2019_2026_il_g16_3_0l_i6_turbo_8_speed_automatic_gran_coupe_petrol",
@@ -105765,7 +105770,8 @@
             "status": "verified",
             "sources_count": 2
           }
-        ]
+        ],
+        "source_ids": []
       },
       {
         "variant_id": "bmw_760i_2009_2015_il_f01_6_0l_v12_twin_turbo_8_speed_automatic_sedan_petrol",
@@ -150350,25 +150356,25 @@
       "status_rebuilt": true,
       "trim_merge_enabled": true,
       "inputs_loaded": {
-        "canonical_resume_package": 524,
+        "canonical_resume_package": 527,
         "canonical_source": "local_canonical",
         "imported_accumulated_dataset": 454,
         "combined_clean": 0,
         "combined_old": 0,
-        "vehicle_variants_verified": 3,
+        "vehicle_variants_verified": 0,
         "vehicle_variants_partial": 11,
         "run_history_embedded": 0,
         "latest_batch_full_variants": 0
       },
       "accumulation_counts": {
-        "canonical_resume_package": 524,
+        "canonical_resume_package": 527,
         "canonical_source": "local_canonical",
         "imported_accumulated_dataset": 454,
-        "verified_output": 3,
+        "verified_output": 0,
         "partial_output": 11,
         "latest_batch_full_variants": 0,
         "final_merged_variants": 527,
-        "shrink_guard_previous_count": 524,
+        "shrink_guard_previous_count": 527,
         "shrink_guard_new_count": 527
       }
     }
@@ -150389,7 +150395,7 @@
     "previous_canonical_variants": 263,
     "new_unique_added": 264,
     "pushed_to_github": true,
-    "last_push_commit_sha": "05d0c3e4364c20d744f7c3a6a42968f9491cddce"
+    "last_push_commit_sha": "769d72435ab6b3cc4c9dff8fa39a24fe87e0be54"
   },
   "counts": {
     "total_variants": 527,
