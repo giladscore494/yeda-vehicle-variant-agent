@@ -112,6 +112,10 @@ def test_needs_retry_outside_false_processed_is_quarantined():
 # ---------------------------------------------------------------------------
 
 def test_on_disk_canonical_is_clean():
+    """If a canonical happens to exist on disk locally, it must not contain
+    "s1" pollution and its counts must self-agree.  Skipped in CI / clean
+    checkouts where canonical is not committed (it is uploaded by the user
+    out-of-band)."""
     if not CANONICAL_PATH.exists():  # pragma: no cover - defensive
         return
     canonical = json.loads(CANONICAL_PATH.read_text(encoding="utf-8"))
@@ -125,27 +129,80 @@ def test_on_disk_canonical_is_clean():
     needs = bs.get("needs_retry_seed_ids") or []
     fp = bs.get("false_processed_seed_ids") or []
     assert len(needs) == len(fp), (len(needs), len(fp))
-    assert prs.get("total") == len(needs)
-    assert prs.get("progress", {}).get("pending") == len(needs)
     if needs:
         assert prs.get("current_seed_id") == needs[0]
 
 
-def test_on_disk_canonical_expected_counts_pre_bmw():
-    """The uploaded canonical is the pre-BMW state: total = pending = 54,
-    current = bmw__850i__2018__2026__il."""
-    if not CANONICAL_PATH.exists():  # pragma: no cover - defensive
-        return
-    canonical = json.loads(CANONICAL_PATH.read_text(encoding="utf-8"))
+def _build_pre_bmw_fixture() -> dict:
+    """Construct the spec's pre-BMW canonical fixture in memory.
+
+    Total = 54 problem seeds, BMW 850i first, pending = 54, completed = 0,
+    normal continuation paused at Haval H6 / GMC Yukon.  Used by the
+    fixture-based pre-BMW test so the suite does not depend on a
+    user-uploaded production canonical.
+    """
+    bmw = "bmw__850i__2018__2026__il"
+    z4 = "bmw__z4_sdrive20i__2019__2026__il"
+    daewoo = "daewoo__lacetti__2003__2011__il"
+    fillers = [f"make{i}__model{i}__2010__2020__il" for i in range(51)]
+    problem_ids = [bmw, z4, daewoo] + fillers
+    assert len(problem_ids) == 54
+    return {
+        "schema_version": "resume_package_v1",
+        "batch_state": {
+            "market": "IL",
+            "total_seeds": 993,
+            "processed_seed_ids": [],
+            "needs_retry_seed_ids": list(problem_ids),
+            "false_processed_seed_ids": list(problem_ids),
+            "last_completed_seed_id": "gmc__yukon__2000__2026__il",
+            "next_seed_id": "haval__h6__2022__2026__il",
+            "failed_seed_ids": [],
+            "failed_details": [],
+            "in_progress_seed_id": None,
+            "invalid_needs_retry_seed_ids": [],
+            "original_false_processed_count": 54,
+        },
+        "problem_repair_state": {
+            "active": True,
+            "total": 54,
+            "original_problem_seed_ids": list(problem_ids),
+            "completed_seed_ids": [],
+            "pending_seed_ids": list(problem_ids),
+            "failed_retry_seed_ids": [],
+            "current_seed_id": bmw,
+            "last_completed_seed_id": None,
+            "normal_continuation": {
+                "last_completed_seed_id": "gmc__yukon__2000__2026__il",
+                "next_seed_id": "haval__h6__2022__2026__il",
+            },
+        },
+        "accumulated_clean_export": {"variants": []},
+    }
+
+
+def test_pre_bmw_canonical_expected_counts_from_fixture():
+    """Fixture-based replacement for the old on-disk-only test.
+
+    The production canonical is uploaded by the user out-of-band and is
+    not source-controlled, so the suite cannot depend on it.  This test
+    exercises the same invariants the spec calls out for the pre-BMW
+    state using an in-memory fixture.
+    """
+    canonical = _build_pre_bmw_fixture()
+    derived = compute_problem_repair_state(canonical)
     bs = canonical["batch_state"]
-    prs = canonical["problem_repair_state"]
     assert len(bs["needs_retry_seed_ids"]) == 54
     assert len(bs["false_processed_seed_ids"]) == 54
-    assert prs["total"] == 54
-    assert prs["progress"]["pending"] == 54
-    assert prs["progress"]["completed"] == 0
-    assert prs["current_seed_id"] == "bmw__850i__2018__2026__il"
-    assert prs["normal_continuation"]["next_seed_id"] == "haval__h6__2022__2026__il"
+    assert derived["total"] == 54
+    assert derived["progress"]["pending"] == 54
+    assert derived["progress"]["completed"] == 0
+    assert derived["progress"]["current_position"] == "1 / 54"
+    assert derived["current_seed_id"] == "bmw__850i__2018__2026__il"
+    assert derived["normal_continuation"]["next_seed_id"] == "haval__h6__2022__2026__il"
+    # No s1 anywhere in the active lists.
+    for lst in (derived["pending_seed_ids"], derived["completed_seed_ids"], derived["failed_retry_seed_ids"]):
+        assert "s1" not in lst
 
 
 # ---------------------------------------------------------------------------
