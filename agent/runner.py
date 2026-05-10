@@ -105,7 +105,7 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     cache_key = f"final:{make}:{model}:{ys}:{ye}:{market}:{strong}:{model_mode}:{verification_mode}"
     discovery_cache_key = f"discovery:{make}:{model}:{ys}:{ye}:{market}:{strong}:{model_mode}"
     verification_cache_key = f"verification:{make}:{model}:{ys}:{ye}:{market}:{strong}:{verification_mode}"
-    trace = {'run_id': run_id, 'batch_id': batch_id, 'seed_id': _seed_id(make, model, ys, ye, market), 'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'cache_key': cache_key, 'gemini_calls_count': 0, 'grounded_calls_count': 0, 'gemini_attempted': False, 'grounding_requested': False, 'model_mode': model_mode, 'verification_mode': verification_mode, 'input': {'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'model_mode': model_mode}, 'discovery_model_used': None, 'verification_model_used': None, 'escalated_to_strong': False, 'escalation_reason': None, 'final_cache_hit': False, 'discovery_cache_hit': False, 'verification_cache_hit': False, 'cache_record_schema_version': None, 'sources_required_min': 2, 'raw_candidate_values_preserved': True, 'dedupe_keys_used': [], 'discovery_raw_text_debug_available': False}
+    trace = {'run_id': run_id, 'batch_id': batch_id, 'seed_id': _seed_id(make, model, ys, ye, market), 'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'cache_key': cache_key, 'gemini_calls_count': 0, 'grounded_calls_count': 0, 'gemini_attempted': False, 'gemini_request_attempted': False, 'gemini_client_ok': None, 'gemini_client_error': None, 'gemini_raw_text_received': False, 'gemini_model_used': None, 'gemini_skip_reason': None, 'grounding_requested': False, 'model_mode': model_mode, 'verification_mode': verification_mode, 'input': {'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'model_mode': model_mode}, 'discovery_model_used': None, 'verification_model_used': None, 'escalated_to_strong': False, 'escalation_reason': None, 'final_cache_hit': False, 'discovery_cache_hit': False, 'verification_cache_hit': False, 'cache_record_schema_version': None, 'sources_required_min': 2, 'raw_candidate_values_preserved': True, 'dedupe_keys_used': [], 'discovery_raw_text_debug_available': False}
     if force_refresh:
         use_cache = False
 
@@ -123,13 +123,19 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
         hit = cache[cache_key]
         hit_trace = hit.get('trace', {})
         hit_trace.update({'final_cache_hit': True, 'cache_record_schema_version': hit.get('schema_version')})
+        hit_trace.setdefault('gemini_request_attempted', False)
+        hit_trace.setdefault('gemini_client_ok', None)
+        hit_trace.setdefault('gemini_client_error', None)
+        hit_trace.setdefault('gemini_raw_text_received', False)
+        hit_trace.setdefault('gemini_model_used', None)
+        hit_trace.setdefault('gemini_skip_reason', 'final_cache_hit')
         return hit.get('result', {'status': 'completed', 'trace': hit_trace})
 
 
     selected_model = strong if model_mode in {'strong', 'pro_only'} else client.fast_model
     discovery_result = None
     if use_cache and cache.get(discovery_cache_key, {}).get('schema_version') == CACHE_SCHEMA_VERSION:
-        discovery_result = cache[discovery_cache_key]['discovery_result']; trace['discovery_cache_hit'] = True
+        discovery_result = cache[discovery_cache_key]['discovery_result']; trace['discovery_cache_hit'] = True; trace['gemini_skip_reason'] = 'discovery_cache_hit'
     else:
         trace['gemini_attempted']=True; trace['grounding_requested']=True
         discovery_result = run_discovery(seed, market, model_name=selected_model, retry_hint=retry_hint)
@@ -144,6 +150,17 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
 
     trace['discovery_model_used'] = selected_model
     gm = discovery_result.get('gemini_metadata', {}) if isinstance(discovery_result.get('gemini_metadata'), dict) else {}
+    if 'request_attempted' in gm:
+        trace['gemini_request_attempted'] = bool(gm.get('request_attempted'))
+    else:
+        trace['gemini_request_attempted'] = bool(trace.get('gemini_attempted'))
+    trace['gemini_client_ok'] = bool(discovery_result.get('ok', False))
+    trace['gemini_client_error'] = gm.get('error') or discovery_result.get('error')
+    trace['gemini_raw_text_received'] = bool(gm.get('raw_text'))
+    trace['gemini_model_used'] = gm.get('model') or selected_model
+    trace['gemini_attempted'] = bool(trace.get('gemini_attempted')) or bool(trace['gemini_request_attempted'])
+    if trace['gemini_request_attempted']:
+        trace['gemini_skip_reason'] = None
     parsed = gm.get('parsed_json') or discovery_result.get('data')
     raw_text = gm.get('raw_text')
     if (not parsed or parsed == {}) and raw_text:

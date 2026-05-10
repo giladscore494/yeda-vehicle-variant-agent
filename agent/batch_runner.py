@@ -50,6 +50,9 @@ ALLOWED_NO_VARIANTS_REASONS = {
     "blocked_by_validation",
 }
 
+REPAIR_QUEUE_SOURCES = {"zero_variant_repair", "needs_retry", "hole_repair", "fill_coverage_holes"}
+MAX_RETRY_ATTEMPTS = 5
+
 
 def _ensure_zero_variant_fields(state: dict) -> dict:
     state.setdefault("needs_retry_seed_ids", [])
@@ -1376,12 +1379,36 @@ def _refresh_coverage(state: dict, ordered_seeds: list[dict]):
 
 
 
-def process_seed_with_variant_retry(seed: dict, state: dict | None = None, max_attempts: int = 3, market: str = "IL", use_cache: bool = True, force_refresh: bool = False) -> dict:
-    capped=max(1,min(int(max_attempts or 3),5))
+def process_seed_with_variant_retry(seed: dict, state: dict | None = None, max_attempts: int = 3, market: str = "IL", use_cache: bool = True, force_refresh: bool = False, force_retry_failed: bool = False) -> dict:
+    capped=max(1,min(int(max_attempts or 3),MAX_RETRY_ATTEMPTS))
     st = _ensure_zero_variant_fields(state if isinstance(state,dict) else {})
     sid=seed.get("seed_id")
     last=None
-    for attempt in range(1,capped+1):
+    previous_attempts = int((st.get("seed_accounting", {}) or {}).get(sid, {}).get("attempts", 0) or 0)
+    if previous_attempts >= MAX_RETRY_ATTEMPTS and not force_retry_failed:
+        fail = (st.get("seed_accounting", {}) or {}).get(sid, {}) if isinstance((st.get("seed_accounting", {}) or {}).get(sid, {}), dict) else {}
+        fail = {
+            "seed_id": sid,
+            "batch_id": st.get("last_batch_id"),
+            "attempts": previous_attempts,
+            "candidates_returned": int(fail.get("candidates_returned", 0) or 0),
+            "valid_variants_built": int(fail.get("valid_variants_built", 0) or 0),
+            "variants_added_to_canonical": int(fail.get("variants_added_to_canonical", 0) or 0),
+            "variants_deduped_or_merged": int(fail.get("variants_deduped_or_merged", 0) or 0),
+            "dedupe_proof": fail.get("dedupe_proof", []) if isinstance(fail.get("dedupe_proof"), list) else [],
+            "no_variants_reason": fail.get("no_variants_reason"),
+            "marked_processed": False,
+            "status": "failed_after_retries",
+            "failure_reason": "zero_variants_without_explanation_after_retries",
+        }
+        st.setdefault("needs_retry_seed_ids", [])
+        if sid not in st["needs_retry_seed_ids"]:
+            st["needs_retry_seed_ids"].append(sid)
+        st.setdefault("seed_accounting", {})[sid] = fail
+        return {**(last or {}), "status": "failed_after_retries", "accounting": fail, "blocked": True, "message": "Seed processing blocked: max retry attempts already exhausted."}
+    start_attempt = previous_attempts + 1
+    end_attempt = min(previous_attempts + capped, MAX_RETRY_ATTEMPTS)
+    for attempt in range(start_attempt, end_attempt + 1):
         # Part E: on attempt 2+ send the retry prompt that demands a no_variants_reason
         retry_hint = attempt > 1
         result = run_single_model(seed["make"], seed["model"], seed["year_start"], seed["year_end"], market=seed.get("market") or market, use_cache=use_cache, force_refresh=force_refresh, retry_hint=retry_hint)
@@ -1405,7 +1432,7 @@ def process_seed_with_variant_retry(seed: dict, state: dict | None = None, max_a
             return {**result,"status":"completed","accounting":accounting}
     st.setdefault("needs_retry_seed_ids",[])
     if sid not in st["needs_retry_seed_ids"]: st["needs_retry_seed_ids"].append(sid)
-    fail={"seed_id":sid,"batch_id":st.get("last_batch_id"),"attempts":capped,"candidates_returned":0,"valid_variants_built":0,"variants_added_to_canonical":0,"variants_deduped_or_merged":0,"dedupe_proof":[],"no_variants_reason":None,"marked_processed":False,"status":"failed_after_retries","failure_reason":"zero_variants_without_explanation_after_retries"}
+    fail={"seed_id":sid,"batch_id":st.get("last_batch_id"),"attempts":max(previous_attempts, end_attempt),"candidates_returned":0,"valid_variants_built":0,"variants_added_to_canonical":0,"variants_deduped_or_merged":0,"dedupe_proof":[],"no_variants_reason":None,"marked_processed":False,"status":"failed_after_retries","failure_reason":"zero_variants_without_explanation_after_retries"}
     st.setdefault("seed_accounting",{})[sid]=fail
     return {**(last or {}),"status":"failed_after_retries","accounting":fail,"blocked":True,"message":"Seed processing blocked: no variants added, no dedupe proof, and no no_variants_reason."}
 
@@ -1436,7 +1463,7 @@ def _process_seeds(
     # Issue 1: Force fresh Gemini calls for repair/retry queues
     effective_force_refresh = force_refresh
     effective_use_cache = use_cache
-    if batch_mode in {"zero_variant_repair", "needs_retry", "hole_repair"} and not force_refresh:
+    if batch_mode in REPAIR_QUEUE_SOURCES:
         effective_force_refresh = True
         effective_use_cache = False
 
@@ -1467,9 +1494,29 @@ def _process_seeds(
         accounting = result.get("accounting") or {}
         # Extract real Gemini call metadata from trace
         result_trace = result.get("trace") or {}
-        actual_gemini_call = bool(result_trace.get("gemini_attempted")) and not bool(result_trace.get("final_cache_hit"))
+        gemini_request_attempted = bool(result_trace.get("gemini_request_attempted"))
         final_cache_hit = bool(result_trace.get("final_cache_hit"))
         discovery_cache_hit = bool(result_trace.get("discovery_cache_hit"))
+        actual_gemini_call = gemini_request_attempted and not final_cache_hit and not discovery_cache_hit
+        gemini_client_error = result_trace.get("gemini_client_error")
+        explicit_skip_reason = result_trace.get("gemini_skip_reason")
+        explicit_error = (
+            result.get("error")
+            or result_trace.get("error")
+            or result_trace.get("gemini_error")
+            or gemini_client_error
+        )
+        if batch_mode in REPAIR_QUEUE_SOURCES and processor_called:
+            allowed_non_gemini_reason = (not final_cache_hit and not discovery_cache_hit and bool(explicit_skip_reason))
+            if (not gemini_request_attempted) and (not allowed_non_gemini_reason) and (not explicit_error):
+                status = "error"
+                result["status"] = "error"
+                result["blocked"] = True
+                result["error"] = "Repair seed did not send Gemini request."
+                result["message"] = "Repair seed did not send Gemini request."
+                if isinstance(accounting, dict):
+                    accounting["status"] = "failed_after_retries"
+                    accounting["failure_reason"] = "repair_seed_model_call_skipped"
         if status == "error" and sid not in state["failed_seed_ids"]:
             state["failed_seed_ids"].append(sid)
             state.setdefault("failed_details", []).append({"seed_id": sid, "reason": str(result.get("error", "")), "created_at": _now()})
@@ -1559,11 +1606,13 @@ def _process_seeds(
             "attempt_after": int(accounting.get("attempts", attempt_before) or attempt_before),
             "processor_called": processor_called,
             "did_call_model": processor_called,  # backward-compat alias
+            "gemini_request_attempted": gemini_request_attempted,
             "actual_gemini_call": actual_gemini_call,
             "final_cache_hit": final_cache_hit,
             "discovery_cache_hit": discovery_cache_hit,
             "force_refresh_used": effective_force_refresh,
             "use_cache_used": effective_use_cache,
+            "gemini_client_error": gemini_client_error,
             "model_response_received": processor_called and status != "error",
             "candidates_returned": int(accounting.get("candidates_returned", 0) or 0),
             "valid_variants_built": int(accounting.get("valid_variants_built", 0) or 0),
