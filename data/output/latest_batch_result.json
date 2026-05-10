@@ -1,7 +1,7 @@
 {
   "batch": {
-    "batch_id": "f1b18eaa-dfbe-46ca-9a55-639fdb4e7b82",
-    "started_at": "2026-05-10T19:31:28.792079+00:00",
+    "batch_id": "f5f3b667-2dea-4ec5-be30-b02101254bb4",
+    "started_at": "2026-05-10T20:04:07.336303+00:00",
     "requested_limit": 1,
     "processed": 1,
     "batch_mode": "rerun_queue"
@@ -9,10 +9,10 @@
   "results": [
     {
       "seed": {
-        "seed_id": "bmw__850i__2018__2026__il",
-        "make": "Bmw",
-        "model": "850I",
-        "year_start": 2018,
+        "seed_id": "honda__civic__1990__2026__il",
+        "make": "Honda",
+        "model": "Civic",
+        "year_start": 1990,
         "year_end": 2026,
         "market": "IL"
       },

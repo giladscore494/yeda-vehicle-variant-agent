@@ -11,270 +11,6 @@
   "total": 54,
   "pending": [
     {
-      "seed_id": "bmw__850i__2018__2026__il",
-      "make": "BMW",
-      "model": "850i",
-      "year_start": 2018,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "bmw__z4_sdrive20i__2019__2026__il",
-      "make": "BMW",
-      "model": "Z4 sDrive20i",
-      "year_start": 2019,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "daewoo__lacetti__2003__2011__il",
-      "make": "Daewoo",
-      "model": "Lacetti",
-      "year_start": 2003,
-      "year_end": 2011,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "daihatsu__copen__2002__2012__il",
-      "make": "Daihatsu",
-      "model": "Copen",
-      "year_start": 2002,
-      "year_end": 2012,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "ds_automobiles__ds_9__2020__2026__il",
-      "make": "DS Automobiles",
-      "model": "DS 9",
-      "year_start": 2020,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "fiat__bravo__1995__2014__il",
-      "make": "Fiat",
-      "model": "Bravo",
-      "year_start": 1995,
-      "year_end": 2014,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "fiat__freemont__2011__2016__il",
-      "make": "Fiat",
-      "model": "Freemont",
-      "year_start": 2011,
-      "year_end": 2016,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "fiat__linea__2007__2018__il",
-      "make": "Fiat",
-      "model": "Linea",
-      "year_start": 2007,
-      "year_end": 2018,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "fiat__tipo__2016__2026__il",
-      "make": "Fiat",
-      "model": "Tipo",
-      "year_start": 2016,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "ford__ecosport__2013__2022__il",
-      "make": "Ford",
-      "model": "EcoSport",
-      "year_start": 2013,
-      "year_end": 2022,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "geely__coolray__2023__2026__il",
-      "make": "Geely",
-      "model": "Coolray",
-      "year_start": 2023,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "geely__monjaro__2023__2026__il",
-      "make": "Geely",
-      "model": "Monjaro",
-      "year_start": 2023,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "haval__jolion__2021__2026__il",
-      "make": "Haval",
-      "model": "Jolion",
-      "year_start": 2021,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__accord__1990__2024__il",
-      "make": "Honda",
-      "model": "Accord",
-      "year_start": 1990,
-      "year_end": 2024,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__civic__1990__2026__il",
-      "make": "Honda",
-      "model": "Civic",
-      "year_start": 1990,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__civic_type_r__2017__2023__il",
-      "make": "Honda",
-      "model": "Civic Type R",
-      "year_start": 2017,
-      "year_end": 2023,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__cr-v__1997__2026__il",
-      "make": "Honda",
-      "model": "CR-V",
-      "year_start": 1997,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__cr-z__2010__2016__il",
-      "make": "Honda",
-      "model": "CR-Z",
-      "year_start": 2010,
-      "year_end": 2016,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__e:ny1__2023__2026__il",
-      "make": "Honda",
-      "model": "e:Ny1",
-      "year_start": 2023,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__fr-v__2004__2009__il",
-      "make": "Honda",
-      "model": "FR-V",
-      "year_start": 2004,
-      "year_end": 2009,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__hr-v__2015__2026__il",
-      "make": "Honda",
-      "model": "HR-V",
-      "year_start": 2015,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__insight__2009__2014__il",
-      "make": "Honda",
-      "model": "Insight",
-      "year_start": 2009,
-      "year_end": 2014,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__insight__2018__2022__il",
-      "make": "Honda",
-      "model": "Insight",
-      "year_start": 2018,
-      "year_end": 2022,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "honda__jazz__2001__2026__il",
-      "make": "Honda",
-      "model": "Jazz",
-      "year_start": 2001,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
       "seed_id": "honda__legend__2000__2012__il",
       "make": "Honda",
       "model": "Legend",
@@ -605,14 +341,376 @@
       "last_status": null
     }
   ],
-  "completed": [],
-  "failed_retry": [],
+  "completed": [
+    {
+      "seed_id": "fiat__bravo__1995__2014__il",
+      "make": "Fiat",
+      "model": "Bravo",
+      "year_start": 1995,
+      "year_end": 2014,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 2,
+      "resolved_at": "2026-05-10T20:04:01.846658+00:00"
+    },
+    {
+      "seed_id": "fiat__freemont__2011__2016__il",
+      "make": "Fiat",
+      "model": "Freemont",
+      "year_start": 2011,
+      "year_end": 2016,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 2,
+      "resolved_at": "2026-05-10T20:04:02.041264+00:00"
+    },
+    {
+      "seed_id": "fiat__linea__2007__2018__il",
+      "make": "Fiat",
+      "model": "Linea",
+      "year_start": 2007,
+      "year_end": 2018,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 2,
+      "resolved_at": "2026-05-10T20:04:02.236176+00:00"
+    },
+    {
+      "seed_id": "ford__ecosport__2013__2022__il",
+      "make": "Ford",
+      "model": "EcoSport",
+      "year_start": 2013,
+      "year_end": 2022,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 2,
+      "resolved_at": "2026-05-10T20:04:02.434481+00:00"
+    },
+    {
+      "seed_id": "geely__coolray__2023__2026__il",
+      "make": "Geely",
+      "model": "Coolray",
+      "year_start": 2023,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 2,
+      "resolved_at": "2026-05-10T20:04:02.671789+00:00"
+    },
+    {
+      "seed_id": "geely__monjaro__2023__2026__il",
+      "make": "Geely",
+      "model": "Monjaro",
+      "year_start": 2023,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 1,
+      "resolved_at": "2026-05-10T20:04:05.115179+00:00"
+    },
+    {
+      "seed_id": "haval__jolion__2021__2026__il",
+      "make": "Haval",
+      "model": "Jolion",
+      "year_start": 2021,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 1,
+      "resolved_at": "2026-05-10T20:04:05.175049+00:00"
+    },
+    {
+      "seed_id": "honda__cr-v__1997__2026__il",
+      "make": "Honda",
+      "model": "CR-V",
+      "year_start": 1997,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 2,
+      "resolved_at": "2026-05-10T20:04:13.169793+00:00"
+    }
+  ],
+  "failed_retry": [
+    {
+      "seed_id": "bmw__850i__2018__2026__il",
+      "make": "BMW",
+      "model": "850i",
+      "year_start": 2018,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "bmw__z4_sdrive20i__2019__2026__il",
+      "make": "BMW",
+      "model": "Z4 sDrive20i",
+      "year_start": 2019,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "daewoo__lacetti__2003__2011__il",
+      "make": "Daewoo",
+      "model": "Lacetti",
+      "year_start": 2003,
+      "year_end": 2011,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "daihatsu__copen__2002__2012__il",
+      "make": "Daihatsu",
+      "model": "Copen",
+      "year_start": 2002,
+      "year_end": 2012,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "ds_automobiles__ds_9__2020__2026__il",
+      "make": "DS Automobiles",
+      "model": "DS 9",
+      "year_start": 2020,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "fiat__tipo__2016__2026__il",
+      "make": "Fiat",
+      "model": "Tipo",
+      "year_start": 2016,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__accord__1990__2024__il",
+      "make": "Honda",
+      "model": "Accord",
+      "year_start": 1990,
+      "year_end": 2024,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__civic__1990__2026__il",
+      "make": "Honda",
+      "model": "Civic",
+      "year_start": 1990,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__civic_type_r__2017__2023__il",
+      "make": "Honda",
+      "model": "Civic Type R",
+      "year_start": 2017,
+      "year_end": 2023,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__cr-z__2010__2016__il",
+      "make": "Honda",
+      "model": "CR-Z",
+      "year_start": 2010,
+      "year_end": 2016,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__e:ny1__2023__2026__il",
+      "make": "Honda",
+      "model": "e:Ny1",
+      "year_start": 2023,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__fr-v__2004__2009__il",
+      "make": "Honda",
+      "model": "FR-V",
+      "year_start": 2004,
+      "year_end": 2009,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__hr-v__2015__2026__il",
+      "make": "Honda",
+      "model": "HR-V",
+      "year_start": 2015,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__insight__2009__2014__il",
+      "make": "Honda",
+      "model": "Insight",
+      "year_start": 2009,
+      "year_end": 2014,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__insight__2018__2022__il",
+      "make": "Honda",
+      "model": "Insight",
+      "year_start": 2018,
+      "year_end": 2022,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "honda__jazz__2001__2026__il",
+      "make": "Honda",
+      "model": "Jazz",
+      "year_start": 2001,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    }
+  ],
   "invalid_seed_ids": [],
-  "updated_at": "2026-05-10T19:32:53.960740+00:00",
+  "updated_at": "2026-05-10T20:04:25.910197+00:00",
   "progress": {
-    "completed": 0,
-    "pending": 54,
-    "failed_retry": 0,
-    "percent": 0
+    "completed": 8,
+    "pending": 30,
+    "failed_retry": 16,
+    "percent": 15
   }
 }
