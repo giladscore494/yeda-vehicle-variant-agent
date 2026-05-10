@@ -11,6 +11,7 @@ from agent.batch_runner import (
     load_batch_state,
     load_local_canonical_resume_package,
     sanitize_repair_queue_state,
+    sync_batch_state_from_canonical,
     repair_and_audit_zero_variant_processed_seeds,
     run_next_batch,
 )
@@ -28,7 +29,7 @@ def _safe_dict(v: Any) -> dict:
 def _status_snapshot(market: str = "IL") -> dict:
     canonical = _safe_dict(load_local_canonical_resume_package())
     ordered = get_ordered_seed_list(market)
-    batch_state = sanitize_repair_queue_state(_safe_dict(load_batch_state(market=market)), ordered)
+    batch_state = sanitize_repair_queue_state(_safe_dict(sync_batch_state_from_canonical(market=market)), ordered)
     progress = _safe_dict(get_batch_progress(market=market))
     final_export = _safe_dict(build_final_export())
 

@@ -1062,6 +1062,35 @@ def load_batch_state(market: str = "IL") -> dict:
     return sanitize_repair_queue_state(state, ordered)
 
 
+def sync_batch_state_from_canonical(market: str = "IL") -> dict:
+    """Use canonical batch_state as source of truth and sync data/output/batch_state.json."""
+    ordered = get_ordered_seed_list(market)
+    canonical = load_local_canonical_resume_package()
+    canonical_state = {}
+    if isinstance(canonical, dict) and isinstance(canonical.get("batch_state"), dict):
+        canonical_state = extract_canonical_batch_state(canonical, ordered, market=market)
+
+    live_state = load_json_object(_batch_state_path())
+    if not isinstance(live_state, dict):
+        live_state = {}
+    live_norm = normalize_batch_state_for_resume(live_state, ordered, market=market)
+
+    if canonical_state and len(canonical_state.get("processed_seed_ids") or []) > 0:
+        first_seed = ordered[0]["seed_id"] if ordered else None
+        if live_norm.get("next_seed_id") == first_seed and canonical_state.get("next_seed_id") != first_seed:
+            selected = canonical_state
+        else:
+            selected = canonical_state
+    elif canonical_state:
+        selected = canonical_state
+    else:
+        selected = live_norm
+
+    selected = sanitize_repair_queue_state(_ensure_zero_variant_fields(selected), ordered)
+    _save_state(copy.deepcopy(selected))
+    return selected
+
+
 def _save_state(state: dict):
     state["updated_at"] = _now()
     save_json(_batch_state_path(), state)
@@ -2376,7 +2405,7 @@ def run_next_batch(
         }
     ordered = get_ordered_seed_list(market)
     if resume:
-        _raw_state = load_batch_state(market)
+        _raw_state = sync_batch_state_from_canonical(market)
         _raw_last_completed = _raw_state.get("last_completed_seed_id")
         state = normalize_batch_state_for_resume(_raw_state, ordered, market=market)
         # Preserve stall-detection fields that are stripped out by normalization
@@ -2471,6 +2500,8 @@ def run_next_batch(
                     if forced is not None:
                         queue = [seed_to_dict(forced, default_market=market)]
     if not queue:
+        if state.get("needs_retry_seed_ids"):
+            return {"status": "blocked", "error": "needs_retry exists but produced empty runnable queue", "batch_mode": batch_mode, "needs_retry_seed_ids": list(state.get("needs_retry_seed_ids") or []), "results": []}
         _refresh_coverage(state, ordered)
         _save_state(state)
         return {"status": "completed_all", "batch_mode": "completed_all", "processed": 0, "remaining": 0, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": 0, "coverage_audit_after_batch": coverage}
@@ -3451,6 +3482,81 @@ def pull_canonical_from_github() -> dict:
     }
 
 
+
+
+def recover_active_state_from_current_canonical_and_backup(market: str = "IL") -> dict:
+    """Deterministically recover active canonical + batch_state from current canonical and backup.
+
+    Preserves current canonical variants while restoring valid needs_retry queue from backup.
+    """
+    ordered = get_ordered_seed_list(market)
+    ordered_ids = [s.get("seed_id") for s in ordered if isinstance(s, dict) and isinstance(s.get("seed_id"), str)]
+    ordered_set = set(ordered_ids)
+
+    current = load_local_canonical_resume_package()
+    if not isinstance(current, dict) or not current:
+        return {"ok": False, "error": "Current canonical package missing or empty."}
+
+    backup_path = _canonical_backup_path()
+    backup = load_json_object(backup_path) if backup_path.exists() else None
+    if not isinstance(backup, dict) or not backup:
+        return {"ok": False, "error": f"Backup file not found or empty: {backup_path}"}
+
+    current_bs = current.get("batch_state") if isinstance(current.get("batch_state"), dict) else {}
+    backup_bs = backup.get("batch_state") if isinstance(backup.get("batch_state"), dict) else {}
+
+    current_variants = _extract_canonical_variant_bucket(current)
+    variants_count_before = len(current_variants)
+
+    backup_retry_raw = [sid for sid in (backup_bs.get("needs_retry_seed_ids") or []) if isinstance(sid, str)]
+    current_retry_raw = [sid for sid in (current_bs.get("needs_retry_seed_ids") or []) if isinstance(sid, str)]
+
+    invalid_ids = [sid for sid in current_retry_raw if sid not in ordered_set]
+    backup_retry_set = set(backup_retry_raw)
+    recovered_retry = [sid for sid in ordered_ids if sid in backup_retry_set]
+
+    processed_before = [sid for sid in (current_bs.get("processed_seed_ids") or []) if isinstance(sid, str)]
+    recovered_set = set(recovered_retry)
+    processed_after = [sid for sid in processed_before if sid not in recovered_set]
+
+    processed_seeds_before = [x for x in (current_bs.get("processed_seeds") or []) if isinstance(x, dict)]
+    processed_seeds_after = [x for x in processed_seeds_before if x.get("seed_id") not in recovered_set]
+
+    repaired_pkg = copy.deepcopy(current)
+    repaired_bs = repaired_pkg.get("batch_state") if isinstance(repaired_pkg.get("batch_state"), dict) else {}
+    repaired_bs = _ensure_zero_variant_fields(repaired_bs)
+    repaired_bs["needs_retry_seed_ids"] = recovered_retry
+    repaired_bs["processed_seed_ids"] = processed_after
+    repaired_bs["processed_seeds"] = processed_seeds_after
+
+    existing_invalid = [sid for sid in (repaired_bs.get("invalid_needs_retry_seed_ids") or []) if isinstance(sid, str)]
+    repaired_bs["invalid_needs_retry_seed_ids"] = merge_lists_preserving_order(existing_invalid, invalid_ids)
+
+    repaired_bs["current_repair_seed"] = recovered_retry[0] if recovered_retry else None
+    repaired_bs["next_repair_seed"] = recovered_retry[0] if recovered_retry else None
+    repaired_bs["next_normal_seed"] = current_bs.get("next_seed_id")
+    repaired_bs["normal_last_completed_seed_id"] = current_bs.get("last_completed_seed_id")
+    repaired_bs["next_seed_id"] = recovered_retry[0] if recovered_retry else current_bs.get("next_seed_id")
+
+    repaired_pkg["batch_state"] = sanitize_repair_queue_state(repaired_bs, ordered)
+    repaired_pkg.setdefault("accumulated_clean_export", {})["variants"] = current_variants
+
+    save_local_canonical_resume_package(repaired_pkg)
+    live_state = copy.deepcopy(repaired_pkg["batch_state"])
+    _save_state(live_state)
+
+    return {
+        "ok": True,
+        "recovered_needs_retry_count": len(recovered_retry),
+        "current_repair_seed": recovered_retry[0] if recovered_retry else None,
+        "invalid_needs_retry_seed_ids": list(live_state.get("invalid_needs_retry_seed_ids") or []),
+        "processed_before": len(processed_before),
+        "processed_after": len(processed_after),
+        "variants_count_before": variants_count_before,
+        "variants_count_after": len(_extract_canonical_variant_bucket(repaired_pkg)),
+        "next_normal_seed": current_bs.get("next_seed_id"),
+        "last_completed_seed_id": current_bs.get("last_completed_seed_id"),
+    }
 def recover_zero_variant_repair_state_from_backup(market: str = "IL") -> dict:
     """Recover the zero-variant repair queue from the backup canonical.
 
