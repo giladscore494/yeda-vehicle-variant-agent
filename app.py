@@ -568,13 +568,17 @@ with tabs[2]:
             st.subheader("Repair Execution Trace")
             _rtrace_rows = [{
                 "seed_id": t.get("seed_id"),
+                "queue_reason": t.get("queue_reason"),
                 "processor_called": t.get("processor_called"),
+                "gemini_request_attempted": t.get("gemini_request_attempted"),
                 "actual_gemini_call": t.get("actual_gemini_call"),
                 "final_cache_hit": t.get("final_cache_hit"),
                 "discovery_cache_hit": t.get("discovery_cache_hit"),
                 "force_refresh_used": t.get("force_refresh_used"),
+                "use_cache_used": t.get("use_cache_used"),
                 "attempt_before": t.get("attempt_before"),
                 "attempt_after": t.get("attempt_after"),
+                "gemini_client_error": t.get("gemini_client_error"),
                 "variants_added_to_canonical": t.get("variants_added_to_canonical"),
                 "dedupe_proof_count": t.get("dedupe_proof_count"),
                 "no_variants_reason": t.get("no_variants_reason"),

@@ -391,6 +391,59 @@ def test_process_seeds_forces_refresh_for_repair_mode(monkeypatch):
         assert call["use_cache"] is False, "cache must be disabled for repair mode"
         assert call["force_refresh"] is True, "force_refresh must be True for repair mode"
 
+def test_zero_variant_repair_sets_use_cache_false_force_refresh_true(monkeypatch):
+    seed = _seed("s1")
+    state = _default_state()
+    captured = []
+
+    def _tracked_run(*a, use_cache=True, force_refresh=False, **k):
+        captured.append({"use_cache": use_cache, "force_refresh": force_refresh})
+        return _no_variant_run()
+
+    monkeypatch.setattr(br, "run_single_model", _tracked_run)
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": False})
+    monkeypatch.setattr(br, "_persist_batch_state_into_canonical", lambda *a, **k: None)
+
+    br._process_seeds([seed], state, [seed], limit=1, market="IL", use_cache=True, force_refresh=False, batch_mode="zero_variant_repair")
+    assert captured and all(c["use_cache"] is False and c["force_refresh"] is True for c in captured)
+
+def test_needs_retry_sets_use_cache_false_force_refresh_true(monkeypatch):
+    seed = _seed("s1")
+    state = _default_state()
+    captured = []
+
+    def _tracked_run(*a, use_cache=True, force_refresh=False, **k):
+        captured.append({"use_cache": use_cache, "force_refresh": force_refresh})
+        return _no_variant_run()
+
+    monkeypatch.setattr(br, "run_single_model", _tracked_run)
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": False})
+    monkeypatch.setattr(br, "_persist_batch_state_into_canonical", lambda *a, **k: None)
+
+    br._process_seeds([seed], state, [seed], limit=1, market="IL", use_cache=True, force_refresh=False, batch_mode="needs_retry")
+    assert captured and all(c["use_cache"] is False and c["force_refresh"] is True for c in captured)
+
+def test_fill_coverage_holes_bypasses_cache(monkeypatch):
+    seed = _seed("s1")
+    state = _default_state()
+    captured = []
+
+    def _tracked_run(*a, use_cache=True, force_refresh=False, **k):
+        captured.append({"use_cache": use_cache, "force_refresh": force_refresh})
+        return _no_variant_run()
+
+    monkeypatch.setattr(br, "run_single_model", _tracked_run)
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": False})
+    monkeypatch.setattr(br, "_persist_batch_state_into_canonical", lambda *a, **k: None)
+
+    br._process_seeds([seed], state, [seed], limit=1, market="IL", use_cache=True, force_refresh=False, batch_mode="fill_coverage_holes")
+    assert captured and all(c["use_cache"] is False and c["force_refresh"] is True for c in captured)
 
 # ---------------------------------------------------------------------------
 # 12. test_process_seeds_forward_mode_respects_caller_cache_setting
@@ -434,7 +487,7 @@ def test_execution_trace_includes_gemini_call_fields(monkeypatch):
 
     def _run_with_trace(*a, **k):
         result = _no_variant_run()
-        result["trace"] = {"candidate_variants_count": 0, "discovery_parsed_json_debug": {}, "gemini_attempted": True, "final_cache_hit": False, "discovery_cache_hit": False}
+        result["trace"] = {"candidate_variants_count": 0, "discovery_parsed_json_debug": {}, "gemini_request_attempted": True, "gemini_attempted": True, "final_cache_hit": False, "discovery_cache_hit": False}
         return result
 
     monkeypatch.setattr(br, "run_single_model", _run_with_trace)
@@ -448,9 +501,83 @@ def test_execution_trace_includes_gemini_call_fields(monkeypatch):
     assert len(trace) == 1
     t = trace[0]
     assert "processor_called" in t
+    assert "gemini_request_attempted" in t
     assert "actual_gemini_call" in t
     assert "final_cache_hit" in t
     assert "discovery_cache_hit" in t
     assert "force_refresh_used" in t
     assert "use_cache_used" in t
-    assert t["actual_gemini_call"] is True  # gemini_attempted=True, final_cache_hit=False
+    assert t["actual_gemini_call"] is True
+
+def test_repair_trace_uses_gemini_request_attempted_not_only_gemini_attempted(monkeypatch):
+    seed = _seed("s1")
+    state = _default_state()
+
+    def _run_with_trace(*a, **k):
+        result = _no_variant_run()
+        result["trace"] = {
+            "candidate_variants_count": 0,
+            "discovery_parsed_json_debug": {},
+            "gemini_attempted": True,
+            "gemini_request_attempted": False,
+            "gemini_client_error": "GEMINI_API_KEY missing",
+            "final_cache_hit": False,
+            "discovery_cache_hit": False,
+        }
+        return result
+
+    monkeypatch.setattr(br, "run_single_model", _run_with_trace)
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": False})
+    monkeypatch.setattr(br, "_persist_batch_state_into_canonical", lambda *a, **k: None)
+
+    _results, _per_seed, trace = br._process_seeds([seed], state, [seed], limit=1, market="IL", batch_mode="zero_variant_repair")
+    assert trace[0]["gemini_request_attempted"] is False
+    assert trace[0]["actual_gemini_call"] is False
+
+def test_process_seed_with_variant_retry_continues_previous_attempts(monkeypatch):
+    seed = _seed("s1")
+    state = _default_state()
+    state["seed_accounting"]["s1"] = {"attempts": 2}
+    calls = {"n": 0}
+
+    def _run(*a, **k):
+        calls["n"] += 1
+        return _no_variant_run()
+
+    monkeypatch.setattr(br, "run_single_model", _run)
+    out = br.process_seed_with_variant_retry(seed, state=state, max_attempts=2)
+    assert calls["n"] == 2
+    assert out["accounting"]["attempts"] == 4
+    assert state["seed_accounting"]["s1"]["attempts"] == 4
+
+def test_repair_seed_blocks_if_model_call_skipped_without_error(monkeypatch):
+    seed = _seed("s1")
+    state = _default_state()
+
+    def _run_with_trace(*a, **k):
+        return {
+            "status": "completed",
+            "variants_created": 0,
+            "verified_count": 0,
+            "partial_count": 0,
+            "trace": {
+                "candidate_variants_count": 0,
+                "discovery_parsed_json_debug": {},
+                "gemini_request_attempted": False,
+                "final_cache_hit": False,
+                "discovery_cache_hit": False,
+            },
+        }
+
+    monkeypatch.setattr(br, "run_single_model", _run_with_trace)
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": False})
+    monkeypatch.setattr(br, "_persist_batch_state_into_canonical", lambda *a, **k: None)
+
+    results, _per_seed, trace = br._process_seeds([seed], state, [seed], limit=1, market="IL", batch_mode="zero_variant_repair")
+    assert results[0]["result"]["status"] == "error"
+    assert results[0]["result"]["error"] == "Repair seed did not send Gemini request."
+    assert trace[0]["final_status"] == "error"
