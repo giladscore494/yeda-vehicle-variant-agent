@@ -2,8 +2,8 @@
   "schema_version": "batch_state_v1",
   "market": "IL",
   "created_at": "2026-05-08T16:44:55.429137+00:00",
-  "updated_at": "2026-05-10T20:52:28.659778+00:00",
-  "last_batch_id": "0c202e03-8b2a-40ee-9e9b-b629521eccda",
+  "updated_at": "2026-05-10T20:59:28.682155+00:00",
+  "last_batch_id": "a0627742-2729-4b7a-a644-f3ca922c7662",
   "total_seeds": 2,
   "processed_seed_ids": [
     "abarth__124_spider__2016__2020__il",
@@ -54,7 +54,7 @@
     {
       "seed_id": "daewoo__lacetti__2003__2011__il",
       "reason": "test_run_next_batch_never_completed_all_when_needs_retry_present.<locals>.<lambda>() takes 0 positional arguments but 4 were given",
-      "created_at": "2026-05-10T20:52:28.653979+00:00"
+      "created_at": "2026-05-10T20:59:28.673357+00:00"
     }
   ],
   "needs_retry_seed_ids": [

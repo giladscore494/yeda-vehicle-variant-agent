@@ -4,10 +4,7 @@ from typing import Any
 
 import streamlit as st
 
-from agent.batch_runner import (
-    repair_and_audit_zero_variant_processed_seeds,
-    run_next_batch,
-)
+from agent.batch_runner import run_next_batch
 from agent.problem_queue import (
     compute_problem_repair_state,
     load_canonical as load_problem_queue_canonical,
@@ -85,7 +82,8 @@ def _status_snapshot(market: str = "IL") -> dict:
 
 
 def _run_next_safe_batch(batch_size: int, market: str, auto_push_per_seed: bool) -> dict:
-    repair_res = repair_and_audit_zero_variant_processed_seeds(market=market)
+    # Canonical-only runner: no pre-pass legacy `repair_refresh` audit.
+    # All repair work flows through `problem_repair_state` in canonical.
     result = run_next_batch(
         limit=batch_size,
         market=market,
@@ -94,7 +92,7 @@ def _run_next_safe_batch(batch_size: int, market: str, auto_push_per_seed: bool)
         auto_push_per_seed=auto_push_per_seed,
         auto_push_canonical=auto_push_per_seed,
     )
-    return {"repair_refresh": repair_res, "batch": result}
+    return {"batch": result}
 
 
 def _render_json_download(path: Path | None, label: str, file_name: str, missing_message: str) -> None:

@@ -52,21 +52,19 @@ PROBLEM_QUEUE_PATH = "data/output/problem_queue.json"
 DEFAULT_NORMAL_CONTINUATION_LAST = "gmc__yukon__2000__2026__il"
 DEFAULT_NORMAL_CONTINUATION_NEXT = "haval__h6__2022__2026__il"
 
-# Reuse the canonical allow-list of no_variants reasons from the batch
-# runner / rerun-queue manager so the closure rule stays consistent.
-try:  # pragma: no cover - import-time fallback
-    from agent.rerun_queue_manager import ALLOWED_NO_VARIANTS_REASONS
-except Exception:  # pragma: no cover
-    ALLOWED_NO_VARIANTS_REASONS = {
-        "model_not_sold_in_market",
-        "no_reliable_sources_found",
-        "insufficient_grounded_data",
-        "duplicate_existing_variant_only",
-        "seed_out_of_scope",
-        "model_discontinued_before_market_period",
-        "source_conflict_unresolved",
-        "blocked_by_validation",
-    }
+# The canonical allow-list of no_variants reasons.  Kept inline here so the
+# problem-queue engine has no dependency on the archived legacy
+# ``agent/rerun_queue_manager.py`` module.
+ALLOWED_NO_VARIANTS_REASONS = {
+    "model_not_sold_in_market",
+    "no_reliable_sources_found",
+    "insufficient_grounded_data",
+    "duplicate_existing_variant_only",
+    "seed_out_of_scope",
+    "model_discontinued_before_market_period",
+    "source_conflict_unresolved",
+    "blocked_by_validation",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -316,15 +314,27 @@ def compute_problem_repair_state(canonical: dict | None) -> dict:
         s for s in _string_list(prs_existing.get("failed_retry_seed_ids")) if _is_valid_seed_id(s)
     ]
 
-    # Total problem seeds = original_false_processed_count OR
-    # len(false_processed_seed_ids_original) per spec; fall back to the
-    # cleaned ``false_processed_seed_ids`` set (then completed + pending).
-    total = bs.get("original_false_processed_count")
-    if not isinstance(total, int) or total <= 0:
-        orig = [s for s in _string_list(bs.get("false_processed_seed_ids_original")) if _is_valid_seed_id(s)]
-        total = len(orig)
-    if not isinstance(total, int) or total <= 0:
-        total = len(fp_valid) or (len(completed_recorded) + len(needs_retry))
+    # ``problem_repair_state.original_problem_seed_ids`` is the canonical
+    # source of TOTAL when present (the user-uploaded canonical contains
+    # exactly the 54 problem seeds in that list).  We never recompute
+    # total from len(pending) — that would shrink total to 53 after the
+    # first BMW completion which is the regression we just fixed.
+    original_problem = [
+        s for s in _string_list(prs_existing.get("original_problem_seed_ids")) if _is_valid_seed_id(s)
+    ]
+    total: int
+    if original_problem:
+        total = len(original_problem)
+    else:
+        total_candidate = bs.get("original_false_processed_count")
+        if isinstance(total_candidate, int) and total_candidate > 0:
+            total = total_candidate
+        else:
+            orig = [s for s in _string_list(bs.get("false_processed_seed_ids_original")) if _is_valid_seed_id(s)]
+            if orig:
+                total = len(orig)
+            else:
+                total = len(fp_valid) or (len(completed_recorded) + len(needs_retry))
 
     pending = len(needs_retry)
     completed = max(total - pending, 0)
@@ -366,6 +376,7 @@ def compute_problem_repair_state(canonical: dict | None) -> dict:
     return {
         "active": pending > 0,
         "total": int(total or 0),
+        "original_problem_seed_ids": list(original_problem),
         "completed_seed_ids": list(completed_recorded),
         "pending_seed_ids": list(needs_retry),
         "failed_retry_seed_ids": list(failed_recorded),
@@ -628,6 +639,87 @@ def select_next_seed(canonical: dict | None = None) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Canonical validation
+# ---------------------------------------------------------------------------
+
+def validate_canonical_state(canonical: dict | None = None) -> dict:
+    """Validate the canonical state and return a structured report.
+
+    Confirms the invariants the runtime depends on:
+
+    * ``batch_state`` and ``problem_repair_state`` exist
+    * No invalid seed ids (e.g. ``"s1"``) leaked into the active lists
+    * When problem-repair is active, the selected seed is not the
+      Haval H6 normal-continuation cursor
+    * When problem-repair is active, the head of
+      ``batch_state.needs_retry_seed_ids`` equals
+      ``problem_repair_state.current_seed_id``
+    """
+    if canonical is None:
+        canonical = load_canonical() or {}
+    issues: list[str] = []
+    if not isinstance(canonical, dict) or not canonical:
+        return {"ok": False, "issues": ["canonical missing or empty"], "active": False}
+
+    bs = canonical.get("batch_state") if isinstance(canonical.get("batch_state"), dict) else None
+    if bs is None:
+        issues.append("batch_state missing")
+        bs = {}
+    prs = canonical.get("problem_repair_state") if isinstance(canonical.get("problem_repair_state"), dict) else None
+    if prs is None:
+        issues.append("problem_repair_state missing")
+        prs = {}
+
+    needs_retry = _string_list(bs.get("needs_retry_seed_ids"))
+    invalid_in_needs = [s for s in needs_retry if not _is_valid_seed_id(s) or s == "s1"]
+    if invalid_in_needs:
+        issues.append(f"invalid seed ids in needs_retry_seed_ids: {invalid_in_needs}")
+
+    derived = compute_problem_repair_state(canonical)
+    selection = select_next_seed(canonical)
+    if derived["active"]:
+        if selection["seed_id"] == DEFAULT_NORMAL_CONTINUATION_NEXT:
+            issues.append("problem_queue active but selector returned Haval H6")
+        head = next(iter(derived["pending_seed_ids"]), None)
+        if head and selection["seed_id"] != head:
+            issues.append(
+                f"selector seed_id {selection['seed_id']!r} does not match needs_retry head {head!r}"
+            )
+
+    return {
+        "ok": not issues,
+        "issues": issues,
+        "active": derived["active"],
+        "mode": selection["mode"],
+        "seed_id": selection["seed_id"],
+        "total": derived["total"],
+        "pending": derived["progress"]["pending"],
+        "completed": derived["progress"]["completed"],
+        "current_position": derived["progress"]["current_position"],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Public aliases (spec-required names)
+# ---------------------------------------------------------------------------
+
+# ``save_canonical_atomic`` is the spec name for the atomic canonical
+# write used by the engine.  Our ``save_canonical`` already writes
+# atomically via ``storage.json_store.save_json`` (write-temp + rename)
+# and rolls a previous-backup, so we expose it under both names.
+save_canonical_atomic = save_canonical
+
+# ``regenerate_problem_queue_mirror`` is the spec name for rebuilding
+# ``data/output/problem_queue.json`` from canonical.  Existing callers
+# use ``regenerate_problem_queue``.
+regenerate_problem_queue_mirror = regenerate_problem_queue
+
+# ``create_backup_from_canonical`` is the spec name for the timestamped
+# backup helper.
+create_backup_from_canonical = write_canonical_backup_timestamped
+
+
 __all__ = [
     "ALLOWED_NO_VARIANTS_REASONS",
     "build_problem_queue_payload",
@@ -635,6 +727,7 @@ __all__ = [
     "classify_seed_closure",
     "compute_problem_repair_state",
     "compute_progress",
+    "create_backup_from_canonical",
     "delete_problem_queue",
     "load_canonical",
     "mark_seed_completed",
@@ -642,8 +735,11 @@ __all__ = [
     "problem_queue_path",
     "refresh_problem_repair_state",
     "regenerate_problem_queue",
+    "regenerate_problem_queue_mirror",
     "sanitize_problem_seed_lists",
     "save_canonical",
+    "save_canonical_atomic",
     "select_next_seed",
+    "validate_canonical_state",
     "write_canonical_backup_timestamped",
 ]

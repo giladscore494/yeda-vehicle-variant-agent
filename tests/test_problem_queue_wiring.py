@@ -324,9 +324,14 @@ def test_rerun_queue_manager_not_used_as_active_selector(monkeypatch):
     monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": True})
 
     # Inject a RerunQueueManager that raises if next_seed() is called.
-    import agent.batch_runner as _br_module
-    import agent.rerun_queue_manager as _rqm_module
-    monkeypatch.setattr(_rqm_module, "RerunQueueManager", _FailingRerunManager)
+    # Module-level: agent/rerun_queue_manager.py is archived under legacy/.
+    # batch_runner must not consult it as an active selector.
+    import importlib
+    rqm_spec = importlib.util.find_spec("agent.rerun_queue_manager")
+    assert rqm_spec is None, (
+        "agent.rerun_queue_manager is the legacy state engine and must not be importable "
+        "from the active agent package; it must live under legacy/."
+    )
 
     # Must not raise from _FailingRerunManager.next_seed()
     result = br.run_next_batch(limit=1, market="IL")
