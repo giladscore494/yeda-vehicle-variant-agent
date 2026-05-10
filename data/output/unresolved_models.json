@@ -75,8 +75,8 @@
     "verification_status": "partial",
     "confidence": "low",
     "sources_count": 0,
-    "created_at": "2026-05-10T19:53:09.961546+00:00",
-    "updated_at": "2026-05-10T19:53:09.961557+00:00",
+    "created_at": "2026-05-10T19:58:07.983693+00:00",
+    "updated_at": "2026-05-10T19:58:07.983705+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -168,8 +168,8 @@
     "verification_status": "partial",
     "confidence": "low",
     "sources_count": 0,
-    "created_at": "2026-05-10T19:53:10.187495+00:00",
-    "updated_at": "2026-05-10T19:53:10.187510+00:00",
+    "created_at": "2026-05-10T19:58:07.995848+00:00",
+    "updated_at": "2026-05-10T19:58:07.995856+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -261,8 +261,8 @@
     "verification_status": "partial",
     "confidence": "low",
     "sources_count": 0,
-    "created_at": "2026-05-10T19:53:10.187578+00:00",
-    "updated_at": "2026-05-10T19:53:10.187580+00:00",
+    "created_at": "2026-05-10T19:58:07.995924+00:00",
+    "updated_at": "2026-05-10T19:58:07.995926+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -354,8 +354,8 @@
     "verification_status": "partial",
     "confidence": "low",
     "sources_count": 0,
-    "created_at": "2026-05-10T19:53:10.187629+00:00",
-    "updated_at": "2026-05-10T19:53:10.187631+00:00",
+    "created_at": "2026-05-10T19:58:07.995977+00:00",
+    "updated_at": "2026-05-10T19:58:07.995978+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -366,873 +366,6 @@
       "engine": "2.0",
       "transmission": "automatic",
       "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_1_8_e_cvt_crossover_unknown_fuel",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": "crossover",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "engine": {
-      "value": "1.8",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "transmission": {
-      "value": "e_cvt",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "medium",
-    "sources_count": 3,
-    "created_at": "2026-05-08T13:51:32.878769+00:00",
-    "updated_at": "2026-05-08T13:51:32.878773+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": {
-        "value": "crossover",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "seats": null,
-      "engine": {
-        "value": "1.8",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "transmission": {
-        "value": "e_cvt",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_6l_manual_unknown_body_unknown_fuel",
-    "make": "Fiat",
-    "model": "Bravo",
-    "aliases": [],
-    "year_start": 1995,
-    "year_end": 2014,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "1.6L",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "manual",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:20.936843+00:00",
-    "updated_at": "2026-05-10T19:53:20.936845+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": null,
-      "seats": null,
-      "engine": "1.6L",
-      "transmission": "manual",
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_6l_automatic_unknown_body_unknown_fuel",
-    "make": "Fiat",
-    "model": "Bravo",
-    "aliases": [],
-    "year_start": 1995,
-    "year_end": 2014,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "1.6L",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "automatic",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:20.936760+00:00",
-    "updated_at": "2026-05-10T19:53:20.936775+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": null,
-      "seats": null,
-      "engine": "1.6L",
-      "transmission": "automatic",
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_4l_manual_unknown_body_unknown_fuel",
-    "make": "Fiat",
-    "model": "Bravo",
-    "aliases": [],
-    "year_start": 1995,
-    "year_end": 2014,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "1.4L",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "manual",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:20.936895+00:00",
-    "updated_at": "2026-05-10T19:53:20.936896+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": null,
-      "seats": null,
-      "engine": "1.4L",
-      "transmission": "manual",
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_4l_turbo_automatic_unknown_body_unknown_fuel",
-    "make": "Fiat",
-    "model": "Bravo",
-    "aliases": [],
-    "year_start": 1995,
-    "year_end": 2014,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "1.4L Turbo",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "automatic",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:20.936943+00:00",
-    "updated_at": "2026-05-10T19:53:20.936945+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": null,
-      "seats": null,
-      "engine": "1.4L Turbo",
-      "transmission": "automatic",
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_4l_turbo_manual_unknown_body_unknown_fuel",
-    "make": "Fiat",
-    "model": "Bravo",
-    "aliases": [],
-    "year_start": 1995,
-    "year_end": 2014,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "1.4L Turbo",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "manual",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:20.936990+00:00",
-    "updated_at": "2026-05-10T19:53:20.936992+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": null,
-      "seats": null,
-      "engine": "1.4L Turbo",
-      "transmission": "manual",
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_1_2_cvt_crossover_petrol",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": "crossover",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "1.2",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "cvt",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": "petrol",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:21.164276+00:00",
-    "updated_at": "2026-05-10T19:53:21.164290+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": "crossover",
-      "seats": null,
-      "engine": "1.2",
-      "transmission": "cvt",
-      "fuel_type": "petrol",
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_1_8_cvt_crossover_hybrid",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": "crossover",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "1.8",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "cvt",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": "hybrid",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:21.164355+00:00",
-    "updated_at": "2026-05-10T19:53:21.164357+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": "crossover",
-      "seats": null,
-      "engine": "1.8",
-      "transmission": "cvt",
-      "fuel_type": "hybrid",
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_2_0_automatic_crossover_petrol",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": "crossover",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "2.0",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "automatic",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": "petrol",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:21.164404+00:00",
-    "updated_at": "2026-05-10T19:53:21.164406+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": "crossover",
-      "seats": null,
-      "engine": "2.0",
-      "transmission": "automatic",
-      "fuel_type": "petrol",
       "drivetrain": null,
       "trim": null
     },
@@ -1314,8 +447,8 @@
     "verification_status": "partial",
     "confidence": "low",
     "sources_count": 0,
-    "created_at": "2026-05-10T19:53:15.380256+00:00",
-    "updated_at": "2026-05-10T19:53:15.380273+00:00",
+    "created_at": "2026-05-10T19:58:08.748426+00:00",
+    "updated_at": "2026-05-10T19:58:08.748440+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -1407,8 +540,8 @@
     "verification_status": "partial",
     "confidence": "low",
     "sources_count": 0,
-    "created_at": "2026-05-10T19:53:10.420769+00:00",
-    "updated_at": "2026-05-10T19:53:10.420771+00:00",
+    "created_at": "2026-05-10T19:58:08.008870+00:00",
+    "updated_at": "2026-05-10T19:58:08.008872+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -1418,375 +551,6 @@
       "seats": null,
       "engine": "2.0",
       "transmission": null,
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_1_2_cvt_crossover_unknown_fuel",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": "crossover",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "engine": {
-      "value": "1.2",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "transmission": {
-      "value": "cvt",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "medium",
-    "sources_count": 3,
-    "created_at": "2026-05-08T13:51:32.878632+00:00",
-    "updated_at": "2026-05-08T13:51:32.878648+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": {
-        "value": "crossover",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "seats": null,
-      "engine": {
-        "value": "1.2",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "transmission": {
-        "value": "cvt",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_2_0_e_cvt_crossover_unknown_fuel",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": "crossover",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "engine": {
-      "value": "2.0",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "transmission": {
-      "value": "e_cvt",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "medium",
-    "sources_count": 3,
-    "created_at": "2026-05-08T13:51:32.878869+00:00",
-    "updated_at": "2026-05-08T13:51:32.878872+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": {
-        "value": "crossover",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "seats": null,
-      "engine": {
-        "value": "2.0",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "transmission": {
-        "value": "e_cvt",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_ev_single_speed_ev_crossover_unknown_fuel",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": "crossover",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "engine": {
-      "value": "ev",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "transmission": {
-      "value": "single_speed_ev",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "u1"
-      ],
-      "used_in_compare": true,
-      "reason": ""
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": ""
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "medium",
-    "sources_count": 3,
-    "created_at": "2026-05-08T13:51:32.878963+00:00",
-    "updated_at": "2026-05-08T13:51:32.878966+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": {
-        "value": "crossover",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "seats": null,
-      "engine": {
-        "value": "ev",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
-      "transmission": {
-        "value": "single_speed_ev",
-        "status": "verified",
-        "sources_count": 1,
-        "source_urls": [
-          "u1"
-        ],
-        "reason": "ok"
-      },
       "fuel_type": null,
       "drivetrain": null,
       "trim": null
@@ -1871,8 +635,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 1,
-    "created_at": "2026-05-10T19:53:16.107594+00:00",
-    "updated_at": "2026-05-10T19:53:16.107610+00:00",
+    "created_at": "2026-05-10T19:58:08.798294+00:00",
+    "updated_at": "2026-05-10T19:58:08.798306+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -1889,378 +653,6 @@
         ],
         "reason": "ok"
       },
-      "transmission": null,
-      "fuel_type": null,
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_x10_1_2_turbo_cvt_crossover_petrol",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "X10",
-    "body_type": {
-      "value": "crossover",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "1.2 Turbo",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "cvt",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": "petrol",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:21.514475+00:00",
-    "updated_at": "2026-05-10T19:53:21.514490+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": "X10",
-      "year_start": null,
-      "year_end": null,
-      "body_type": "crossover",
-      "seats": null,
-      "engine": "1.2 Turbo",
-      "transmission": "cvt",
-      "fuel_type": "petrol",
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_x10_1_8_hybrid_e_cvt_crossover_hybrid",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "X10",
-    "body_type": {
-      "value": "crossover",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "1.8 Hybrid",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "e_cvt",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": "hybrid",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:21.514554+00:00",
-    "updated_at": "2026-05-10T19:53:21.514556+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": "X10",
-      "year_start": null,
-      "year_end": null,
-      "body_type": "crossover",
-      "seats": null,
-      "engine": "1.8 Hybrid",
-      "transmission": "e_cvt",
-      "fuel_type": "hybrid",
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_c_hr_2017_2023_il_x10_2_0_hybrid_e_cvt_crossover_hybrid",
-    "make": "Toyota",
-    "model": "C-HR",
-    "aliases": [],
-    "year_start": 2017,
-    "year_end": 2023,
-    "market": "IL",
-    "generation": "X10",
-    "body_type": {
-      "value": "crossover",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": "2.0 Hybrid",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "transmission": {
-      "value": "e_cvt",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": "hybrid",
-      "status": "unverified",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unverified from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:21.514649+00:00",
-    "updated_at": "2026-05-10T19:53:21.514650+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": "X10",
-      "year_start": null,
-      "year_end": null,
-      "body_type": "crossover",
-      "seats": null,
-      "engine": "2.0 Hybrid",
-      "transmission": "e_cvt",
-      "fuel_type": "hybrid",
-      "drivetrain": null,
-      "trim": null
-    },
-    "identity_confidence": "candidate_unverified"
-  },
-  {
-    "variant_id": "toyota_corolla_1992_2026_il_unknown_generation_unknown_engine_unknown_transmission_unknown_body_unknown_fuel",
-    "make": "Toyota",
-    "model": "Corolla",
-    "aliases": [],
-    "year_start": 1992,
-    "year_end": 2026,
-    "market": "IL",
-    "generation": "",
-    "body_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "seats": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "engine": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "transmission": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "fuel_type": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "drivetrain": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "trim": {
-      "value": null,
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "unknown from 0 source(s)"
-    },
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "low",
-    "sources_count": 0,
-    "created_at": "2026-05-10T19:53:24.634618+00:00",
-    "updated_at": "2026-05-10T19:53:24.634647+00:00",
-    "notes": [],
-    "candidate_raw": {
-      "generation": null,
-      "year_start": null,
-      "year_end": null,
-      "body_type": null,
-      "seats": null,
-      "engine": null,
       "transmission": null,
       "fuel_type": null,
       "drivetrain": null,
@@ -2344,8 +736,8 @@
     "verification_status": "partial",
     "confidence": "low",
     "sources_count": 0,
-    "created_at": "2026-05-10T19:53:19.002069+00:00",
-    "updated_at": "2026-05-10T19:53:19.002085+00:00",
+    "created_at": "2026-05-10T19:58:08.909756+00:00",
+    "updated_at": "2026-05-10T19:58:08.909764+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -2437,8 +829,8 @@
     "verification_status": "partial",
     "confidence": "low",
     "sources_count": 0,
-    "created_at": "2026-05-10T19:53:19.227884+00:00",
-    "updated_at": "2026-05-10T19:53:19.227898+00:00",
+    "created_at": "2026-05-10T19:58:08.921032+00:00",
+    "updated_at": "2026-05-10T19:58:08.921040+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -2447,6 +839,1122 @@
       "body_type": null,
       "seats": null,
       "engine": "2.0L",
+      "transmission": null,
+      "fuel_type": null,
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_6l_manual_unknown_body_unknown_fuel",
+    "make": "Fiat",
+    "model": "Bravo",
+    "aliases": [],
+    "year_start": 1995,
+    "year_end": 2014,
+    "market": "IL",
+    "generation": "",
+    "body_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "1.6L",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "manual",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.708392+00:00",
+    "updated_at": "2026-05-10T19:58:09.708395+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": null,
+      "year_start": null,
+      "year_end": null,
+      "body_type": null,
+      "seats": null,
+      "engine": "1.6L",
+      "transmission": "manual",
+      "fuel_type": null,
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_6l_automatic_unknown_body_unknown_fuel",
+    "make": "Fiat",
+    "model": "Bravo",
+    "aliases": [],
+    "year_start": 1995,
+    "year_end": 2014,
+    "market": "IL",
+    "generation": "",
+    "body_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "1.6L",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "automatic",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.708317+00:00",
+    "updated_at": "2026-05-10T19:58:09.708324+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": null,
+      "year_start": null,
+      "year_end": null,
+      "body_type": null,
+      "seats": null,
+      "engine": "1.6L",
+      "transmission": "automatic",
+      "fuel_type": null,
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_4l_manual_unknown_body_unknown_fuel",
+    "make": "Fiat",
+    "model": "Bravo",
+    "aliases": [],
+    "year_start": 1995,
+    "year_end": 2014,
+    "market": "IL",
+    "generation": "",
+    "body_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "1.4L",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "manual",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.708443+00:00",
+    "updated_at": "2026-05-10T19:58:09.708445+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": null,
+      "year_start": null,
+      "year_end": null,
+      "body_type": null,
+      "seats": null,
+      "engine": "1.4L",
+      "transmission": "manual",
+      "fuel_type": null,
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_4l_turbo_automatic_unknown_body_unknown_fuel",
+    "make": "Fiat",
+    "model": "Bravo",
+    "aliases": [],
+    "year_start": 1995,
+    "year_end": 2014,
+    "market": "IL",
+    "generation": "",
+    "body_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "1.4L Turbo",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "automatic",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.708492+00:00",
+    "updated_at": "2026-05-10T19:58:09.708494+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": null,
+      "year_start": null,
+      "year_end": null,
+      "body_type": null,
+      "seats": null,
+      "engine": "1.4L Turbo",
+      "transmission": "automatic",
+      "fuel_type": null,
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "fiat_bravo_1995_2014_il_unknown_generation_1_4l_turbo_manual_unknown_body_unknown_fuel",
+    "make": "Fiat",
+    "model": "Bravo",
+    "aliases": [],
+    "year_start": 1995,
+    "year_end": 2014,
+    "market": "IL",
+    "generation": "",
+    "body_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "1.4L Turbo",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "manual",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.708539+00:00",
+    "updated_at": "2026-05-10T19:58:09.708541+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": null,
+      "year_start": null,
+      "year_end": null,
+      "body_type": null,
+      "seats": null,
+      "engine": "1.4L Turbo",
+      "transmission": "manual",
+      "fuel_type": null,
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_1_2_cvt_crossover_petrol",
+    "make": "Toyota",
+    "model": "C-HR",
+    "aliases": [],
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "generation": "",
+    "body_type": {
+      "value": "crossover",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "1.2",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "cvt",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": "petrol",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.728191+00:00",
+    "updated_at": "2026-05-10T19:58:09.728201+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": null,
+      "year_start": null,
+      "year_end": null,
+      "body_type": "crossover",
+      "seats": null,
+      "engine": "1.2",
+      "transmission": "cvt",
+      "fuel_type": "petrol",
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_1_8_cvt_crossover_hybrid",
+    "make": "Toyota",
+    "model": "C-HR",
+    "aliases": [],
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "generation": "",
+    "body_type": {
+      "value": "crossover",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "1.8",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "cvt",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": "hybrid",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.728269+00:00",
+    "updated_at": "2026-05-10T19:58:09.728271+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": null,
+      "year_start": null,
+      "year_end": null,
+      "body_type": "crossover",
+      "seats": null,
+      "engine": "1.8",
+      "transmission": "cvt",
+      "fuel_type": "hybrid",
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "toyota_c_hr_2017_2023_il_unknown_generation_2_0_automatic_crossover_petrol",
+    "make": "Toyota",
+    "model": "C-HR",
+    "aliases": [],
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "generation": "",
+    "body_type": {
+      "value": "crossover",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "2.0",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "automatic",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": "petrol",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.728320+00:00",
+    "updated_at": "2026-05-10T19:58:09.728322+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": null,
+      "year_start": null,
+      "year_end": null,
+      "body_type": "crossover",
+      "seats": null,
+      "engine": "2.0",
+      "transmission": "automatic",
+      "fuel_type": "petrol",
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "toyota_c_hr_2017_2023_il_x10_1_2_turbo_cvt_crossover_petrol",
+    "make": "Toyota",
+    "model": "C-HR",
+    "aliases": [],
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "generation": "X10",
+    "body_type": {
+      "value": "crossover",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "1.2 Turbo",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "cvt",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": "petrol",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.854140+00:00",
+    "updated_at": "2026-05-10T19:58:09.854158+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": "X10",
+      "year_start": null,
+      "year_end": null,
+      "body_type": "crossover",
+      "seats": null,
+      "engine": "1.2 Turbo",
+      "transmission": "cvt",
+      "fuel_type": "petrol",
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "toyota_c_hr_2017_2023_il_x10_1_8_hybrid_e_cvt_crossover_hybrid",
+    "make": "Toyota",
+    "model": "C-HR",
+    "aliases": [],
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "generation": "X10",
+    "body_type": {
+      "value": "crossover",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "1.8 Hybrid",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "e_cvt",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": "hybrid",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.854236+00:00",
+    "updated_at": "2026-05-10T19:58:09.854238+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": "X10",
+      "year_start": null,
+      "year_end": null,
+      "body_type": "crossover",
+      "seats": null,
+      "engine": "1.8 Hybrid",
+      "transmission": "e_cvt",
+      "fuel_type": "hybrid",
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "toyota_c_hr_2017_2023_il_x10_2_0_hybrid_e_cvt_crossover_hybrid",
+    "make": "Toyota",
+    "model": "C-HR",
+    "aliases": [],
+    "year_start": 2017,
+    "year_end": 2023,
+    "market": "IL",
+    "generation": "X10",
+    "body_type": {
+      "value": "crossover",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": "2.0 Hybrid",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "transmission": {
+      "value": "e_cvt",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": "hybrid",
+      "status": "unverified",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unverified from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:09.854344+00:00",
+    "updated_at": "2026-05-10T19:58:09.854346+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": "X10",
+      "year_start": null,
+      "year_end": null,
+      "body_type": "crossover",
+      "seats": null,
+      "engine": "2.0 Hybrid",
+      "transmission": "e_cvt",
+      "fuel_type": "hybrid",
+      "drivetrain": null,
+      "trim": null
+    },
+    "identity_confidence": "candidate_unverified"
+  },
+  {
+    "variant_id": "toyota_corolla_1992_2026_il_unknown_generation_unknown_engine_unknown_transmission_unknown_body_unknown_fuel",
+    "make": "Toyota",
+    "model": "Corolla",
+    "aliases": [],
+    "year_start": 1992,
+    "year_end": 2026,
+    "market": "IL",
+    "generation": "",
+    "body_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "seats": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "engine": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "transmission": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "fuel_type": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "drivetrain": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "trim": {
+      "value": null,
+      "status": "unknown",
+      "confidence": "low",
+      "sources_count": 0,
+      "source_ids": [],
+      "used_in_compare": false,
+      "reason": "unknown from 0 source(s)"
+    },
+    "doors": null,
+    "verification_status": "partial",
+    "confidence": "low",
+    "sources_count": 0,
+    "created_at": "2026-05-10T19:58:10.894894+00:00",
+    "updated_at": "2026-05-10T19:58:10.894904+00:00",
+    "notes": [],
+    "candidate_raw": {
+      "generation": null,
+      "year_start": null,
+      "year_end": null,
+      "body_type": null,
+      "seats": null,
+      "engine": null,
       "transmission": null,
       "fuel_type": null,
       "drivetrain": null,

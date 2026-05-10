@@ -1,22 +1,5 @@
 [
   {
-    "source_id": "source_mock_kia_sportage",
-    "source_name": "Mock Source",
-    "url": "https://example.com/mock-kia-sportage",
-    "source_type": "mock",
-    "market_scope": "IL",
-    "title": "Mock Kia Sportage",
-    "retrieved_at": "2026-05-08T11:40:14.092142+00:00",
-    "evidence_snippet": "mock evidence",
-    "reliability_score": 3,
-    "fields_supported": [
-      "body_type",
-      "seats",
-      "engine",
-      "transmission"
-    ]
-  },
-  {
     "source_id": "s1"
   }
 ]

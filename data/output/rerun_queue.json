@@ -1,6 +1,6 @@
 {
   "schema_version": "rerun_queue_v1",
-  "created_at": "2026-05-10T19:32:53.959989+00:00",
+  "created_at": "2026-05-10T19:58:01.571331+00:00",
   "market": "IL",
   "source_canonical_path": "data/canonical/resume_package_canonical.json",
   "reason": "processed_zero_variant_without_proof",
@@ -353,7 +353,7 @@
       "attempts": 1,
       "last_status": "success",
       "variants_added": 2,
-      "resolved_at": "2026-05-10T19:53:09.121942+00:00"
+      "resolved_at": "2026-05-10T19:58:07.812345+00:00"
     },
     {
       "seed_id": "fiat__freemont__2011__2016__il",
@@ -366,7 +366,7 @@
       "attempts": 1,
       "last_status": "success",
       "variants_added": 2,
-      "resolved_at": "2026-05-10T19:53:09.287836+00:00"
+      "resolved_at": "2026-05-10T19:58:07.823381+00:00"
     },
     {
       "seed_id": "fiat__linea__2007__2018__il",
@@ -379,7 +379,7 @@
       "attempts": 1,
       "last_status": "success",
       "variants_added": 2,
-      "resolved_at": "2026-05-10T19:53:09.569562+00:00"
+      "resolved_at": "2026-05-10T19:58:07.941469+00:00"
     },
     {
       "seed_id": "ford__ecosport__2013__2022__il",
@@ -392,7 +392,7 @@
       "attempts": 1,
       "last_status": "success",
       "variants_added": 2,
-      "resolved_at": "2026-05-10T19:53:09.740056+00:00"
+      "resolved_at": "2026-05-10T19:58:07.957326+00:00"
     },
     {
       "seed_id": "geely__coolray__2023__2026__il",
@@ -405,7 +405,7 @@
       "attempts": 1,
       "last_status": "success",
       "variants_added": 2,
-      "resolved_at": "2026-05-10T19:53:09.946710+00:00"
+      "resolved_at": "2026-05-10T19:58:07.969305+00:00"
     },
     {
       "seed_id": "geely__monjaro__2023__2026__il",
@@ -418,7 +418,7 @@
       "attempts": 1,
       "last_status": "success",
       "variants_added": 1,
-      "resolved_at": "2026-05-10T19:53:12.113426+00:00"
+      "resolved_at": "2026-05-10T19:58:08.214610+00:00"
     },
     {
       "seed_id": "haval__jolion__2021__2026__il",
@@ -431,7 +431,7 @@
       "attempts": 1,
       "last_status": "success",
       "variants_added": 1,
-      "resolved_at": "2026-05-10T19:53:12.289525+00:00"
+      "resolved_at": "2026-05-10T19:58:08.222826+00:00"
     },
     {
       "seed_id": "honda__cr-v__1997__2026__il",
@@ -444,7 +444,7 @@
       "attempts": 1,
       "last_status": "success",
       "variants_added": 2,
-      "resolved_at": "2026-05-10T19:53:19.520719+00:00"
+      "resolved_at": "2026-05-10T19:58:08.955571+00:00"
     }
   ],
   "failed_retry": [
@@ -706,7 +706,7 @@
     }
   ],
   "invalid_seed_ids": [],
-  "updated_at": "2026-05-10T19:53:30.427285+00:00",
+  "updated_at": "2026-05-10T19:58:15.546286+00:00",
   "progress": {
     "completed": 8,
     "pending": 30,

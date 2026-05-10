@@ -1,89 +1,5 @@
 [
   {
-    "variant_id": "toyota_corolla_1992_2026_il_1_6_turbo_automatic_suv",
-    "make": "Toyota",
-    "model": "Corolla",
-    "aliases": [],
-    "year_start": 1992,
-    "year_end": 2026,
-    "market": "IL",
-    "generation": "QL",
-    "body_type": {
-      "value": "suv",
-      "status": "verified",
-      "confidence": "high",
-      "sources_count": 1,
-      "source_ids": [
-        "source_mock_kia_sportage"
-      ],
-      "used_in_compare": true,
-      "reason": "mock"
-    },
-    "seats": {
-      "value": 5,
-      "status": "verified",
-      "confidence": "high",
-      "sources_count": 1,
-      "source_ids": [
-        "source_mock_kia_sportage"
-      ],
-      "used_in_compare": true,
-      "reason": "mock"
-    },
-    "engine": {
-      "value": "1.6 Turbo",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "source_mock_kia_sportage"
-      ],
-      "used_in_compare": true,
-      "reason": "mock"
-    },
-    "transmission": {
-      "value": "automatic",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "source_mock_kia_sportage"
-      ],
-      "used_in_compare": true,
-      "reason": "mock"
-    },
-    "fuel_type": {
-      "value": "petrol",
-      "status": "partial",
-      "confidence": "medium",
-      "sources_count": 1,
-      "source_ids": [
-        "source_mock_kia_sportage"
-      ],
-      "used_in_compare": true,
-      "reason": "mock"
-    },
-    "drivetrain": {
-      "value": "FWD",
-      "status": "unknown",
-      "confidence": "low",
-      "sources_count": 0,
-      "source_ids": [],
-      "used_in_compare": false,
-      "reason": "Model inference without source was downgraded to unknown."
-    },
-    "trim": null,
-    "doors": null,
-    "verification_status": "partial",
-    "confidence": "medium",
-    "sources_count": 1,
-    "created_at": "2026-05-08T11:40:14.092111+00:00",
-    "updated_at": "2026-05-08T11:40:14.092121+00:00",
-    "notes": [
-      "mock mode"
-    ]
-  },
-  {
     "variant_id": "abarth_500_2018_2023_il_unknown_generation_1_4_turbo_unknown_transmission_hatchback_petrol",
     "make": "Abarth",
     "model": "500",
@@ -159,8 +75,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 6,
-    "created_at": "2026-05-10T19:53:13.221120+00:00",
-    "updated_at": "2026-05-10T19:53:13.221136+00:00",
+    "created_at": "2026-05-10T19:58:08.271919+00:00",
+    "updated_at": "2026-05-10T19:58:08.271929+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -268,8 +184,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 7,
-    "created_at": "2026-05-10T19:53:13.617664+00:00",
-    "updated_at": "2026-05-10T19:53:13.617680+00:00",
+    "created_at": "2026-05-10T19:58:08.285427+00:00",
+    "updated_at": "2026-05-10T19:58:08.285441+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -377,8 +293,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 7,
-    "created_at": "2026-05-10T19:53:13.617746+00:00",
-    "updated_at": "2026-05-10T19:53:13.617748+00:00",
+    "created_at": "2026-05-10T19:58:08.285508+00:00",
+    "updated_at": "2026-05-10T19:58:08.285510+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -486,8 +402,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 7,
-    "created_at": "2026-05-10T19:53:13.617796+00:00",
-    "updated_at": "2026-05-10T19:53:13.617797+00:00",
+    "created_at": "2026-05-10T19:58:08.285559+00:00",
+    "updated_at": "2026-05-10T19:58:08.285561+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -595,8 +511,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 6,
-    "created_at": "2026-05-10T19:53:13.987329+00:00",
-    "updated_at": "2026-05-10T19:53:13.987345+00:00",
+    "created_at": "2026-05-10T19:58:08.307383+00:00",
+    "updated_at": "2026-05-10T19:58:08.307394+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -712,8 +628,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 6,
-    "created_at": "2026-05-10T19:53:13.987411+00:00",
-    "updated_at": "2026-05-10T19:53:13.987413+00:00",
+    "created_at": "2026-05-10T19:58:08.307463+00:00",
+    "updated_at": "2026-05-10T19:58:08.307465+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -835,8 +751,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 3,
-    "created_at": "2026-05-10T19:53:15.877591+00:00",
-    "updated_at": "2026-05-10T19:53:15.877593+00:00",
+    "created_at": "2026-05-10T19:58:08.782273+00:00",
+    "updated_at": "2026-05-10T19:58:08.782275+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -958,8 +874,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 3,
-    "created_at": "2026-05-10T19:53:15.877506+00:00",
-    "updated_at": "2026-05-10T19:53:15.877522+00:00",
+    "created_at": "2026-05-10T19:58:08.782195+00:00",
+    "updated_at": "2026-05-10T19:58:08.782205+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -1081,8 +997,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 3,
-    "created_at": "2026-05-10T19:53:15.877643+00:00",
-    "updated_at": "2026-05-10T19:53:15.877644+00:00",
+    "created_at": "2026-05-10T19:58:08.782324+00:00",
+    "updated_at": "2026-05-10T19:58:08.782326+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,
@@ -1204,8 +1120,8 @@
     "verification_status": "partial",
     "confidence": "medium",
     "sources_count": 3,
-    "created_at": "2026-05-10T19:53:15.877692+00:00",
-    "updated_at": "2026-05-10T19:53:15.877694+00:00",
+    "created_at": "2026-05-10T19:58:08.782373+00:00",
+    "updated_at": "2026-05-10T19:58:08.782374+00:00",
     "notes": [],
     "candidate_raw": {
       "generation": null,

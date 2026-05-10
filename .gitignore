@@ -7,3 +7,22 @@ __pycache__/
 venv/
 data/cache/tmp*
 data/cache/*.jsonl
+
+# Derived, mutable runtime state.  The only permanent state file is
+# data/canonical/resume_package_canonical.json.  Everything under
+# data/output/ is regenerated from the canonical and must not be tracked.
+data/output/rerun_queue.json
+data/output/problem_queue.json
+data/output/batch_state.json
+data/output/latest_batch_result.json
+data/output/run_history.json
+data/output/gemini_raw_runs.json
+data/output/unresolved_models.json
+data/output/vehicle_candidates_raw.json
+data/output/vehicle_variants_partial.json
+data/output/vehicle_variants_verified.json
+data/output/vehicle_conflicts.json
+data/output/vehicle_sources.json
+
+# Timestamped canonical backups (kept locally only).
+data/canonical/backups/

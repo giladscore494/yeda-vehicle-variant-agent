@@ -2,8 +2,8 @@
   "schema_version": "batch_state_v1",
   "market": "IL",
   "created_at": "2026-05-08T16:44:55.429137+00:00",
-  "updated_at": "2026-05-10T19:53:14.696580+00:00",
-  "last_batch_id": "40262934-e15c-44c7-a2de-63a8e6a49bef",
+  "updated_at": "2026-05-10T19:58:08.696628+00:00",
+  "last_batch_id": "4bcbe34b-6ec3-461d-b806-6622a662fb83",
   "total_seeds": 2,
   "processed_seed_ids": [
     "abarth__124_spider__2016__2020__il"
@@ -45,7 +45,7 @@
     {
       "seed_id": "honda__civic__1990__2026__il",
       "reason": "test_run_next_batch_never_completed_all_when_needs_retry_present.<locals>.<lambda>() takes 0 positional arguments but 4 were given",
-      "created_at": "2026-05-10T19:53:14.660578+00:00"
+      "created_at": "2026-05-10T19:58:08.696274+00:00"
     }
   ],
   "needs_retry_seed_ids": [
