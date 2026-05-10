@@ -2,8 +2,8 @@
   "schema_version": "batch_state_v1",
   "market": "IL",
   "created_at": "2026-05-08T16:44:55.429137+00:00",
-  "updated_at": "2026-05-10T19:31:28.790282+00:00",
-  "last_batch_id": "f1b18eaa-dfbe-46ca-9a55-639fdb4e7b82",
+  "updated_at": "2026-05-10T19:53:14.696580+00:00",
+  "last_batch_id": "40262934-e15c-44c7-a2de-63a8e6a49bef",
   "total_seeds": 2,
   "processed_seed_ids": [
     "abarth__124_spider__2016__2020__il"
@@ -19,7 +19,7 @@
     }
   ],
   "failed_seed_ids": [
-    "bmw__850i__2018__2026__il"
+    "honda__civic__1990__2026__il"
   ],
   "skipped_seed_ids": [],
   "in_progress_seed_id": null,
@@ -43,9 +43,9 @@
       "created_at": "2026-05-10T12:57:31.358172+00:00"
     },
     {
-      "seed_id": "bmw__850i__2018__2026__il",
+      "seed_id": "honda__civic__1990__2026__il",
       "reason": "test_run_next_batch_never_completed_all_when_needs_retry_present.<locals>.<lambda>() takes 0 positional arguments but 4 were given",
-      "created_at": "2026-05-10T19:31:28.747015+00:00"
+      "created_at": "2026-05-10T19:53:14.660578+00:00"
     }
   ],
   "needs_retry_seed_ids": [
@@ -606,12 +606,12 @@
       "verified_variants": 0,
       "partial_variants": 0,
       "unresolved": 0,
-      "failed": 1,
+      "failed": 0,
       "completed": false
     }
   },
   "_last_queue_seed_ids": [
-    "bmw__850i__2018__2026__il"
+    "honda__civic__1990__2026__il"
   ],
   "_last_total_attempts": 6
 }
