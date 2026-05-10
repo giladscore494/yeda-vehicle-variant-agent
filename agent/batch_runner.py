@@ -279,6 +279,7 @@ EXPECTED_LOCAL_NEXT_SEED_ID = "audi__rs6__2008__2026__il"
 EXPECTED_LOCAL_MIN_VARIANTS = 263
 EXPECTED_LOCAL_MIN_PROCESSED = 59
 CANDIDATE_SOURCE_MERGED = "merged_candidate"
+CANDIDATE_SOURCE_RERUN_QUEUE = "rerun_queue"
 _LAST_CANONICAL_UPDATE_ATTEMPT = {
     "failed": False,
     "guard_issues": [],
@@ -1552,6 +1553,8 @@ def _process_seeds(
     market: str = "IL",
     batch_mode: str = "resume_forward",
     force_retry_failed: bool = False,
+    rerun_manager=None,
+    rerun_normal_continuation: dict | None = None,
 ) -> tuple[list, list, list]:
     """Process a batch of seeds and return (results, per_seed_canonical, execution_trace).
 
@@ -1576,6 +1579,20 @@ def _process_seeds(
     execution_trace: list[dict] = []
     _ensure_zero_variant_fields(state)
     state = sanitize_repair_queue_state(state, ordered)
+    # In rerun_queue mode the normal continuation cursor must remain frozen.
+    # We capture the pre-batch values once and restore them after every seed
+    # so that processing a rerun seed never advances last_completed_seed_id /
+    # next_seed_id / processed_seed_ids in the canonical batch_state.
+    _is_rerun_mode = (batch_mode == "rerun_queue")
+    _frozen_processed_set: set = set(state.get("processed_seed_ids") or []) if _is_rerun_mode else set()
+    _frozen_last_completed = state.get("last_completed_seed_id") if _is_rerun_mode else None
+    _frozen_next_seed = state.get("next_seed_id") if _is_rerun_mode else None
+    if _is_rerun_mode and isinstance(rerun_normal_continuation, dict):
+        # Prefer queue-declared normal_continuation when available.
+        if rerun_normal_continuation.get("last_completed_seed_id"):
+            _frozen_last_completed = rerun_normal_continuation["last_completed_seed_id"]
+        if rerun_normal_continuation.get("next_seed_id"):
+            _frozen_next_seed = rerun_normal_continuation["next_seed_id"]
     for idx, seed in enumerate(seed_queue[:limit], start=1):
         selected_market = state.get("market")
         seed["market"] = seed.get("market") or selected_market or "IL"
@@ -1681,6 +1698,20 @@ def _process_seeds(
                 state["needs_retry_seed_ids"].remove(sid)
         state["in_progress_seed_id"] = None
         results.append({"seed": seed, "result": result})
+        # Freeze normal continuation while in RERUN_QUEUE mode.  Processing a
+        # rerun seed must NOT advance processed_seed_ids / last_completed_seed_id /
+        # next_seed_id; rerun progress is tracked exclusively inside
+        # data/output/rerun_queue.json.  Without this restore, a successful
+        # rerun seed would silently move the canonical continuation cursor
+        # backward (because it sits earlier in canonical seed order than the
+        # actual normal continuation point), failing validate_canonical_update.
+        if _is_rerun_mode:
+            current_processed = list(state.get("processed_seed_ids") or [])
+            state["processed_seed_ids"] = [s for s in current_processed if s in _frozen_processed_set]
+            if _frozen_last_completed:
+                state["last_completed_seed_id"] = _frozen_last_completed
+            if _frozen_next_seed:
+                state["next_seed_id"] = _frozen_next_seed
         _refresh_coverage(state, ordered)
         _save_state(state)
         # Per-seed canonical persistence: local save is mandatory; GitHub push is optional.
@@ -1693,6 +1724,8 @@ def _process_seeds(
                 push_to_github=auto_push_per_seed,
                 commit_message_prefix=commit_message_prefix,
                 market=seed_market,
+                rerun_mode=_is_rerun_mode,
+                rerun_normal_continuation=rerun_normal_continuation if _is_rerun_mode else None,
             )
             per_seed_canonical.append({"seed_id": sid, "canonical_persist": seed_persist})
             saved_canonical = bool(isinstance(seed_persist, dict) and seed_persist.get("ok"))
@@ -2400,6 +2433,7 @@ def run_next_batch(
     _rerun_active = bool(_rerun_manager and _rerun_manager.queue_exists() and _rerun_manager.has_pending())
     _rerun_queue_data = _rerun_manager.load_queue() if _rerun_active else {}
     _rerun_normal_next = (_rerun_queue_data.get("normal_continuation") or {}).get("next_seed_id") if _rerun_active else None
+    _rerun_normal_last_completed = (_rerun_queue_data.get("normal_continuation") or {}).get("last_completed_seed_id") if _rerun_active else None
     if _rerun_active:
         head = _rerun_manager.next_seed() or {}
         head_id = head.get("seed_id")
@@ -2591,6 +2625,8 @@ def run_next_batch(
         market=market,
         batch_mode=batch_mode,
         force_retry_failed=include_failed,
+        rerun_manager=_rerun_manager if _rerun_active else None,
+        rerun_normal_continuation=(_rerun_queue_data.get("normal_continuation") if _rerun_active else None),
     )
     outputs_after = _load_outputs()
     coverage_after = audit_coverage_until_last_completed(candidates, state, outputs_after)
@@ -2599,7 +2635,13 @@ def run_next_batch(
     payload = {"batch": {"batch_id": batch_id, "started_at": _now(), "requested_limit": limit, "processed": len(results), "batch_mode": batch_mode}, "results": results, "coverage_audit_after_batch": coverage_after}
     save_json(latest_batch_path, payload)
     canonical_result = None
-    if len(results) > 0:
+    if len(results) > 0 and not _rerun_active:
+        # In RERUN_QUEUE mode the per-seed persist_canonical_after_seed call
+        # has already saved the canonical with frozen normal continuation.
+        # Calling persist_canonical_resume_package here would re-run
+        # build_canonical_candidate's normalization and reject the package
+        # for "moved backward" because canonical seed order places rerun
+        # seeds before the normal continuation point.
         canonical_result = persist_canonical_resume_package(batch_id=batch_id, push_to_github=auto_push_canonical, market=market)
     # --- Rerun queue post-processing ---
     rerun_finalize = None
@@ -2831,7 +2873,16 @@ def validate_canonical_update(previous_package: dict | None, candidate_package: 
         issues.append("candidate_processed_count < previous_processed_count")
     if next_seed_is_processed:
         issues.append("candidate_next_seed_id is already processed")
-    if last_completed_moved_backward:
+    # In RERUN_QUEUE mode the candidate must keep last_completed_seed_id /
+    # next_seed_id frozen at the normal continuation point — backward
+    # movement is therefore not a real failure, provided variants and
+    # processed counts are not shrinking and normal continuation is
+    # preserved.  Without this exception, rerun seeds (which sit earlier in
+    # canonical seed order than the current normal continuation) would
+    # always trigger a "moved backward" rejection.
+    candidate_source_value = str(candidate.get("_candidate_source") or "")
+    is_rerun_candidate = candidate_source_value == CANDIDATE_SOURCE_RERUN_QUEUE
+    if last_completed_moved_backward and not is_rerun_candidate:
         issues.append("candidate_last_completed_seed_id moved backward")
     if duplicate_variant_ids:
         issues.append("duplicate variant_id found")
@@ -3383,6 +3434,8 @@ def persist_canonical_after_seed(
     push_to_github: bool = False,
     commit_message_prefix: str = "Update canonical vehicle variants",
     market: str = "IL",
+    rerun_mode: bool = False,
+    rerun_normal_continuation: dict | None = None,
 ) -> dict:
     """Persist canonical package after a single successfully completed seed.
 
@@ -3406,11 +3459,35 @@ def persist_canonical_after_seed(
     final_export = build_final_export()
     merged_variants = [v for v in (final_export.get("variants") or []) if isinstance(v, dict)] if isinstance(final_export, dict) else []
 
+    # In RERUN_QUEUE mode, the rerun seed must NOT mutate normal continuation
+    # in canonical batch_state.  Force the candidate's batch_state to use the
+    # previous canonical's processed_seed_ids/last_completed_seed_id/next_seed_id.
+    effective_new_batch_state = batch_state if isinstance(batch_state, dict) else None
+    candidate_source = CANDIDATE_SOURCE_RERUN_QUEUE if rerun_mode else CANDIDATE_SOURCE_MERGED
+    if rerun_mode and isinstance(effective_new_batch_state, dict):
+        prev_bs = previous.get("batch_state") if isinstance(previous, dict) and isinstance(previous.get("batch_state"), dict) else {}
+        effective_new_batch_state = copy.deepcopy(effective_new_batch_state)
+        # Restore the frozen normal-continuation cursor onto the candidate state.
+        prev_processed = list(prev_bs.get("processed_seed_ids") or [])
+        prev_processed_set = set(prev_processed)
+        cur_processed = [s for s in (effective_new_batch_state.get("processed_seed_ids") or []) if s in prev_processed_set]
+        effective_new_batch_state["processed_seed_ids"] = cur_processed
+        if isinstance(rerun_normal_continuation, dict):
+            if rerun_normal_continuation.get("last_completed_seed_id"):
+                effective_new_batch_state["last_completed_seed_id"] = rerun_normal_continuation["last_completed_seed_id"]
+            if rerun_normal_continuation.get("next_seed_id"):
+                effective_new_batch_state["next_seed_id"] = rerun_normal_continuation["next_seed_id"]
+        elif prev_bs:
+            if prev_bs.get("last_completed_seed_id"):
+                effective_new_batch_state["last_completed_seed_id"] = prev_bs.get("last_completed_seed_id")
+            if prev_bs.get("next_seed_id"):
+                effective_new_batch_state["next_seed_id"] = prev_bs.get("next_seed_id")
+
     package = build_canonical_candidate(
         previous,
         merged_variants,
-        new_batch_state=batch_state if isinstance(batch_state, dict) else None,
-        source=CANDIDATE_SOURCE_MERGED,
+        new_batch_state=effective_new_batch_state,
+        source=candidate_source,
     )
     package_acc = package.get("accumulated_clean_export") if isinstance(package.get("accumulated_clean_export"), dict) else {}
     package_acc["quality_gate"] = final_export.get("quality_gate") if isinstance(final_export, dict) else None
@@ -3428,6 +3505,45 @@ def persist_canonical_after_seed(
     package["merge_metadata"].setdefault("pushed_to_github", False)
 
     package = rebuild_canonical_metadata_from_accumulated(package, get_ordered_seed_list(market))
+
+    # In RERUN_QUEUE mode, re-impose the frozen normal-continuation cursor
+    # AFTER all normalization steps.  build_canonical_candidate's call to
+    # extract_canonical_batch_state recomputes last_completed_seed_id /
+    # next_seed_id from the contiguous prefix of processed_seed_ids — which
+    # is exactly what we must avoid here, because the rerun seeds sit
+    # earlier in canonical order and would otherwise pull the cursor
+    # backward.  We tag the candidate so validate_canonical_update can
+    # accept the (now zero) cursor delta.
+    if rerun_mode:
+        prev_bs_full = previous.get("batch_state") if isinstance(previous, dict) and isinstance(previous.get("batch_state"), dict) else {}
+        rerun_bs = package.get("batch_state") if isinstance(package.get("batch_state"), dict) else {}
+        # Preserve previous canonical's processed_seed_ids verbatim — rerun
+        # progress is tracked exclusively in data/output/rerun_queue.json.
+        rerun_bs["processed_seed_ids"] = list(prev_bs_full.get("processed_seed_ids") or [])
+        rerun_bs["processed_seeds"] = copy.deepcopy(list(prev_bs_full.get("processed_seeds") or []))
+        target_last_completed = (
+            (rerun_normal_continuation or {}).get("last_completed_seed_id")
+            or prev_bs_full.get("last_completed_seed_id")
+        )
+        target_next_seed = (
+            (rerun_normal_continuation or {}).get("next_seed_id")
+            or prev_bs_full.get("next_seed_id")
+        )
+        if target_last_completed:
+            rerun_bs["last_completed_seed_id"] = target_last_completed
+        if target_next_seed:
+            rerun_bs["next_seed_id"] = target_next_seed
+        # Drop the resolved rerun seed from canonical needs_retry_seed_ids so
+        # the queue is not auto-recreated with stale data on the next run.
+        # build_canonical_candidate already filters resolved seeds; this is a
+        # belt-and-suspenders guard for the seed currently being persisted.
+        sid = seed.get("seed_id") if isinstance(seed, dict) else None
+        if sid:
+            rerun_bs["needs_retry_seed_ids"] = [
+                x for x in (rerun_bs.get("needs_retry_seed_ids") or []) if x != sid
+            ]
+        package["batch_state"] = rerun_bs
+        package["_candidate_source"] = CANDIDATE_SOURCE_RERUN_QUEUE
 
     validate_result = validate_canonical_update(previous, package, market=market)
     issues = list(validate_result.get("issues") or [])
