@@ -2208,6 +2208,16 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
                 )
 
     repair_required = len(false_processed) > 0
+
+    # Needs-retry queue: seeds that were moved out of processed and need re-processing.
+    # These are stored in the volatile batch_state fields and preserved through the merge above.
+    _processed_set_for_guard = set(processed)
+    needs_retry_ids_raw = [
+        sid for sid in (state.get("needs_retry_seed_ids") or [])
+        if isinstance(sid, str) and sid not in _processed_set_for_guard
+    ]
+    needs_retry_required = len(needs_retry_ids_raw) > 0
+
     return {
         "passed": len(issues) == 0,
         "issues": issues,
@@ -2221,6 +2231,9 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
         "repair_required": repair_required,
         "false_processed_seed_count": len(false_processed),
         "false_processed_seeds": false_processed,
+        "needs_retry_required": needs_retry_required,
+        "needs_retry_count": len(needs_retry_ids_raw),
+        "needs_retry_seed_ids": needs_retry_ids_raw,
     }
 
 
@@ -2288,9 +2301,10 @@ def run_next_batch(
         batch_50_guard = evaluate_batch_50_guard(market=market, auto_push_canonical=auto_push_canonical, auto_push_per_seed=auto_push_per_seed)
         if not batch_50_guard.get("passed", False):
             return {"status": "blocked", "error": "Batch 50 blocked by canonical guard.", "guard": batch_50_guard, "results": []}
-    # When repair_required, auto-switch to repair queue instead of blocking.
-    # Only block when the guard failed for reasons unrelated to zero-variant repair.
-    if not guard.get("repair_required") and not guard.get("passed", False):
+    # When repair_required or needs_retry_required, auto-switch to the appropriate
+    # repair/retry queue instead of blocking.  Only block when the guard failed for
+    # reasons unrelated to zero-variant repair or needs_retry.
+    if not guard.get("repair_required") and not guard.get("needs_retry_required") and not guard.get("passed", False):
         return {
             "status": "blocked",
             "error": "Batch start blocked by canonical/batch_state guard.",
@@ -2305,18 +2319,26 @@ def run_next_batch(
         # Preserve stall-detection fields that are stripped out by normalization
         state["_last_queue_seed_ids"] = _raw_state.get("_last_queue_seed_ids") or []
         state["_last_total_attempts"] = _raw_state.get("_last_total_attempts", -1)
+        # Preserve needs_retry queue: normalization strips volatile fields from the raw state.
+        # Without this, seeds queued for retry after Repair & Audit are silently dropped.
+        _raw_needs_retry = list(_raw_state.get("needs_retry_seed_ids") or [])
+        if _raw_needs_retry:
+            state["needs_retry_seed_ids"] = _raw_needs_retry
         first_seed = ordered[0]["seed_id"] if ordered else None
         if len(state.get("processed_seed_ids", [])) == 0 and not state.get("last_completed_seed_id") and not _raw_last_completed and (state.get("next_seed_id") in {None, first_seed}):
             local_canonical = load_local_canonical_resume_package()
             if isinstance(local_canonical, dict) and isinstance(local_canonical.get("batch_state"), dict):
                 canonical_state = extract_canonical_batch_state(local_canonical, ordered, market=market)
                 if len(canonical_state.get("processed_seed_ids", [])) > 0:
-                    # Preserve stall-detection fields across the canonical override
+                    # Preserve stall-detection and retry fields across the canonical override
                     _prev_last_queue = state.get("_last_queue_seed_ids", [])
                     _prev_last_attempts = state.get("_last_total_attempts", -1)
+                    _prev_needs_retry = list(state.get("needs_retry_seed_ids") or [])
                     state = canonical_state
                     state["_last_queue_seed_ids"] = _prev_last_queue
                     state["_last_total_attempts"] = _prev_last_attempts
+                    if _prev_needs_retry:
+                        state["needs_retry_seed_ids"] = _prev_needs_retry
                     _save_state(state)
     else:
         state = _default_state(market, ordered)
@@ -2349,19 +2371,32 @@ def run_next_batch(
         holes = [seed_to_dict(s, default_market=market) for s in coverage["missing_seeds"]]
         processed_set = set(state.get("processed_seed_ids", []))
         next_seed_id = state.get("next_seed_id")
-        forward_queue = [seed_to_dict(s, default_market=market) for s in candidates if s["seed_id"] not in processed_set and (include_failed or s["seed_id"] not in state.get("failed_seed_ids", []))]
-        if next_seed_id and next_seed_id in [s.get("seed_id") for s in forward_queue]:
-            idx = [s.get("seed_id") for s in forward_queue].index(next_seed_id)
-            forward_queue = forward_queue[idx:]
-        use_hole_repair = bool(holes) and not (next_seed_id and next_seed_id not in processed_set)
-        batch_mode = "fill_coverage_holes" if use_hole_repair else "resume_forward"
-        queue = holes if use_hole_repair else forward_queue
-        if not queue and ordered and len(state.get("processed_seed_ids", [])) < len(ordered):
-            next_id = state.get("next_seed_id") or next_unprocessed_seed_id([s["seed_id"] for s in ordered], set(state.get("processed_seed_ids", [])))
-            if next_id:
-                forced = next((s for s in ordered if s["seed_id"] == next_id), None)
-                if forced is not None:
-                    queue = [seed_to_dict(forced, default_market=market)]
+        # Priority: if needs_retry is non-empty, run those seeds before any normal
+        # forward progress.  The canonical order is preserved; the normal checkpoint
+        # (next_seed_id / scanned_count / all_seeds cursor) is ignored until the
+        # retry queue is fully drained.
+        needs_retry_ids = [
+            sid for sid in (state.get("needs_retry_seed_ids") or [])
+            if isinstance(sid, str) and sid not in processed_set
+        ]
+        if needs_retry_ids:
+            retry_set = set(needs_retry_ids)
+            queue = [seed_to_dict(s, default_market=market) for s in ordered if s["seed_id"] in retry_set]
+            batch_mode = "needs_retry"
+        else:
+            forward_queue = [seed_to_dict(s, default_market=market) for s in candidates if s["seed_id"] not in processed_set and (include_failed or s["seed_id"] not in state.get("failed_seed_ids", []))]
+            if next_seed_id and next_seed_id in [s.get("seed_id") for s in forward_queue]:
+                idx = [s.get("seed_id") for s in forward_queue].index(next_seed_id)
+                forward_queue = forward_queue[idx:]
+            use_hole_repair = bool(holes) and not (next_seed_id and next_seed_id not in processed_set)
+            batch_mode = "fill_coverage_holes" if use_hole_repair else "resume_forward"
+            queue = holes if use_hole_repair else forward_queue
+            if not queue and ordered and len(state.get("processed_seed_ids", [])) < len(ordered):
+                next_id = state.get("next_seed_id") or next_unprocessed_seed_id([s["seed_id"] for s in ordered], set(state.get("processed_seed_ids", [])))
+                if next_id:
+                    forced = next((s for s in ordered if s["seed_id"] == next_id), None)
+                    if forced is not None:
+                        queue = [seed_to_dict(forced, default_market=market)]
     if not queue:
         _refresh_coverage(state, ordered)
         _save_state(state)
@@ -2455,7 +2490,27 @@ def get_batch_progress(market="IL") -> dict:
     next_seed = next((seed_to_dict(s) for s in ordered if s["seed_id"] == state.get("next_seed_id")), None)
     total = len(ordered); processed = len(state.get("processed_seed_ids", [])); failed = len(state.get("failed_seed_ids", []))
     coverage_rows = sorted([{"make": m, **c, "remaining": max(c.get("total", 0)-c.get("processed", 0),0)} for m,c in state.get("coverage_by_make", {}).items()], key=lambda r:r["make"].lower())
-    return {"total_seeds": total, "processed": processed, "remaining": max(total-processed, 0), "failed": failed, "percent_complete": round((processed/total)*100, 1) if total else 0.0, "current_make": (next_seed or {}).get("make"), "next_seed": next_seed, "coverage_by_make": coverage_rows, "coverage_audit": audit}
+    # Retry queue details for dashboard
+    _processed_set_prog = set(state.get("processed_seed_ids", []))
+    needs_retry_ids = [sid for sid in (state.get("needs_retry_seed_ids") or []) if isinstance(sid, str) and sid not in _processed_set_prog]
+    current_retry_seed = needs_retry_ids[0] if needs_retry_ids else None
+    remaining_retry_seeds = needs_retry_ids[1:] if len(needs_retry_ids) > 1 else []
+    normal_next_seed = next_seed if not needs_retry_ids else next((seed_to_dict(s) for s in ordered if s["seed_id"] == state.get("next_seed_id")), None)
+    return {
+        "total_seeds": total,
+        "processed": processed,
+        "remaining": max(total - processed, 0),
+        "failed": failed,
+        "percent_complete": round((processed / total) * 100, 1) if total else 0.0,
+        "current_make": (next_seed or {}).get("make"),
+        "next_seed": next_seed,
+        "coverage_by_make": coverage_rows,
+        "coverage_audit": audit,
+        "retry_queue_count": len(needs_retry_ids),
+        "current_retry_seed": current_retry_seed,
+        "remaining_retry_seeds": remaining_retry_seeds,
+        "normal_next_seed": normal_next_seed,
+    }
 
 
 def build_final_export(include_partial=True, include_verified=True, include_conflicts=False, include_unresolved=False, merge_trim_options=True, strict_no_mock=True) -> dict:
