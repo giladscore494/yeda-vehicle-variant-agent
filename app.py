@@ -11,7 +11,7 @@ from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
-    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, persist_canonical_after_seed, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync, evaluate_batch_50_guard, repair_false_processed_zero_variant_seeds
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, persist_canonical_after_seed, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync, evaluate_batch_50_guard, repair_false_processed_zero_variant_seeds, repair_and_audit_zero_variant_processed_seeds
 except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -113,6 +113,9 @@ except ImportError as exc:
         return {"passed": False, "issues": [_BATCH_RUNNER_IMPORT_ERROR]}
 
     def repair_false_processed_zero_variant_seeds(*args, **kwargs):
+        return _get_batch_runner_error_result()
+
+    def repair_and_audit_zero_variant_processed_seeds(*args, **kwargs):
         return _get_batch_runner_error_result()
 from tools.gemini_client import GeminiClient
 
@@ -330,7 +333,7 @@ with tabs[2]:
     if int(continue_guard.get("false_processed_seed_count", 0) or 0) > 0:
         st.warning(
             f"⚠️ Guard: {continue_guard.get('false_processed_seed_count')} false-processed zero-variant seed(s) detected. "
-            "Use 'Repair false processed seeds' to fix the state without calling Gemini."
+            "Use 'Repair & Audit' to fix the state without calling Gemini."
         )
         if st.button("Repair false processed seeds", key="repair_false_processed_seeds_btn"):
             with st.spinner("Repairing false-processed seeds…"):
@@ -353,6 +356,51 @@ with tabs[2]:
             else:
                 st.error(f"Repair failed: {_repair_res.get('error', 'Unknown error')}")
                 st.json(_repair_res)
+
+        st.divider()
+        if st.button("🔍 Repair & Audit zero-variant processed seeds (full audit)", key="repair_and_audit_btn"):
+            with st.spinner("Running full repair & audit…"):
+                _audit_res = repair_and_audit_zero_variant_processed_seeds(market=market)
+            if _audit_res.get("ok"):
+                _audit_obj = _audit_res.get("zero_variant_repair_audit", {})
+                st.success(_audit_res.get("ui_message", "Repair & audit complete."))
+                st.subheader("Zero-Variant Repair Audit Summary")
+                col_a, col_b, col_c, col_d = st.columns(4)
+                col_a.metric("Originally problematic", _audit_obj.get("original_false_processed_count", 0))
+                col_b.metric("Already fixed", _audit_obj.get("fixed_count", 0))
+                col_c.metric("Still unresolved", _audit_obj.get("unresolved_count", 0))
+                col_d.metric("Newly detected", _audit_obj.get("newly_detected_count", 0))
+                st.metric("Remaining to fix", _audit_obj.get("remaining_to_fix_count", 0))
+                st.write({
+                    "processed_seed_count_before": _audit_obj.get("processed_seed_count_before"),
+                    "processed_seed_count_after": _audit_obj.get("processed_seed_count_after"),
+                    "needs_retry_count_after": _audit_obj.get("needs_retry_count_after"),
+                    "next_seed_after_repair": _audit_obj.get("next_seed_after_repair"),
+                    "safe_to_continue_after_repair": _audit_obj.get("safe_to_continue_after_repair"),
+                })
+                if _audit_obj.get("variants_added_by_seed"):
+                    st.subheader("Variants added per fixed seed")
+                    st.json(_audit_obj.get("variants_added_by_seed"))
+                if _audit_obj.get("fixed_seed_ids"):
+                    st.subheader("Fixed seeds")
+                    st.write(_audit_obj.get("fixed_seed_ids"))
+                if _audit_obj.get("unresolved_seed_ids"):
+                    st.subheader("Unresolved seeds (moved to needs-retry)")
+                    st.write(_audit_obj.get("unresolved_seed_ids"))
+                if _audit_obj.get("newly_detected_seed_ids"):
+                    st.subheader("Newly detected false-processed seeds")
+                    st.write(_audit_obj.get("newly_detected_seed_ids"))
+                next_blocking = _audit_obj.get("next_seed_after_repair")
+                if next_blocking:
+                    if not _audit_obj.get("safe_to_continue_after_repair"):
+                        st.error(f"🚫 Not safe to continue. Next blocking seed: **{next_blocking}**")
+                    else:
+                        st.info(f"✅ Safe to continue. Next seed: **{next_blocking}**")
+                st.subheader("Guard result after repair")
+                st.json(_audit_res.get("guard_after", {}))
+            else:
+                st.error(f"Repair & audit failed: {_audit_res.get('error', 'Unknown error')}")
+                st.json(_audit_res)
 
     batch_limit_ui = st.selectbox("Batch limit", [1,3,5,10,20,50], index=4, key='batch_limit_ui')
     st.caption("Batch size does not reduce API cost per vehicle. Cost is mainly token/model dependent. Batch 50 mainly reduces manual overhead.")

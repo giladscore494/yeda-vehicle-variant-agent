@@ -1802,6 +1802,280 @@ def repair_false_processed_zero_variant_seeds(market: str = "IL") -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Blocking failed seed that the runner must return to once all zero-variant
+# false-processed seeds are resolved.
+# ---------------------------------------------------------------------------
+BLOCKING_FAILED_SEED_ID = "haval__h6__2022__2026__il"
+
+
+def _build_seed_variant_count_map(variants: list[dict], ordered_seeds: list[dict]) -> dict[str, int]:
+    """Return a mapping of seed_id -> variant count using accumulated_clean_export.variants."""
+    by_seed: dict[str, int] = {}
+    seed_lookup = {s["seed_id"]: s for s in (ordered_seeds or []) if isinstance(s, dict) and s.get("seed_id")}
+    for v in (variants or []):
+        if not isinstance(v, dict):
+            continue
+        # Match by explicit seed_id fields
+        for field in ("seed_id", "source_seed_id", "seed_ref"):
+            sid = v.get(field)
+            if isinstance(sid, str) and sid:
+                by_seed[sid] = by_seed.get(sid, 0) + 1
+                break
+        else:
+            # Fall back to make/model/market/year overlap matching
+            vmake = str(scalar_value(v.get("make"), "") or "").strip().lower()
+            vmodel = str(scalar_value(v.get("model"), "") or "").strip().lower()
+            vmarket = str(scalar_value(v.get("market"), "il") or "").strip().lower()
+            vys = safe_int_value(v.get("year_start"), 0)
+            vye = safe_int_value(v.get("year_end"), 9999)
+            for sid, seed in seed_lookup.items():
+                smake = str(seed.get("make", "") or "").strip().lower()
+                smodel = str(seed.get("model", "") or "").strip().lower()
+                smarket = str(seed.get("market", "il") or "").strip().lower()
+                sys_ = safe_int_value(seed.get("year_start"), 0)
+                sye_ = safe_int_value(seed.get("year_end"), 9999)
+                if (vmake == smake and vmodel == smodel and vmarket == smarket
+                        and sys_ <= vye and sye_ >= vys):
+                    by_seed[sid] = by_seed.get(sid, 0) + 1
+    return by_seed
+
+
+def _is_valid_zero_variant_seed(seed_id: str, batch_state: dict) -> bool:
+    """Return True if having zero variants is explicitly acceptable for this seed."""
+    novar = batch_state.get("no_variants_by_seed") or {}
+    entry = novar.get(seed_id)
+    reason = (entry.get("reason") if isinstance(entry, dict) else None)
+    if reason in ALLOWED_NO_VARIANTS_REASONS:
+        return True
+    dedupe = batch_state.get("dedupe_proof_by_seed") or {}
+    proof_entry = dedupe.get(seed_id)
+    if isinstance(proof_entry, dict) and proof_entry.get("matched_variant_ids"):
+        return True
+    return False
+
+
+def repair_and_audit_zero_variant_processed_seeds(market: str = "IL") -> dict:
+    """Comprehensive audit and repair of false-processed zero-variant seeds.
+
+    Builds a persistent audit of every seed that was marked processed but had 0 variants,
+    tracking which ones were later fixed, which remain unresolved, and which are newly
+    detected.  When all zero-variant false-processed seeds are resolved the function
+    sets next_seed_id to the known blocking failed seed so the runner does not skip it.
+
+    Returns a dict with:
+      ok, repaired_count, processed_seed_count_before, processed_seed_count_after,
+      original_false_processed_count, fixed_count, unresolved_count,
+      newly_detected_count, remaining_to_fix_count, variants_added_by_seed,
+      fixed_seed_ids, unresolved_seed_ids, newly_detected_seed_ids,
+      next_seed_after_repair, safe_to_continue_after_repair,
+      zero_variant_repair_audit, guard_after, error (on failure).
+    """
+    ordered = get_ordered_seed_list(market)
+    canonical = load_local_canonical_resume_package()
+    if not isinstance(canonical, dict):
+        return {"ok": False, "error": "canonical package missing — cannot audit"}
+
+    # ── load state ────────────────────────────────────────────────────────────
+    bs = canonical.get("batch_state") if isinstance(canonical.get("batch_state"), dict) else {}
+    processed_before = list(bs.get("processed_seed_ids") or [])
+    processed_seed_count_before = len(processed_before)
+
+    # ── build seed_id → variant_count map ────────────────────────────────────
+    variants = _load_variants_from_package(canonical)
+    variant_count_by_seed = _build_seed_variant_count_map(variants, ordered)
+
+    # ── identify currently false-processed (0 variants, no valid reason) ─────
+    currently_false_processed = {
+        sid for sid in processed_before
+        if variant_count_by_seed.get(sid, 0) == 0
+        and not _is_valid_zero_variant_seed(sid, bs)
+    }
+
+    # ── load or initialise the persistent audit ───────────────────────────────
+    existing_audit = bs.get("zero_variant_repair_audit") if isinstance(bs.get("zero_variant_repair_audit"), dict) else {}
+    original_list: list[str] = list(existing_audit.get("original_false_processed_seed_ids") or [])
+
+    if not original_list:
+        # First time: seed the historical list from current observation
+        original_list = sorted(currently_false_processed)
+
+    original_set = set(original_list)
+
+    # newly detected = currently false-processed NOT in the original historical list
+    newly_detected_set = currently_false_processed - original_set
+
+    # expand original list to include newly detected
+    updated_original_set = original_set | newly_detected_set
+    updated_original_list = sorted(updated_original_set)
+
+    # fixed = originally false-processed that now have variants
+    fixed_set = {sid for sid in updated_original_set if variant_count_by_seed.get(sid, 0) > 0}
+
+    # unresolved = originally false-processed that still have 0 variants and no valid reason
+    unresolved_set = {
+        sid for sid in updated_original_set
+        if variant_count_by_seed.get(sid, 0) == 0
+        and not _is_valid_zero_variant_seed(sid, bs)
+    }
+
+    # variants added per fixed seed
+    variants_added_by_seed: dict[str, int] = {
+        sid: variant_count_by_seed.get(sid, 0) for sid in fixed_set
+    }
+
+    # ── apply repairs to batch_state ─────────────────────────────────────────
+    pkg = copy.deepcopy(canonical)
+    bs_new = pkg.get("batch_state") if isinstance(pkg.get("batch_state"), dict) else {}
+    _ensure_zero_variant_fields(bs_new)
+
+    # Remove unresolved and newly detected from processed_seed_ids
+    seeds_to_remove = unresolved_set | newly_detected_set
+    bs_new["processed_seed_ids"] = [sid for sid in bs_new.get("processed_seed_ids", []) if sid not in seeds_to_remove]
+
+    # Keep fixed seeds in processed_seed_ids (they are legitimately processed)
+    # (they're already there unless previously removed)
+
+    # Add unresolved and newly detected to needs_retry and false_processed lists
+    for sid in (unresolved_set | newly_detected_set):
+        if sid not in bs_new["needs_retry_seed_ids"]:
+            bs_new["needs_retry_seed_ids"].append(sid)
+        if sid not in bs_new["false_processed_seed_ids"]:
+            bs_new["false_processed_seed_ids"].append(sid)
+        if sid in (bs_new.get("failed_seed_ids") or []):
+            bs_new["failed_seed_ids"].remove(sid)
+
+    # ── seed_accounting ───────────────────────────────────────────────────────
+    accounting = bs_new.setdefault("seed_accounting", {})
+    repair_ts = _now()
+    for sid in unresolved_set:
+        entry = dict(accounting.get(sid) or {})
+        entry["variant_count"] = 0
+        entry["repair_status"] = "moved_from_processed_to_needs_retry"
+        entry["repair_reason"] = "processed_seed_with_zero_variants"
+        entry["repair_timestamp"] = repair_ts
+        accounting[sid] = entry
+    for sid in newly_detected_set:
+        entry = dict(accounting.get(sid) or {})
+        entry["variant_count"] = 0
+        entry["repair_status"] = "new_false_processed_zero_variant_detected"
+        entry["repair_reason"] = "processed_seed_with_zero_variants"
+        entry["repair_timestamp"] = repair_ts
+        accounting[sid] = entry
+    for sid in fixed_set:
+        entry = dict(accounting.get(sid) or {})
+        entry["variant_count"] = variants_added_by_seed.get(sid, 0)
+        entry["repair_status"] = "fixed_by_later_variants"
+        entry["repair_reason"] = "seed_now_has_valid_variants"
+        entry["repair_timestamp"] = repair_ts
+        accounting[sid] = entry
+    bs_new["seed_accounting"] = accounting
+
+    # ── continuation logic ────────────────────────────────────────────────────
+    remaining_to_fix = unresolved_set | newly_detected_set
+    remaining_to_fix_count = len(remaining_to_fix)
+
+    ordered_ids = [s.get("seed_id") for s in ordered if isinstance(s, dict) and s.get("seed_id")]
+    processed_set_after = set(bs_new.get("processed_seed_ids") or [])
+
+    if remaining_to_fix:
+        # Point next_seed_id to the first unresolved seed (in canonical order)
+        ordered_unresolved = [sid for sid in ordered_ids if sid in remaining_to_fix]
+        next_seed_id = ordered_unresolved[0] if ordered_unresolved else sorted(remaining_to_fix)[0]
+        safe_to_continue = False
+        ui_message = (
+            f"{remaining_to_fix_count} false-processed zero-variant seed(s) still need repair. "
+            f"Next: {next_seed_id}"
+        )
+    else:
+        # All false-processed seeds are resolved — return to the blocking failed seed
+        blocking_seed = BLOCKING_FAILED_SEED_ID
+        blocking_variant_count = variant_count_by_seed.get(blocking_seed, 0)
+        blocking_in_failed = blocking_seed in (bs_new.get("failed_seed_ids") or [])
+        haval_resolved = blocking_variant_count > 0 or _is_valid_zero_variant_seed(blocking_seed, bs_new)
+        if not haval_resolved:
+            next_seed_id = blocking_seed
+            safe_to_continue = False
+            ui_message = (
+                "No false-processed zero-variant seeds remain. "
+                f"Returning to unresolved failed seed {blocking_seed}."
+            )
+        else:
+            next_seed_id = next_unprocessed_seed_id(ordered_ids, processed_set_after)
+            safe_to_continue = True
+            ui_message = "All false-processed seeds resolved and blocking seed is no longer failing."
+
+    # Update next_seed_id in batch_state
+    bs_new["next_seed_id"] = next_seed_id
+    if next_seed_id and next_seed_id in ordered_ids:
+        idx = ordered_ids.index(next_seed_id) - 1
+        bs_new["last_completed_seed_id"] = ordered_ids[idx] if idx >= 0 else None
+
+    # ── build zero_variant_repair_audit ──────────────────────────────────────
+    processed_count_after = len(bs_new.get("processed_seed_ids") or [])
+    needs_retry_count_after = len(bs_new.get("needs_retry_seed_ids") or [])
+    failed_ids_after = list(bs_new.get("failed_seed_ids") or [])
+
+    audit_obj: dict = {
+        "schema_version": 1,
+        "last_repaired_at": repair_ts,
+        "original_false_processed_count": len(updated_original_list),
+        "original_false_processed_seed_ids": updated_original_list,
+        "fixed_count": len(fixed_set),
+        "fixed_seed_ids": sorted(fixed_set),
+        "unresolved_count": len(unresolved_set),
+        "unresolved_seed_ids": sorted(unresolved_set),
+        "newly_detected_count": len(newly_detected_set),
+        "newly_detected_seed_ids": sorted(newly_detected_set),
+        "variants_added_by_seed": dict(sorted(variants_added_by_seed.items())),
+        "remaining_to_fix_count": remaining_to_fix_count,
+        "processed_seed_count_before": processed_seed_count_before,
+        "processed_seed_count_after": processed_count_after,
+        "needs_retry_count_after": needs_retry_count_after,
+        "failed_seed_ids_after": failed_ids_after,
+        "next_seed_after_repair": next_seed_id,
+        "safe_to_continue_after_repair": safe_to_continue,
+        "ui_message": ui_message,
+    }
+    bs_new["zero_variant_repair_audit"] = audit_obj
+    pkg["batch_state"] = bs_new
+
+    # ── recompute canonical metadata ──────────────────────────────────────────
+    pkg = rebuild_canonical_metadata_from_accumulated(pkg, ordered)
+    pkg.pop("_metadata_repaired_from_accumulated", None)
+
+    # ── persist ───────────────────────────────────────────────────────────────
+    save_local_canonical_resume_package(pkg)
+    repaired_bs = pkg.get("batch_state") if isinstance(pkg.get("batch_state"), dict) else {}
+    _save_state({**repaired_bs, "schema_version": BATCH_STATE_SCHEMA, "market": market})
+
+    guard_after = evaluate_continue_guard(market=market)
+
+    total_repaired = len(unresolved_set) + len(newly_detected_set)
+
+    return {
+        "ok": True,
+        "repaired_count": total_repaired,
+        "processed_seed_count_before": processed_seed_count_before,
+        "processed_seed_count_after": processed_count_after,
+        "original_false_processed_count": len(updated_original_list),
+        "original_false_processed_seed_ids": updated_original_list,
+        "fixed_count": len(fixed_set),
+        "fixed_seed_ids": sorted(fixed_set),
+        "unresolved_count": len(unresolved_set),
+        "unresolved_seed_ids": sorted(unresolved_set),
+        "newly_detected_count": len(newly_detected_set),
+        "newly_detected_seed_ids": sorted(newly_detected_set),
+        "remaining_to_fix_count": remaining_to_fix_count,
+        "variants_added_by_seed": dict(sorted(variants_added_by_seed.items())),
+        "next_seed_after_repair": next_seed_id,
+        "safe_to_continue_after_repair": safe_to_continue,
+        "zero_variant_repair_audit": audit_obj,
+        "guard_after": guard_after,
+        "ui_message": ui_message,
+    }
+
+
 def _apply_false_processed_repair_to_batch_state(
     batch_state: dict,
     ordered_seeds: list[dict],
