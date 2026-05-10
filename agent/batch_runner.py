@@ -2464,38 +2464,13 @@ def run_next_batch(
                 "results": [],
             }
 
-    # --- Rerun queue gate (legacy — only used when problem_queue is NOT active) ---
-    # If data/output/rerun_queue.json exists with pending seeds, force the
-    # batch to consume only the queue head and refuse to advance the normal
-    # continuation cursor.  This is the single active repair gate.
-    try:
-        from agent.rerun_queue_manager import RerunQueueManager
-        _rerun_manager = RerunQueueManager(market=market)
-    except Exception:
-        _rerun_manager = None
-    _rerun_active = (not _pq_active) and bool(_rerun_manager and _rerun_manager.queue_exists() and _rerun_manager.has_pending())
-    _rerun_queue_data = _rerun_manager.load_queue() if _rerun_active else {}
-    _rerun_normal_next = (_rerun_queue_data.get("normal_continuation") or {}).get("next_seed_id") if _rerun_active else None
-    _rerun_normal_last_completed = (_rerun_queue_data.get("normal_continuation") or {}).get("last_completed_seed_id") if _rerun_active else None
-    if _rerun_active:
-        head = _rerun_manager.next_seed() or {}
-        head_id = head.get("seed_id")
-        if not head_id:
-            return {
-                "status": "blocked",
-                "error": "rerun_queue has pending items but next_seed() returned None",
-                "batch_mode": "rerun_queue",
-                "results": [],
-            }
-        if _rerun_normal_next and head_id == _rerun_normal_next:
-            # Defensive: a queue head that equals the normal next seed would
-            # silently advance normal continuation.  Refuse.
-            return {
-                "status": "blocked",
-                "error": "rerun_queue head equals normal_continuation.next_seed_id",
-                "batch_mode": "rerun_queue",
-                "results": [],
-            }
+    # Legacy rerun_queue.json is no longer an active state source.  Problem
+    # queue (canonical.problem_repair_state) is the only repair channel.
+    _rerun_manager = None
+    _rerun_active = False
+    _rerun_queue_data: dict = {}
+    _rerun_normal_next = None
+    _rerun_normal_last_completed = None
 
     guard = evaluate_continue_guard(market=market)
     if int(limit or 0) == 50:
@@ -2754,44 +2729,9 @@ def run_next_batch(
                     push_canonical_resume_package(updated_pkg, batch_id=batch_id)
             except Exception:
                 pass
-    # --- Rerun queue post-processing ---
-    rerun_finalize = None
-    if _rerun_active and _rerun_manager is not None and results:
-        for entry in results:
-            seed_obj = entry.get("seed") or {}
-            sid = seed_obj.get("seed_id")
-            res = entry.get("result") or {}
-            accounting = res.get("accounting") or {}
-            variants_added = int(
-                accounting.get("variants_added_to_canonical")
-                or res.get("variants_created")
-                or 0
-            )
-            dedupe_proof_rows = accounting.get("dedupe_proof") or []
-            no_variants_reason = accounting.get("no_variants_reason") or res.get("no_variants_reason")
-            proof_payload = {
-                "variants_added": variants_added,
-                "dedupe_proof": {"matched_variant_ids": [r.get("matched_variant_id") for r in dedupe_proof_rows if isinstance(r, dict) and r.get("matched_variant_id")]},
-                "no_variants_reason": no_variants_reason,
-            }
-            resolved = (
-                variants_added > 0
-                or (proof_payload["dedupe_proof"]["matched_variant_ids"])
-                or (isinstance(no_variants_reason, str) and no_variants_reason in ALLOWED_NO_VARIANTS_REASONS)
-            )
-            try:
-                if resolved:
-                    _rerun_manager.mark_success(sid, variants_added, proof_payload)
-                else:
-                    _rerun_manager.mark_failed_retry(sid, proof_payload)
-            except Exception:
-                pass
-        if _rerun_manager.is_complete():
-            try:
-                rerun_finalize = _rerun_manager.finalize_if_complete()
-            except Exception as exc:
-                rerun_finalize = {"ok": False, "error": str(exc)}
-    return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result, "per_seed_canonical": per_seed_canonical, "queue_diagnostics": queue_diagnostics, "batch_execution_trace": execution_trace, "rerun_queue_finalize": rerun_finalize, "rerun_queue_progress": (_rerun_manager.progress_summary() if _rerun_manager is not None else None), "problem_queue_post": pq_post_result}
+    # --- Rerun queue post-processing (legacy) — disabled ---
+    # Rerun queue manager has been removed; problem_queue is the only repair channel.
+    return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result, "per_seed_canonical": per_seed_canonical, "queue_diagnostics": queue_diagnostics, "batch_execution_trace": execution_trace, "problem_queue_post": pq_post_result}
 
 
 def repair_coverage_until_clean(limit_per_pass=20, max_passes=10, market="IL"):

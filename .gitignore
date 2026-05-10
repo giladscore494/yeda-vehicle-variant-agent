@@ -7,6 +7,7 @@ __pycache__/
 venv/
 data/cache/tmp*
 data/cache/*.jsonl
+data/cache/extraction_cache.json
 
 # Derived, mutable runtime state.  The only permanent state file is
 # data/canonical/resume_package_canonical.json.  Everything under
@@ -26,3 +27,9 @@ data/output/vehicle_sources.json
 
 # Timestamped canonical backups (kept locally only).
 data/canonical/backups/
+
+# The rolling "previous" canonical backup is a derived artifact of
+# canonical writes — never source-controlled.  The canonical itself
+# (data/canonical/resume_package_canonical.json) IS tracked: the user
+# uploads it out-of-band and treats it as the single source of truth.
+data/canonical/resume_package_backup_previous.json
