@@ -1417,8 +1417,17 @@ def process_seed_with_variant_retry(seed: dict, state: dict | None = None, max_a
         candidates=int(trace.get("candidate_variants_count",0) or 0)
         valid=int(result.get("variants_created", trace.get("variants_created",0)) or 0)
         added=max(int(result.get("verified_count",0) or 0)+int(result.get("partial_count",0) or 0), int(result.get("variants_created",0) or 0))
-        no_reason=((trace.get("discovery_parsed_json_debug") or {}).get("no_variants_reason") if isinstance(trace.get("discovery_parsed_json_debug"),dict) else None)
+        # Read no_variants_reason from both trace paths (Part E)
+        no_reason = (
+            result.get("no_variants_reason")
+            or trace.get("no_variants_reason")
+            or ((trace.get("discovery_parsed_json_debug") or {}).get("no_variants_reason") if isinstance(trace.get("discovery_parsed_json_debug"), dict) else None)
+        )
         accounting={"seed_id":sid,"batch_id":st.get("last_batch_id"),"attempts":attempt,"candidates_returned":candidates,"valid_variants_built":valid,"variants_added_to_canonical":added,"variants_deduped_or_merged":0,"dedupe_proof":[],"no_variants_reason":no_reason,"marked_processed":False,"status":"needs_retry","failure_reason":"zero_variants_without_explanation"}
+        # If runner returned error/needs_retry status due to empty payload, do not mark processed
+        if result.get("status") in {"error", "needs_retry"} and added == 0:
+            st.setdefault("seed_accounting", {})[sid] = accounting
+            continue
         decision=can_mark_seed_processed(sid,accounting)
         if decision["allowed"]:
             accounting["marked_processed"]=True
@@ -1897,6 +1906,10 @@ def run_next_batch(
         state.setdefault("failed_details", []).append({"seed_id": state["in_progress_seed_id"], "reason": "Previous run interrupted before completion", "created_at": _now()})
         state["in_progress_seed_id"] = None
     candidates = [s for s in ordered if not make_filter or s["make"].lower() == make_filter.lower()]
+    # When retrying failed seeds, always bypass cache so Gemini is actually called
+    if include_failed:
+        force_refresh = True
+        use_cache = False
     # --- Build queue ---
     if guard.get("repair_required"):
         false_processed_ids = [fp.get("seed_id") for fp in guard.get("false_processed_seeds", []) if isinstance(fp, dict)]

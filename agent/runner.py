@@ -94,6 +94,18 @@ def _save_raw_debug(trace):
     save_json(raw_runs, runs)
     save_json(raw_candidates, cands)
 
+ALLOWED_NO_VARIANTS_REASONS = {
+    "model_not_sold_in_market",
+    "no_reliable_sources_found",
+    "insufficient_grounded_data",
+    "duplicate_existing_variant_only",
+    "seed_out_of_scope",
+    "model_discontinued_before_market_period",
+    "source_conflict_unresolved",
+    "blocked_by_validation",
+}
+
+
 def run_single_model(make, model, year_start=None, year_end=None, market='IL', force_mock=False, allow_mock_fallback=True, model_mode='pro_only', use_cache=True, force_refresh=False, max_sources=6, max_snippets_per_source=2, max_snippet_chars=220, max_candidate_variants=12, verification_mode='skip_second_pass', max_gemini_calls_per_model_run=3, max_grounded_calls_per_model_run=1, batch_id=None, retry_hint: bool = False):
     ensure_output_files(); run_id = str(uuid.uuid4()); seed = find_seed(make, model)
     if not seed:
@@ -107,6 +119,10 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     verification_cache_key = f"verification:{make}:{model}:{ys}:{ye}:{market}:{strong}:{verification_mode}"
     trace = {'run_id': run_id, 'batch_id': batch_id, 'seed_id': _seed_id(make, model, ys, ye, market), 'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'cache_key': cache_key, 'gemini_calls_count': 0, 'grounded_calls_count': 0, 'gemini_attempted': False, 'gemini_request_attempted': False, 'gemini_client_ok': None, 'gemini_client_error': None, 'gemini_raw_text_received': False, 'gemini_model_used': None, 'gemini_skip_reason': None, 'grounding_requested': False, 'model_mode': model_mode, 'verification_mode': verification_mode, 'input': {'make': make, 'model': model, 'year_start': ys, 'year_end': ye, 'market': market, 'model_mode': model_mode}, 'discovery_model_used': None, 'verification_model_used': None, 'escalated_to_strong': False, 'escalation_reason': None, 'final_cache_hit': False, 'discovery_cache_hit': False, 'verification_cache_hit': False, 'cache_record_schema_version': None, 'sources_required_min': 2, 'raw_candidate_values_preserved': True, 'dedupe_keys_used': [], 'discovery_raw_text_debug_available': False}
     if force_refresh:
+        use_cache = False
+
+    # Retry attempts must bypass both final cache and discovery cache (Part C/D)
+    if retry_hint:
         use_cache = False
 
     if force_mock:
@@ -146,7 +162,9 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
             selected_model = strong
             discovery_result = run_discovery(seed, market, model_name=selected_model, retry_hint=retry_hint)
             trace['gemini_calls_count'] += 1; trace['grounded_calls_count'] += 1
-        cache[discovery_cache_key] = {'schema_version': CACHE_SCHEMA_VERSION, 'discovery_result': discovery_result}
+        # Only cache discovery if it returned a usable (ok) result
+        if discovery_result.get('ok') and discovery_result.get('data') is not None:
+            cache[discovery_cache_key] = {'schema_version': CACHE_SCHEMA_VERSION, 'discovery_result': discovery_result}
 
     trace['discovery_model_used'] = selected_model
     gm = discovery_result.get('gemini_metadata', {}) if isinstance(discovery_result.get('gemini_metadata'), dict) else {}
@@ -161,6 +179,22 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     trace['gemini_attempted'] = bool(trace.get('gemini_attempted')) or bool(trace['gemini_request_attempted'])
     if trace['gemini_request_attempted']:
         trace['gemini_skip_reason'] = None
+
+    # Guard: a failed/empty discovery response must never be treated as valid zero-variant result (Part C.2)
+    if not discovery_result.get('ok') and discovery_result.get('data') is None:
+        raw_text = gm.get('raw_text')
+        trace['discovery_parse_error'] = gm.get('parse_error') or discovery_result.get('error')
+        trace['discovery_raw_text'] = raw_text
+        trace['discovery_raw_text_debug_available'] = bool(raw_text)
+        trace['discovery_parsed_json_debug'] = {}
+        trace['discovery_parsed_top_level_keys'] = []
+        trace['candidate_extraction_path'] = 'none'
+        trace['candidate_variants_count'] = 0
+        trace['gemini_client_error'] = gm.get('error') or discovery_result.get('error')
+        err = trace | {'status': 'error', 'error': 'Empty or failed Gemini discovery response', 'gemini_client_error': trace['gemini_client_error'], 'discovery_parse_error': trace['discovery_parse_error'], 'discovery_raw_text_debug_available': bool(raw_text), 'candidate_variants_count': 0, 'classification_summary': {'variants_created': 0, 'verified_count': 0, 'partial_count': 0, 'conflict_count': 0, 'unresolved_count': 0}, 'created_at': _now(), 'duration_ms': 0, 'model_policy': 'pro_only'}
+        add_run_history(err)
+        return {'status': 'error', 'error': 'Empty or failed Gemini discovery response', 'trace': trace}
+
     parsed = gm.get('parsed_json') or discovery_result.get('data')
     raw_text = gm.get('raw_text')
     if (not parsed or parsed == {}) and raw_text:
@@ -174,6 +208,19 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
             return {'status': 'error', 'error': 'Failed to parse raw Gemini JSON in runner', 'parse_error': parse_error, 'trace': trace}
         parsed = parsed2
         trace['raw_text_parsed_in_runner'] = True
+
+    # Guard: empty/missing parsed payload must not be cached as success (Part C.3)
+    if not parsed or parsed == {}:
+        trace['discovery_parse_error'] = 'Empty discovery payload'
+        trace['discovery_raw_text'] = raw_text
+        trace['discovery_raw_text_debug_available'] = bool(raw_text)
+        trace['discovery_parsed_json_debug'] = {}
+        trace['discovery_parsed_top_level_keys'] = []
+        trace['candidate_extraction_path'] = 'none'
+        trace['candidate_variants_count'] = 0
+        err = trace | {'status': 'error', 'error': 'Empty discovery payload', 'classification_summary': {'variants_created': 0, 'verified_count': 0, 'partial_count': 0, 'conflict_count': 0, 'unresolved_count': 0}, 'created_at': _now(), 'duration_ms': 0, 'model_policy': 'pro_only'}
+        add_run_history(err)
+        return {'status': 'error', 'error': 'Empty discovery payload', 'trace': trace}
 
     trace['discovery_parsed_json_debug'] = parsed or {}
     trace['discovery_raw_text'] = raw_text
@@ -197,6 +244,33 @@ def run_single_model(make, model, year_start=None, year_end=None, market='IL', f
     if _contains_marker({'candidates': candidate_variants, 'sources': (parsed or {}).get('sources', []) if isinstance(parsed, dict) else []}):
         add_run_history(trace | {'status': 'error'})
         return {'status': 'error', 'gemini_error': 'Mock contamination detected in real Gemini run', 'trace': trace, 'mock_contamination_detected': True}
+
+    # Guard: empty candidate_variants — check no_variants_reason (Part C.4)
+    if not candidate_variants:
+        no_variants_reason = (parsed.get('no_variants_reason') if isinstance(parsed, dict) else None) or (discovery_result.get('data', {}) or {}).get('no_variants_reason')
+        trace['no_variants_reason'] = no_variants_reason
+        trace['discovery_parsed_json_debug'] = parsed or {}
+        if no_variants_reason in ALLOWED_NO_VARIANTS_REASONS:
+            # Zero variants with valid explanation — safe to mark as completed
+            trace.update({'variants_built_before_dedupe': 0, 'variants_after_dedupe': 0, 'variants_created': 0, 'verified_count': 0, 'partial_count': 0, 'conflict_count': 0, 'unresolved_count': 0, 'field_verifications': {}, 'final_decision': {'classification': 'no_variants_reason', 'no_variants_reason': no_variants_reason}, 'cache_record_schema_version': CACHE_SCHEMA_VERSION, 'verification_calls_count': 0, 'verification_model_used': 'not_used', 'dedupe_keys_used': []})
+            result = {'status': 'completed', 'variants_created': 0, 'verified_count': 0, 'partial_count': 0, 'conflict_count': 0, 'unresolved_count': 0, 'no_variants_reason': no_variants_reason, 'trace': trace}
+            # Cache this as a legitimate zero-variant result
+            cache[cache_key] = {'schema_version': CACHE_SCHEMA_VERSION, 'result': result, 'trace': trace}
+            cache[verification_cache_key] = {'schema_version': CACHE_SCHEMA_VERSION, 'skipped': True}
+            save_json(cache_path, cache)
+            trace['status'] = 'completed'
+            trace['classification_summary'] = {'variants_created': 0, 'verified_count': 0, 'partial_count': 0, 'conflict_count': 0, 'unresolved_count': 0}
+            trace['created_at'] = _now(); trace['duration_ms'] = 0; trace['model_policy'] = 'pro_only'
+            add_run_history(trace)
+            return result
+        else:
+            # Empty variants without explanation — must not be marked processed
+            trace['classification_summary'] = {'variants_created': 0, 'verified_count': 0, 'partial_count': 0, 'conflict_count': 0, 'unresolved_count': 0}
+            trace['created_at'] = _now(); trace['duration_ms'] = 0; trace['model_policy'] = 'pro_only'
+            trace['candidate_variants_count'] = 0
+            # Do NOT save to final cache
+            add_run_history(trace | {'status': 'needs_retry', 'failure_reason': 'zero_variants_without_no_variants_reason'})
+            return {'status': 'needs_retry', 'error': 'zero_variants_without_no_variants_reason', 'variants_created': 0, 'no_variants_reason': no_variants_reason, 'trace': trace}
 
     dict_candidates = [c for c in candidate_variants if isinstance(c, dict)]
     critical_fields = ('engine', 'transmission', 'fuel_type', 'body_type', 'generation', 'year_start', 'year_end')

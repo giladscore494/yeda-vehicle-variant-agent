@@ -18,7 +18,14 @@ Do not include reason strings.
 Return max 8 candidate_variants and max 5 sources.
 Do not include evidence_snippets by default.
 If evidence_snippets are included, max 1 per source and max 80 chars.
-Top-level keys: search_queries, sources, candidate_variants, conflicts, unresolved, unresolved_reason.
+Top-level keys: search_queries, sources, candidate_variants, no_variants_reason, conflicts, unresolved, unresolved_reason.
+If no candidate variants can be found, return:
+  candidate_variants: []
+  no_variants_reason: one of:
+    model_not_sold_in_market | no_reliable_sources_found | insufficient_grounded_data |
+    duplicate_existing_variant_only | seed_out_of_scope | model_discontinued_before_market_period |
+    source_conflict_unresolved | blocked_by_validation
+Never return an empty candidate_variants list without no_variants_reason.
 Candidate shape:
 {{
   "candidate_index": 0,

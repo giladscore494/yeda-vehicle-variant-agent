@@ -110,7 +110,11 @@ def run_discovery(seed, market='IL', model_name=None, retry_hint: bool = False) 
     extracted, extraction_path, extraction_warning, raw_count = extract_candidate_variants(payload)
     sources = payload.get('sources') if isinstance(payload.get('sources'), list) else []
     top_level_keys = sorted(payload.keys()) if isinstance(payload, dict) else []
-    data = {'search_queries': payload.get('search_queries') if isinstance(payload.get('search_queries'), list) else [], 'sources': sources, 'candidate_variants': extracted, 'conflicts': payload.get('conflicts') if isinstance(payload.get('conflicts'), list) else [], 'unresolved': bool(payload.get('unresolved', False)), 'unresolved_reason': payload.get('unresolved_reason'), 'field_evidence': payload.get('field_evidence', {})}
+    no_variants_reason = payload.get('no_variants_reason') if isinstance(payload, dict) else None
+    # Validate: empty candidate_variants must have no_variants_reason
+    if not extracted and not no_variants_reason:
+        extraction_warning = extraction_warning or 'empty_candidate_variants_without_no_variants_reason'
+    data = {'search_queries': payload.get('search_queries') if isinstance(payload.get('search_queries'), list) else [], 'sources': sources, 'candidate_variants': extracted, 'no_variants_reason': no_variants_reason, 'conflicts': payload.get('conflicts') if isinstance(payload.get('conflicts'), list) else [], 'unresolved': bool(payload.get('unresolved', False)), 'unresolved_reason': payload.get('unresolved_reason'), 'field_evidence': payload.get('field_evidence', {})}
 
     return {'ok': True, 'data': data, 'error': None, 'gemini_metadata': {
         'model': res.get('model'), 'grounding_requested': bool(res.get('grounding_requested', True)), 'request_attempted': bool(res.get('request_attempted', True)),
