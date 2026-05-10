@@ -67,6 +67,51 @@ def _ensure_zero_variant_fields(state: dict) -> dict:
     return state
 
 
+
+
+def sanitize_repair_queue_state(state: dict, ordered_seeds: list[dict]) -> dict:
+    """Sanitize needs_retry queue against canonical ordered seeds.
+
+    - Keep only valid seed ids from ordered_seeds.
+    - Move invalid ids into invalid_needs_retry_seed_ids.
+    - Deduplicate while preserving order.
+    """
+    state = state if isinstance(state, dict) else {}
+    ordered_ids = [s.get("seed_id") for s in (ordered_seeds or []) if isinstance(s, dict) and isinstance(s.get("seed_id"), str)]
+    valid_seed_ids = set(ordered_ids)
+
+    def _unique(items: list[str]) -> list[str]:
+        out = []
+        seen = set()
+        for sid in items or []:
+            if not isinstance(sid, str):
+                continue
+            if sid in seen:
+                continue
+            seen.add(sid)
+            out.append(sid)
+        return out
+
+    raw_retry = [sid for sid in (state.get("needs_retry_seed_ids") or []) if isinstance(sid, str)]
+    valid_retry = []
+    invalid_retry = []
+    seen_valid = set()
+    seen_invalid = set()
+    for sid in raw_retry:
+        if sid in valid_seed_ids:
+            if sid not in seen_valid:
+                seen_valid.add(sid)
+                valid_retry.append(sid)
+        else:
+            if sid not in seen_invalid:
+                seen_invalid.add(sid)
+                invalid_retry.append(sid)
+
+    state["needs_retry_seed_ids"] = valid_retry
+    existing_invalid = [sid for sid in (state.get("invalid_needs_retry_seed_ids") or []) if isinstance(sid, str)]
+    state["invalid_needs_retry_seed_ids"] = _unique(existing_invalid + invalid_retry)
+    return state
+
 def _total_accounting_attempts(state: dict) -> int:
     """Return total cumulative attempts recorded in seed_accounting."""
     return sum(int(a.get("attempts", 0) or 0) for a in (state.get("seed_accounting") or {}).values())
@@ -1002,6 +1047,7 @@ def extract_canonical_batch_state(package: dict, ordered_seeds: list[dict], mark
             {"batch_state": normalized, "accumulated_clean_export": {"variants": _extract_canonical_variant_bucket(package)}},
             ordered_seeds=ordered_seeds,
         )
+    normalized = sanitize_repair_queue_state(normalized, ordered_seeds)
     _refresh_coverage(normalized, ordered_seeds)
     return normalized
 
@@ -1012,7 +1058,8 @@ def load_batch_state(market: str = "IL") -> dict:
     if not state or state.get("schema_version") != BATCH_STATE_SCHEMA or state.get("market") != market:
         state = _default_state(market, ordered)
         save_json(_batch_state_path(), state)
-    return state
+    _ensure_zero_variant_fields(state)
+    return sanitize_repair_queue_state(state, ordered)
 
 
 def _save_state(state: dict):
@@ -1499,6 +1546,7 @@ def _process_seeds(
     per_seed_canonical: list[dict] = []
     execution_trace: list[dict] = []
     _ensure_zero_variant_fields(state)
+    state = sanitize_repair_queue_state(state, ordered)
     for idx, seed in enumerate(seed_queue[:limit], start=1):
         selected_market = state.get("market")
         seed["market"] = seed.get("market") or selected_market or "IL"
@@ -2064,6 +2112,7 @@ def repair_and_audit_zero_variant_processed_seeds(market: str = "IL") -> dict:
         "ui_message": ui_message,
     }
     bs_new["zero_variant_repair_audit"] = audit_obj
+    bs_new = sanitize_repair_queue_state(bs_new, ordered)
     pkg["batch_state"] = bs_new
 
     # ── recompute canonical metadata ──────────────────────────────────────────
@@ -2156,7 +2205,7 @@ def evaluate_continue_guard(market: str = "IL") -> dict:
     if not isinstance(local_canonical, dict):
         issues.append("canonical package missing")
         canonical_variants_count = 0
-        state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
+        state = sanitize_repair_queue_state(normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market), ordered)
     else:
         canonical_variants_count = canonical_variant_count(local_canonical)
         canonical_state = extract_canonical_batch_state(local_canonical, ordered, market=market)
@@ -2260,7 +2309,7 @@ def evaluate_batch_50_guard(market: str = "IL", auto_push_canonical: bool = Fals
     local_exists = isinstance(local_canonical, dict)
     if not local_exists:
         issues.append("canonical package missing")
-        state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
+        state = sanitize_repair_queue_state(normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market), ordered)
         canonical_count = 0
     else:
         state = extract_canonical_batch_state(local_canonical, ordered, market=market)
@@ -2357,6 +2406,7 @@ def run_next_batch(
     else:
         state = _default_state(market, ordered)
     _ensure_zero_variant_fields(state)
+    state = sanitize_repair_queue_state(state, ordered)
     outputs = _load_outputs()
     if state.get("in_progress_seed_id"):
         state.setdefault("failed_details", []).append({"seed_id": state["in_progress_seed_id"], "reason": "Previous run interrupted before completion", "created_at": _now()})
@@ -2397,6 +2447,15 @@ def run_next_batch(
             retry_set = set(needs_retry_ids)
             queue = [seed_to_dict(s, default_market=market) for s in ordered if s["seed_id"] in retry_set]
             batch_mode = "needs_retry"
+            if not queue:
+                return {
+                    "status": "blocked",
+                    "error": "needs_retry queue contains no valid runnable seeds after sanitization",
+                    "needs_retry_seed_ids": needs_retry_ids,
+                    "invalid_needs_retry_seed_ids": list(state.get("invalid_needs_retry_seed_ids") or []),
+                    "batch_mode": "needs_retry",
+                    "results": [],
+                }
         else:
             forward_queue = [seed_to_dict(s, default_market=market) for s in candidates if s["seed_id"] not in processed_set and (include_failed or s["seed_id"] not in state.get("failed_seed_ids", []))]
             if next_seed_id and next_seed_id in [s.get("seed_id") for s in forward_queue]:
@@ -2484,6 +2543,7 @@ def get_batch_progress(market="IL") -> dict:
         state = extract_canonical_batch_state(local_canonical, ordered, market=market)
         local_state = load_batch_state(market)
         _ensure_zero_variant_fields(state)
+        state = sanitize_repair_queue_state(state, ordered)
         for field in VOLATILE_BATCH_STATE_FIELDS:
             local_val = local_state.get(field)
             canonical_val = state.get(field)
@@ -2498,7 +2558,7 @@ def get_batch_progress(market="IL") -> dict:
             elif field.startswith("_last_") and local_val is not None:
                 state[field] = local_val
     else:
-        state = normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market)
+        state = sanitize_repair_queue_state(normalize_batch_state_for_resume(load_batch_state(market), ordered, market=market), ordered)
     _refresh_coverage(state, ordered)
     audit = audit_coverage_until_last_completed(ordered, state, _load_outputs())
     next_seed = next((seed_to_dict(s) for s in ordered if s["seed_id"] == state.get("next_seed_id")), None)
@@ -2818,17 +2878,7 @@ def build_canonical_candidate(
             # Prefer the newer value when they are scalar
             selected_state[_f] = new_val if new_val is not None else prev_val
 
-    # ── Validate needs_retry_seed_ids — filter out unknown IDs ──────────────
-    # IDs that do not exist in the canonical seed list are moved to a diagnostic
-    # field so they never block or redirect batch execution.
-    raw_retry = list(selected_state.get("needs_retry_seed_ids") or [])
-    valid_retry = [sid for sid in raw_retry if sid in set(ordered_seed_ids)]
-    invalid_retry = [sid for sid in raw_retry if sid not in set(ordered_seed_ids)]
-    selected_state["needs_retry_seed_ids"] = valid_retry
-    if invalid_retry:
-        existing_invalid = list(selected_state.get("invalid_needs_retry_seed_ids") or [])
-        combined_invalid = merge_lists_preserving_order(existing_invalid, invalid_retry)
-        selected_state["invalid_needs_retry_seed_ids"] = combined_invalid
+    selected_state = sanitize_repair_queue_state(selected_state, ordered_seeds)
 
     # ── Remove resolved seeds from needs_retry_seed_ids ─────────────────────
     # A seed is considered resolved if variants exist for it, OR a valid
@@ -3126,7 +3176,10 @@ def persist_canonical_resume_package(batch_id: str | None = None, push_to_github
     )
     package["merge_metadata"].setdefault("pushed_to_github", False)
     # Rebuild coverage metadata from accumulated_clean_export.variants (source of truth).
-    package = rebuild_canonical_metadata_from_accumulated(package, get_ordered_seed_list(market))
+    ordered = get_ordered_seed_list(market)
+    package_bs = package.get("batch_state") if isinstance(package.get("batch_state"), dict) else {}
+    package["batch_state"] = sanitize_repair_queue_state(package_bs, ordered)
+    package = rebuild_canonical_metadata_from_accumulated(package, ordered)
     validate_result = validate_canonical_update(previous, package, market=market)
     issues = list(validate_result.get("issues") or [])
     if issues:
