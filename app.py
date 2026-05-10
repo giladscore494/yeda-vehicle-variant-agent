@@ -8,7 +8,9 @@ from agent.batch_runner import (
     build_final_export,
     get_batch_progress,
     get_ordered_seed_list,
+    load_batch_state,
     load_local_canonical_resume_package,
+    sanitize_repair_queue_state,
     repair_and_audit_zero_variant_processed_seeds,
     run_next_batch,
 )
@@ -25,10 +27,10 @@ def _safe_dict(v: Any) -> dict:
 
 def _status_snapshot(market: str = "IL") -> dict:
     canonical = _safe_dict(load_local_canonical_resume_package())
-    batch_state = _safe_dict(canonical.get("batch_state"))
+    ordered = get_ordered_seed_list(market)
+    batch_state = sanitize_repair_queue_state(_safe_dict(load_batch_state(market=market)), ordered)
     progress = _safe_dict(get_batch_progress(market=market))
     final_export = _safe_dict(build_final_export())
-    ordered = get_ordered_seed_list(market)
 
     needs_retry = list(batch_state.get("needs_retry_seed_ids") or [])
     processed = list(batch_state.get("processed_seed_ids") or [])
