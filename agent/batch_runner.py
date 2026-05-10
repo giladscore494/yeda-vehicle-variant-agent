@@ -1734,6 +1734,8 @@ def repair_false_processed_zero_variant_seeds(market: str = "IL") -> dict:
     canonical_path = _canonical_resume_path()
     batch_state_path = _batch_state_path()
 
+    # Backup paths start as None; they are set on success and remain None if backup
+    # creation fails (non-fatal — a warning is printed and repair continues).
     backup_canonical_path: str | None = None
     backup_batch_state_path: str | None = None
     try:
