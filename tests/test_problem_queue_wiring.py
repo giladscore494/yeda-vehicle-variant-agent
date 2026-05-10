@@ -207,9 +207,9 @@ def test_run_next_batch_selects_bmw_from_canonical(monkeypatch):
 # 5. After mocked BMW dedupe_proof result, progress becomes 2/54
 # ---------------------------------------------------------------------------
 
-def test_after_bmw_dedupe_proof_progress_becomes_2_of_54(monkeypatch):
-    """BMW 850i with 0 new variants but dedupe_proof still counts as completed."""
-    from agent.problem_queue import classify_seed_closure, mark_seed_completed
+def test_classify_seed_closure_dedupe_proof_counts_as_closed(monkeypatch):
+    """A seed with 0 new variants but a valid dedupe_proof must still be classified as closed."""
+    from agent.problem_queue import classify_seed_closure
 
     closure_input = {
         "variants_added_to_canonical": 0,

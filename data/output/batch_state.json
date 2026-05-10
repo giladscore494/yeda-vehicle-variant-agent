@@ -2,8 +2,8 @@
   "schema_version": "batch_state_v1",
   "market": "IL",
   "created_at": "2026-05-08T16:44:55.429137+00:00",
-  "updated_at": "2026-05-10T20:30:33.458124+00:00",
-  "last_batch_id": "d27f985b-8d9b-4177-ac91-c18999b0b7e1",
+  "updated_at": "2026-05-10T20:32:26.896518+00:00",
+  "last_batch_id": "71c493e4-07fc-4cbd-96eb-c5ea85602927",
   "total_seeds": 2,
   "processed_seed_ids": [
     "abarth__124_spider__2016__2020__il"
@@ -45,7 +45,7 @@
     {
       "seed_id": "bmw__850i__2018__2026__il",
       "reason": "test_run_next_batch_never_completed_all_when_needs_retry_present.<locals>.<lambda>() takes 0 positional arguments but 4 were given",
-      "created_at": "2026-05-10T20:30:33.454592+00:00"
+      "created_at": "2026-05-10T20:32:26.892148+00:00"
     }
   ],
   "needs_retry_seed_ids": [

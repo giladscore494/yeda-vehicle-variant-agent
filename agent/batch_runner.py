@@ -2446,9 +2446,9 @@ def run_next_batch(
         _pq_mark_failed = None
 
     if _pq_active:
-        # Hard guard: s1 and invalid tokens must never become the active seed.
-        _pq_invalid = not _pq_seed_id or not _pq_seed_id.replace("_", "").replace("-", "").strip()
-        if _pq_invalid or _pq_seed_id in {"s1", "", None}:
+        # Hard guard: empty or whitespace-only seed_id must never become active.
+        _pq_invalid = not _pq_seed_id or not _pq_seed_id.strip()
+        if _pq_invalid or _pq_seed_id in {"s1", ""}:
             return {
                 "status": "blocked",
                 "error": f"problem_queue selected invalid seed_id: {_pq_seed_id!r}",
