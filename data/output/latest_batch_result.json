@@ -1,7 +1,7 @@
 {
   "batch": {
-    "batch_id": "4bcbe34b-6ec3-461d-b806-6622a662fb83",
-    "started_at": "2026-05-10T19:58:08.697819+00:00",
+    "batch_id": "a582c9ce-a95d-4466-80b5-bd34f11c7c02",
+    "started_at": "2026-05-10T20:10:13.514354+00:00",
     "requested_limit": 1,
     "processed": 1,
     "batch_mode": "rerun_queue"
@@ -9,11 +9,11 @@
   "results": [
     {
       "seed": {
-        "seed_id": "honda__civic__1990__2026__il",
-        "make": "Honda",
-        "model": "Civic",
+        "seed_id": "hyundai__excel__1990__1998__il",
+        "make": "Hyundai",
+        "model": "Excel",
         "year_start": 1990,
-        "year_end": 2026,
+        "year_end": 1998,
         "market": "IL"
       },
       "result": {
