@@ -440,3 +440,71 @@ def test_extract_canonical_batch_state_preserves_repair_fields():
     assert result.get("dedupe_proof_by_seed") == {"s2_real": {"proof": "ok"}}
     assert result.get("zero_variant_seed_ids") == ["s2_real"]
     assert result.get("zero_variant_repair_audit") == {"count": 1}
+
+
+def test_recovery_excludes_invalid_from_active_queue_and_overlap_cleanup(monkeypatch, tmp_path):
+    seeds = [
+        _seed("bmw__850i__2018__2026__il", make="BMW", model="850i"),
+        _seed("hummer__h3__2005__2010__il", make="Hummer", model="H3"),
+        _seed("infiniti__qx80__2010__2022__il", make="Infiniti", model="QX80"),
+    ]
+    unresolved_54 = [s["seed_id"] for s in seeds]
+    backup_pkg = {
+        "schema_version": "resume_package_v1",
+        "batch_state": {
+            "needs_retry_seed_ids": unresolved_54 + ["s1"],
+            "zero_variant_repair_audit": {"original_false_processed_seed_ids": unresolved_54 + ["s1"]},
+        },
+    }
+    current_bs = {
+        "processed_seed_ids": unresolved_54,
+        "needs_retry_seed_ids": ["s1", "hummer__h3__2005__2010__il"],
+        "next_seed_id": "haval__h6__2022__2026__il",
+        "market": "IL",
+    }
+    current_pkg = {"schema_version": "resume_package_v1", "batch_state": current_bs, "accumulated_clean_export": {"variants": []}}
+    fake_backup_path = tmp_path / "backup.json"
+    fake_backup_path.write_text(json.dumps(backup_pkg))
+    monkeypatch.setattr(br, "_canonical_backup_path", lambda: fake_backup_path)
+    monkeypatch.setattr(br, "load_json_object", lambda p: json.loads(pathlib.Path(p).read_text()))
+    monkeypatch.setattr(br, "get_ordered_seed_list", lambda market="IL": seeds)
+    monkeypatch.setattr(br, "load_local_canonical_resume_package", lambda: copy.deepcopy(current_pkg))
+    monkeypatch.setattr(br, "save_local_canonical_resume_package", lambda pkg: None)
+    monkeypatch.setattr(br, "load_batch_state", lambda market="IL": copy.deepcopy(current_bs))
+    saved = {}
+    monkeypatch.setattr(br, "_save_state", lambda s: saved.__setitem__("state", copy.deepcopy(s)))
+
+    result = br.recover_zero_variant_repair_state_from_backup("IL")
+    active = saved["state"]["needs_retry_seed_ids"]
+    assert "s1" not in active
+    assert "s1" in saved["state"].get("invalid_needs_retry_seed_ids", [])
+    assert result["next_seed_id"] == "bmw__850i__2018__2026__il"
+    assert result["overlap_processed_and_needs_retry"] == []
+
+
+def test_hummer_not_selected_when_bmw_unresolved(monkeypatch, tmp_path):
+    seeds = [
+        _seed("bmw__850i__2018__2026__il", make="BMW", model="850i"),
+        _seed("hummer__h3__2005__2010__il", make="Hummer", model="H3"),
+    ]
+    backup_pkg = {
+        "schema_version": "resume_package_v1",
+        "batch_state": {
+            "needs_retry_seed_ids": [s["seed_id"] for s in seeds],
+            "zero_variant_repair_audit": {"original_false_processed_seed_ids": [s["seed_id"] for s in seeds]},
+        },
+    }
+    current_bs = {"processed_seed_ids": [], "needs_retry_seed_ids": [], "market": "IL"}
+    current_pkg = {"schema_version": "resume_package_v1", "batch_state": current_bs, "accumulated_clean_export": {"variants": []}}
+    fake_backup_path = tmp_path / "backup.json"
+    fake_backup_path.write_text(json.dumps(backup_pkg))
+    monkeypatch.setattr(br, "_canonical_backup_path", lambda: fake_backup_path)
+    monkeypatch.setattr(br, "load_json_object", lambda p: json.loads(pathlib.Path(p).read_text()))
+    monkeypatch.setattr(br, "get_ordered_seed_list", lambda market="IL": seeds)
+    monkeypatch.setattr(br, "load_local_canonical_resume_package", lambda: copy.deepcopy(current_pkg))
+    monkeypatch.setattr(br, "save_local_canonical_resume_package", lambda pkg: None)
+    monkeypatch.setattr(br, "load_batch_state", lambda market="IL": copy.deepcopy(current_bs))
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+
+    result = br.recover_zero_variant_repair_state_from_backup("IL")
+    assert result["next_seed_id"] == "bmw__850i__2018__2026__il"
