@@ -15,6 +15,7 @@ from agent.batch_runner import (
     repair_and_audit_zero_variant_processed_seeds,
     run_next_batch,
 )
+from agent.rerun_queue_manager import RerunQueueManager
 from agent.runner import run_single_model
 from core.ingest import get_makes, get_models_by_make
 from storage.json_store import get_output_paths
@@ -38,6 +39,10 @@ def _status_snapshot(market: str = "IL") -> dict:
     invalid_retry = list(batch_state.get("invalid_needs_retry_seed_ids") or [])
     last_push = _safe_dict(_safe_dict(canonical.get("merge_metadata")).get("last_push_result"))
 
+    rerun_manager = RerunQueueManager(market=market)
+    rerun_active = rerun_manager.queue_exists() and rerun_manager.has_pending()
+    rerun_progress = rerun_manager.progress_summary() if rerun_manager.queue_exists() else None
+
     return {
         "canonical": canonical,
         "batch_state": batch_state,
@@ -48,9 +53,11 @@ def _status_snapshot(market: str = "IL") -> dict:
         "invalid_retry": invalid_retry,
         "current_repair_seed": needs_retry[0] if needs_retry else None,
         "next_normal_seed": batch_state.get("next_seed_id") or _safe_dict(progress.get("next_seed")).get("seed_id"),
-        "safe_to_continue": len(needs_retry) == 0,
+        "safe_to_continue": (not rerun_active) and len(needs_retry) == 0,
         "variants_count": len(list(_safe_dict(final_export).get("variants") or [])),
         "last_push": last_push,
+        "rerun_active": rerun_active,
+        "rerun_progress": rerun_progress,
     }
 
 
@@ -82,20 +89,41 @@ main_tab, manual_tab, diag_tab = st.tabs(["Main Run", "Manual Single Model", "Ex
 
 with main_tab:
     snap = _status_snapshot(market=market)
+    rerun_progress = snap.get("rerun_progress") or {}
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Variants", snap["variants_count"])
-    c2.metric("Processed", f"{snap['processed_count']} / {snap['total_seeds']}")
-    c3.metric("Repair Queue", len(snap["needs_retry"]))
-    c4.metric("Safe To Continue", "Yes" if snap["safe_to_continue"] else "No")
-
-    st.write(
-        {
-            "current_repair_seed": snap["current_repair_seed"],
-            "next_normal_seed": snap["next_normal_seed"],
-            "last_github_push_status": snap["last_push"],
-        }
-    )
+    if snap.get("rerun_active"):
+        st.subheader("Mode: Rerun Queue")
+        total_rerun = int(rerun_progress.get("total_rerun") or 0)
+        completed = int(rerun_progress.get("completed_count") or 0)
+        pending = int(rerun_progress.get("pending_count") or 0)
+        failed_retry = int(rerun_progress.get("failed_retry_count") or 0)
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Total rerun seeds", total_rerun)
+        c2.metric("Completed", completed)
+        c3.metric("Pending", pending)
+        c4.metric("Failed retry", failed_retry)
+        position = int(rerun_progress.get("current_position") or (completed + 1 if pending else completed))
+        st.write(
+            {
+                "current_seed": rerun_progress.get("current_seed"),
+                "current_position": f"{position} / {total_rerun}" if total_rerun else None,
+                "normal_continuation_paused_at": rerun_progress.get("normal_continuation_seed"),
+                "variants": snap["variants_count"],
+            }
+        )
+        st.progress(min(1.0, max(0.0, (rerun_progress.get("progress_percent") or 0) / 100.0)))
+    else:
+        st.subheader("Mode: Normal Batch")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Variants", snap["variants_count"])
+        c2.metric("Processed", f"{snap['processed_count']} / {snap['total_seeds']}")
+        c3.metric("Safe To Continue", "Yes" if snap["safe_to_continue"] else "No")
+        st.write(
+            {
+                "next_normal_seed": snap["next_normal_seed"],
+                "last_github_push_status": snap["last_push"],
+            }
+        )
 
     batch_size = st.number_input("Batch size", min_value=1, max_value=20, value=1, step=1)
     auto_push = st.checkbox("Save + push to GitHub after every completed model", value=True)
