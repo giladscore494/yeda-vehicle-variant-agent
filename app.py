@@ -15,6 +15,14 @@ from agent.batch_runner import (
     repair_and_audit_zero_variant_processed_seeds,
     run_next_batch,
 )
+from agent.problem_queue import (
+    compute_problem_repair_state,
+    compute_progress as compute_canonical_progress,
+    delete_problem_queue,
+    problem_queue_path,
+    refresh_problem_repair_state,
+    regenerate_problem_queue,
+)
 from agent.rerun_queue_manager import RerunQueueManager
 from agent.runner import run_single_model
 from core.ingest import get_makes, get_models_by_make
