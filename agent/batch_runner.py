@@ -1805,12 +1805,24 @@ def repair_false_processed_zero_variant_seeds(market: str = "IL") -> dict:
 # ---------------------------------------------------------------------------
 # Blocking failed seed that the runner must return to once all zero-variant
 # false-processed seeds are resolved.
+# When ``repair_and_audit_zero_variant_processed_seeds`` finds no remaining
+# false-processed seeds it sets next_seed_id to this value so the batch runner
+# is forced to address the Haval H6 (2022-2026 IL) failure before moving on.
 # ---------------------------------------------------------------------------
 BLOCKING_FAILED_SEED_ID = "haval__h6__2022__2026__il"
 
 
 def _build_seed_variant_count_map(variants: list[dict], ordered_seeds: list[dict]) -> dict[str, int]:
-    """Return a mapping of seed_id -> variant count using accumulated_clean_export.variants."""
+    """Return a mapping of seed_id -> variant count using accumulated_clean_export.variants.
+
+    Matching strategy (in priority order):
+    1. Explicit seed reference fields: ``seed_id``, ``source_seed_id``, ``seed_ref``.
+       The first non-empty field wins; no further matching is attempted for that variant.
+    2. Attribute overlap: when no explicit seed reference is present, the variant is
+       matched against every seed whose make/model/market combination equals the variant's
+       and whose year range [year_start, year_end] overlaps the variant's range.  A variant
+       may be counted for multiple overlapping seeds via this fallback.
+    """
     by_seed: dict[str, int] = {}
     seed_lookup = {s["seed_id"]: s for s in (ordered_seeds or []) if isinstance(s, dict) and s.get("seed_id")}
     for v in (variants or []):

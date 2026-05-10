@@ -204,7 +204,7 @@ def test_audit_original_list_persists_across_runs(monkeypatch, tmp_path):
     # original list must still include both seeds even though they're now in needs_retry
     original_after_r2 = set(r2["original_false_processed_seed_ids"])
     # BMW and Toyota were in the original list; they must still be recorded
-    assert original_after_r2 >= original_after_r1 or original_after_r2 == original_after_r1
+    assert original_after_r2 >= original_after_r1
 
 
 # ---------------------------------------------------------------------------
