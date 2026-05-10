@@ -982,6 +982,20 @@ def extract_canonical_batch_state(package: dict, ordered_seeds: list[dict], mark
         "run_history": raw_state.get("run_history", []),
         "failed_details": failed_details,
     }
+    # Preserve repair-state fields that must never be lost during normalization.
+    # These are carried verbatim from raw_state so that repair queues survive
+    # round-trips through extract_canonical_batch_state / normalize_batch_state_for_resume.
+    for _repair_field in (
+        "needs_retry_seed_ids",
+        "false_processed_seed_ids",
+        "zero_variant_repair_audit",
+        "seed_accounting",
+        "no_variants_by_seed",
+        "dedupe_proof_by_seed",
+        "zero_variant_seed_ids",
+    ):
+        if _repair_field in raw_state:
+            normalized[_repair_field] = copy.deepcopy(raw_state[_repair_field])
     _ensure_zero_variant_fields(normalized)
     if strict_zero_variant_audit:
         normalized["false_processed_seed_ids"] = find_processed_zero_variant_seeds(
@@ -2775,6 +2789,76 @@ def build_canonical_candidate(
             resolved_next = previous_next_seed
         selected_state["next_seed_id"] = resolved_next
 
+    # ── Merge repair-state fields from previous AND new batch state ──────────
+    # These fields must never be silently dropped. We merge previous_state_raw
+    # (from the persisted canonical) with selected_state (which may be the
+    # normalised new state) so that the repair queue survives every persist
+    # round-trip.  Resolved seeds are removed below.
+    _REPAIR_MERGE_FIELDS = [
+        "needs_retry_seed_ids",
+        "false_processed_seed_ids",
+        "zero_variant_repair_audit",
+        "seed_accounting",
+        "no_variants_by_seed",
+        "dedupe_proof_by_seed",
+        "zero_variant_seed_ids",
+    ]
+    for _f in _REPAIR_MERGE_FIELDS:
+        prev_val = previous_state_raw.get(_f)
+        new_val = selected_state.get(_f)
+        if prev_val is None and new_val is None:
+            continue
+        if isinstance(prev_val, dict) or isinstance(new_val, dict):
+            merged_dict = dict(prev_val or {})
+            merged_dict.update(new_val or {})
+            selected_state[_f] = merged_dict
+        elif isinstance(prev_val, list) or isinstance(new_val, list):
+            selected_state[_f] = merge_lists_preserving_order(prev_val or [], new_val or [])
+        else:
+            # Prefer the newer value when they are scalar
+            selected_state[_f] = new_val if new_val is not None else prev_val
+
+    # ── Validate needs_retry_seed_ids — filter out unknown IDs ──────────────
+    # IDs that do not exist in the canonical seed list are moved to a diagnostic
+    # field so they never block or redirect batch execution.
+    raw_retry = list(selected_state.get("needs_retry_seed_ids") or [])
+    valid_retry = [sid for sid in raw_retry if sid in set(ordered_seed_ids)]
+    invalid_retry = [sid for sid in raw_retry if sid not in set(ordered_seed_ids)]
+    selected_state["needs_retry_seed_ids"] = valid_retry
+    if invalid_retry:
+        existing_invalid = list(selected_state.get("invalid_needs_retry_seed_ids") or [])
+        combined_invalid = merge_lists_preserving_order(existing_invalid, invalid_retry)
+        selected_state["invalid_needs_retry_seed_ids"] = combined_invalid
+
+    # ── Remove resolved seeds from needs_retry_seed_ids ─────────────────────
+    # A seed is considered resolved if variants exist for it, OR a valid
+    # no_variants_reason exists, OR a valid dedupe_proof exists.
+    variants_by_seed: dict[str, list] = {}
+    for v in variants:
+        sid = None
+        # Try to map variant back to a seed_id
+        vmake = str(_field_value(v, "make") or "").strip().lower()
+        vmodel = str(_field_value(v, "model") or "").strip().lower()
+        for _seed in ordered_seeds:
+            if str(_seed.get("make") or "").strip().lower() == vmake and str(_seed.get("model") or "").strip().lower() == vmodel:
+                sid = _seed["seed_id"]
+                break
+        if sid:
+            variants_by_seed.setdefault(sid, []).append(v)
+    no_variants_by_seed = selected_state.get("no_variants_by_seed") or {}
+    dedupe_proof_by_seed = selected_state.get("dedupe_proof_by_seed") or {}
+    resolved_retry = set()
+    for sid in list(selected_state.get("needs_retry_seed_ids") or []):
+        has_variants = bool(variants_by_seed.get(sid))
+        has_no_variants_reason = bool((no_variants_by_seed.get(sid) or {}).get("reason"))
+        has_dedupe_proof = bool(dedupe_proof_by_seed.get(sid))
+        if has_variants or has_no_variants_reason or has_dedupe_proof:
+            resolved_retry.add(sid)
+    selected_state["needs_retry_seed_ids"] = [
+        sid for sid in (selected_state.get("needs_retry_seed_ids") or [])
+        if sid not in resolved_retry
+    ]
+
     candidate_acc = candidate.get("accumulated_clean_export")
     if not isinstance(candidate_acc, dict):
         candidate_acc = {}
@@ -3311,6 +3395,121 @@ def pull_canonical_from_github() -> dict:
         "repair_required": repair_required,
         "false_processed_seed_count": len(false_processed),
         "false_processed_seeds": false_processed,
+    }
+
+
+def recover_zero_variant_repair_state_from_backup(market: str = "IL") -> dict:
+    """Recover the zero-variant repair queue from the backup canonical.
+
+    Reads ``data/canonical/resume_package_backup_previous.json``, validates the
+    ``needs_retry_seed_ids`` it contains against the ordered seed list, then
+    merges the valid repair state into the live canonical
+    (``resume_package_canonical.json``) and into ``data/output/batch_state.json``.
+
+    Returns a summary dict with keys:
+        ok, before_needs_retry_count, recovered_needs_retry_count,
+        after_needs_retry_count, next_seed_id, invalid_seed_ids, error (on failure).
+    """
+    ordered = get_ordered_seed_list(market)
+    ordered_ids = {s["seed_id"] for s in ordered}
+
+    # -- Load backup ----------------------------------------------------------
+    backup_path = _canonical_backup_path()
+    backup = load_json_object(backup_path) if backup_path.exists() else None
+    if not isinstance(backup, dict) or not backup:
+        return {"ok": False, "error": f"Backup file not found or empty: {backup_path}"}
+
+    backup_bs = backup.get("batch_state") if isinstance(backup.get("batch_state"), dict) else {}
+
+    # -- Validate seed IDs from backup ----------------------------------------
+    raw_backup_retry = list(backup_bs.get("needs_retry_seed_ids") or [])
+    valid_backup_retry = [sid for sid in raw_backup_retry if sid in ordered_ids]
+    invalid_backup_retry = [sid for sid in raw_backup_retry if sid not in ordered_ids]
+
+    # -- Load current canonical -----------------------------------------------
+    current = load_local_canonical_resume_package()
+    if not isinstance(current, dict):
+        current = {}
+    current_bs = current.get("batch_state") if isinstance(current.get("batch_state"), dict) else {}
+
+    before_count = len(list(current_bs.get("needs_retry_seed_ids") or []))
+
+    # -- Merge repair state into current canonical ----------------------------
+    pkg = copy.deepcopy(current)
+    if not isinstance(pkg.get("batch_state"), dict):
+        pkg["batch_state"] = {}
+    canon_bs = pkg["batch_state"]
+
+    # Merge needs_retry_seed_ids
+    existing_retry = list(canon_bs.get("needs_retry_seed_ids") or [])
+    merged_retry = merge_lists_preserving_order(valid_backup_retry, existing_retry)
+    # Re-validate merged list
+    merged_retry = [sid for sid in merged_retry if sid in ordered_ids]
+    canon_bs["needs_retry_seed_ids"] = merged_retry
+
+    # Merge additional repair fields from backup
+    _BACKUP_MERGE_FIELDS = [
+        "false_processed_seed_ids",
+        "zero_variant_repair_audit",
+        "seed_accounting",
+        "no_variants_by_seed",
+        "dedupe_proof_by_seed",
+        "zero_variant_seed_ids",
+    ]
+    for _f in _BACKUP_MERGE_FIELDS:
+        bval = backup_bs.get(_f)
+        cval = canon_bs.get(_f)
+        if bval is None:
+            continue
+        if isinstance(bval, dict):
+            merged = dict(bval)
+            merged.update(cval or {})
+            canon_bs[_f] = merged
+        elif isinstance(bval, list):
+            canon_bs[_f] = merge_lists_preserving_order(bval, cval or [])
+        else:
+            if cval is None:
+                canon_bs[_f] = bval
+
+    # Carry over next_seed_id from backup if the current canonical's next_seed
+    # is ahead of the backup's repair starting point, respecting needs_retry priority.
+    if merged_retry:
+        canon_bs["next_seed_id"] = merged_retry[0]
+    elif backup_bs.get("next_seed_id") and backup_bs["next_seed_id"] in ordered_ids:
+        canon_bs["next_seed_id"] = backup_bs["next_seed_id"]
+
+    pkg["batch_state"] = canon_bs
+    save_local_canonical_resume_package(pkg)
+
+    # -- Also persist into batch_state.json -----------------------------------
+    live_state = load_batch_state(market)
+    live_state["needs_retry_seed_ids"] = merged_retry
+    for _f in _BACKUP_MERGE_FIELDS:
+        bval = backup_bs.get(_f)
+        if bval is None:
+            continue
+        lval = live_state.get(_f)
+        if isinstance(bval, dict):
+            merged_live = dict(bval)
+            merged_live.update(lval or {})
+            live_state[_f] = merged_live
+        elif isinstance(bval, list):
+            live_state[_f] = merge_lists_preserving_order(bval, lval or [])
+        else:
+            if lval is None:
+                live_state[_f] = bval
+    if merged_retry:
+        live_state["next_seed_id"] = merged_retry[0]
+    _save_state(live_state)
+
+    after_count = len(merged_retry)
+    return {
+        "ok": True,
+        "before_needs_retry_count": before_count,
+        "recovered_needs_retry_count": len(valid_backup_retry),
+        "after_needs_retry_count": after_count,
+        "next_seed_id": canon_bs.get("next_seed_id"),
+        "invalid_seed_ids": invalid_backup_retry,
     }
 
 

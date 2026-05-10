@@ -11,7 +11,7 @@ from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
-    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, persist_canonical_after_seed, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync, evaluate_batch_50_guard, repair_false_processed_zero_variant_seeds, repair_and_audit_zero_variant_processed_seeds
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, persist_canonical_after_seed, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync, evaluate_batch_50_guard, repair_false_processed_zero_variant_seeds, repair_and_audit_zero_variant_processed_seeds, recover_zero_variant_repair_state_from_backup
 except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -116,6 +116,9 @@ except ImportError as exc:
         return _get_batch_runner_error_result()
 
     def repair_and_audit_zero_variant_processed_seeds(*args, **kwargs):
+        return _get_batch_runner_error_result()
+
+    def recover_zero_variant_repair_state_from_backup(*args, **kwargs):
         return _get_batch_runner_error_result()
 from tools.gemini_client import GeminiClient
 
@@ -598,9 +601,9 @@ with tabs[2]:
         # Per-seed canonical persistence results
         per_seed_canonical = result.get("per_seed_canonical", [])
         if per_seed_canonical:
-            blocked_saves = [p for p in per_seed_canonical if not p.get("canonical_persist", {}).get("ok")]
-            github_push_failures = [p for p in per_seed_canonical if p.get("canonical_persist", {}).get("github_push_failed")]
-            saved_count = sum(1 for p in per_seed_canonical if p.get("canonical_persist", {}).get("ok"))
+            blocked_saves = [p for p in per_seed_canonical if not (p.get("canonical_persist") or {}).get("ok")]
+            github_push_failures = [p for p in per_seed_canonical if (p.get("canonical_persist") or {}).get("github_push_failed")]
+            saved_count = sum(1 for p in per_seed_canonical if (p.get("canonical_persist") or {}).get("ok"))
             if blocked_saves:
                 for b in blocked_saves:
                     st.error(f"Canonical resume package update blocked for seed {b.get('seed_id')} — local file was NOT updated.")
@@ -609,10 +612,13 @@ with tabs[2]:
                 st.warning("⚠️ Local canonical saved, GitHub push failed.")
                 with st.expander("GitHub push failure details"):
                     for f in github_push_failures:
-                        st.write(f"Seed: {f.get('seed_id')} — {f.get('canonical_persist', {}).get('push_error', '')}")
-                        st.json(f.get("canonical_persist", {}).get("push_result") or {})
+                        st.write(f"Seed: {f.get('seed_id')} — {(f.get('canonical_persist') or {}).get('push_error', '')}")
+                        st.json((f.get("canonical_persist") or {}).get("push_result") or {})
             elif saved_count > 0:
-                pushed_any = any(p.get("canonical_persist", {}).get("push_result", {}).get("ok") for p in per_seed_canonical)
+                pushed_any = any(
+                    ((p.get("canonical_persist") or {}).get("push_result") or {}).get("ok")
+                    for p in per_seed_canonical
+                )
                 if pushed_any:
                     st.success(f"Local canonical saved and pushed to GitHub after {saved_count} completed model(s).")
                 else:
@@ -667,6 +673,23 @@ with tabs[2]:
             } for t in _rtrace]
             st.dataframe(pd.DataFrame(_rtrace_rows))
         st.json(repair_result)
+
+    if st.button("🔄 Recover repair queue from backup"):
+        st.info("Recovering zero-variant repair state from backup canonical…")
+        _recover_result = recover_zero_variant_repair_state_from_backup(market=market)
+        if _recover_result.get("ok"):
+            st.success(
+                f"Repair queue recovered. "
+                f"Before: {_recover_result.get('before_needs_retry_count', 0)} seeds, "
+                f"Recovered: {_recover_result.get('recovered_needs_retry_count', 0)} seeds, "
+                f"After: {_recover_result.get('after_needs_retry_count', 0)} seeds. "
+                f"Next seed: {_recover_result.get('next_seed_id') or '(none)'}."
+            )
+            if _recover_result.get("invalid_seed_ids"):
+                st.warning(f"Invalid seed IDs filtered out: {_recover_result['invalid_seed_ids']}")
+        else:
+            st.error(f"Recovery failed: {_recover_result.get('error', 'unknown error')}")
+        st.json(_recover_result)
 
     if st.button("Retry failed only"):
         st.json(run_next_batch(limit=batch_limit_ui, market=market, make_filter=make_filter_ui or None, force_refresh=force_refresh_ui, use_cache=use_cache_ui, resume=True, include_failed=True))
