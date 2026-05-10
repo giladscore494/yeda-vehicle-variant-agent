@@ -547,11 +547,13 @@ def mark_seed_completed(
         canonical = {}
     bs = canonical.setdefault("batch_state", {})
 
-    # Remove from needs_retry / false_processed.
+    # Remove from needs_retry only.  false_processed_seed_ids is intentionally
+    # preserved so that compute_problem_repair_state can still derive
+    # total = len(false_processed_seed_ids) = 54 after seeds are completed.
+    # Removing completed seeds from false_processed caused total to shrink
+    # from 54 → 53 and completed to read 0 (Bug 2 regression).
     needs = [s for s in _string_list(bs.get("needs_retry_seed_ids")) if s != seed_id]
     bs["needs_retry_seed_ids"] = needs
-    fp = [s for s in _string_list(bs.get("false_processed_seed_ids")) if s != seed_id]
-    bs["false_processed_seed_ids"] = fp
 
     prs = canonical.setdefault("problem_repair_state", {})
     completed = _string_list(prs.get("completed_seed_ids"))
@@ -701,8 +703,114 @@ def validate_canonical_state(canonical: dict | None = None) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Public aliases (spec-required names)
+# Partial-persist repair
 # ---------------------------------------------------------------------------
+
+def repair_problem_queue_partial_persist_state(
+    canonical: dict | None = None,
+    *,
+    persist: bool = True,
+) -> dict:
+    """Detect and repair seeds that are marked completed without persisted evidence.
+
+    A seed is considered partially-persisted when it appears in
+    ``problem_repair_state.completed_seed_ids`` but neither variants for it
+    exist in ``accumulated_clean_export.variants``, nor a valid ``dedupe_proof``
+    exists in ``batch_state.dedupe_proof_by_seed``, nor a valid
+    ``no_variants_reason`` exists in ``batch_state.no_variants_by_seed``.
+
+    Such seeds are moved back to the front of ``needs_retry_seed_ids`` and
+    removed from ``completed_seed_ids`` so they will be re-processed on the
+    next run.
+
+    Returns a report dict: ``{"ok", "repaired", "changed"}``.
+    """
+    own_load = canonical is None
+    if own_load:
+        canonical = load_canonical() or {}
+    if not isinstance(canonical, dict):
+        return {"ok": False, "repaired": [], "changed": False, "issue": "canonical missing"}
+
+    bs = canonical.get("batch_state") if isinstance(canonical.get("batch_state"), dict) else {}
+    prs = canonical.get("problem_repair_state") if isinstance(canonical.get("problem_repair_state"), dict) else {}
+
+    completed = _string_list(prs.get("completed_seed_ids"))
+    if not completed:
+        return {"ok": True, "repaired": [], "changed": False}
+
+    # Build evidence lookup structures.
+    acc = canonical.get("accumulated_clean_export") if isinstance(canonical.get("accumulated_clean_export"), dict) else {}
+    variants = acc.get("variants") if isinstance(acc.get("variants"), list) else []
+    variant_makes_models = {
+        (str(v.get("make") or "").strip().lower(), str(v.get("model") or "").strip().lower())
+        for v in variants if isinstance(v, dict)
+    }
+    dedupe_proof = bs.get("dedupe_proof_by_seed") if isinstance(bs.get("dedupe_proof_by_seed"), dict) else {}
+    no_variants = bs.get("no_variants_by_seed") if isinstance(bs.get("no_variants_by_seed"), dict) else {}
+
+    repaired: list[str] = []
+    for seed_id in list(completed):
+        parts = seed_id.split("__")
+        if len(parts) < 2:
+            continue
+        seed_make = parts[0].lower()
+        seed_model = parts[1].lower()
+
+        has_variants = (seed_make, seed_model) in variant_makes_models
+        dp_entry = dedupe_proof.get(seed_id)
+        has_dedupe = (
+            isinstance(dp_entry, dict)
+            and isinstance(dp_entry.get("matched_variant_ids"), list)
+            and len(dp_entry.get("matched_variant_ids")) > 0
+        )
+        nv_entry = no_variants.get(seed_id)
+        nv_reason = nv_entry.get("reason") if isinstance(nv_entry, dict) else None
+        has_no_variants_reason = _no_variants_reason_is_valid(nv_reason)
+
+        if not (has_variants or has_dedupe or has_no_variants_reason):
+            repaired.append(seed_id)
+
+    if not repaired:
+        return {"ok": True, "repaired": [], "changed": False}
+
+    # Move repaired seeds back to the front of needs_retry.
+    repaired_set = set(repaired)
+    bs_dict = canonical.setdefault("batch_state", {})
+    existing_needs_retry = _string_list(bs_dict.get("needs_retry_seed_ids"))
+    new_needs_retry = repaired + [s for s in existing_needs_retry if s not in repaired_set]
+    bs_dict["needs_retry_seed_ids"] = new_needs_retry
+
+    # Ensure repaired seeds are present in false_processed_seed_ids.
+    existing_fp = _string_list(bs_dict.get("false_processed_seed_ids"))
+    fp_set = set(existing_fp)
+    for sid in repaired:
+        if sid not in fp_set:
+            existing_fp.append(sid)
+            fp_set.add(sid)
+    bs_dict["false_processed_seed_ids"] = existing_fp
+
+    # Remove from completed_seed_ids.
+    prs_dict = canonical.setdefault("problem_repair_state", {})
+    prs_dict["completed_seed_ids"] = [s for s in completed if s not in repaired_set]
+    remaining_completed = prs_dict["completed_seed_ids"]
+    prs_dict["last_completed_seed_id"] = remaining_completed[-1] if remaining_completed else None
+
+    # Recompute derived state.
+    _ensure_problem_repair_state(canonical)
+
+    if persist:
+        save_canonical(canonical)
+        regenerate_problem_queue(canonical)
+
+    return {
+        "ok": True,
+        "repaired": repaired,
+        "changed": True,
+        "restored_to_pending": repaired,
+    }
+
+
+
 
 # ``save_canonical_atomic`` is the spec name for the atomic canonical
 # write used by the engine.  Our ``save_canonical`` already writes
@@ -736,6 +844,7 @@ __all__ = [
     "refresh_problem_repair_state",
     "regenerate_problem_queue",
     "regenerate_problem_queue_mirror",
+    "repair_problem_queue_partial_persist_state",
     "sanitize_problem_seed_lists",
     "save_canonical",
     "save_canonical_atomic",

@@ -1716,8 +1716,15 @@ def _process_seeds(
         _save_state(state)
         # Per-seed canonical persistence: local save is mandatory; GitHub push is optional.
         # Issue 4: also persist when failed_after_retries to record seed_accounting in canonical
+        # In problem_queue mode the old persist path must NOT be called: it rebuilds from
+        # batch_state which advances the normal continuation cursor backward and fails
+        # validate_canonical_update.  The problem_queue persist path (Bug-1 fix) is invoked
+        # in run_next_batch after _process_seeds returns.
         saved_canonical = False
-        if status in {"completed", "partial"}:
+        if batch_mode == "problem_queue":
+            # Defer canonical persistence to run_next_batch via persist_canonical_problem_queue_seed.
+            pass
+        elif status in {"completed", "partial"}:
             seed_persist = persist_canonical_after_seed(
                 seed=seed,
                 batch_state=copy.deepcopy(state),
@@ -2428,7 +2435,6 @@ def run_next_batch(
         from agent.problem_queue import (
             select_next_seed as _pq_select,
             classify_seed_closure as _pq_classify,
-            mark_seed_completed as _pq_mark_completed,
             mark_seed_failed_retry as _pq_mark_failed,
         )
         _pq_local_canonical = load_local_canonical_resume_package()
@@ -2442,7 +2448,6 @@ def run_next_batch(
         _pq_canonical = {}
         _pq_selection = {"mode": "normal_batch", "seed_id": None, "blocks_normal_batch": False}
         _pq_classify = None
-        _pq_mark_completed = None
         _pq_mark_failed = None
 
     if _pq_active:
@@ -2681,9 +2686,12 @@ def run_next_batch(
         canonical_result = persist_canonical_resume_package(batch_id=batch_id, push_to_github=auto_push_canonical, market=market)
     # --- Problem-queue post-processing ---
     # After each seed result in problem_queue mode, update the canonical
-    # problem_repair_state exclusively via the problem_queue module.
+    # problem_repair_state exclusively via persist_canonical_problem_queue_seed.
+    # This function (Bug-1 fix) freezes the normal continuation cursor, merges
+    # new variants, validates, and only marks the seed completed after a
+    # successful atomic canonical save.
     pq_post_result = None
-    if _pq_active and results and _pq_classify is not None:
+    if _pq_active and results:
         pq_post_result = {}
         for entry in results:
             seed_obj = entry.get("seed") or {}
@@ -2712,23 +2720,61 @@ def run_next_batch(
                 "dedupe_proof": dedupe_dict,
                 "no_variants_reason": accounting.get("no_variants_reason") or res.get("no_variants_reason"),
             }
+
+            if _pq_classify is None:
+                pq_post_result[sid] = {"closed": False, "error": "classify unavailable"}
+                continue
+
             closed, cl_status = _pq_classify(closure_input)
-            try:
-                if closed:
-                    _pq_mark_completed(sid, result=closure_input, canonical=None)
+
+            if closed:
+                # Attempt atomic canonical persist (freeze cursor, merge variants, validate).
+                try:
+                    persist_ok_result = persist_canonical_problem_queue_seed(
+                        seed_id=sid,
+                        closure_result=closure_input,
+                        push_to_github=(auto_push_canonical or auto_push_per_seed),
+                        batch_id=batch_id,
+                        market=market,
+                    )
+                except Exception as exc:
+                    persist_ok_result = {"ok": False, "issue": str(exc)}
+
+                persist_ok = bool(isinstance(persist_ok_result, dict) and persist_ok_result.get("ok"))
+
+                if persist_ok:
+                    pq_post_result[sid] = {
+                        "closed": True,
+                        "status": cl_status,
+                        "canonical_persist": persist_ok_result,
+                    }
+                    per_seed_canonical.append({"seed_id": sid, "canonical_persist": persist_ok_result})
                 else:
-                    _pq_mark_failed(sid, canonical=None)
-                pq_post_result[sid] = {"closed": closed, "status": cl_status}
-            except Exception as exc:
-                pq_post_result[sid] = {"closed": False, "error": str(exc)}
-        # Push canonical to GitHub if enabled (canonical already persisted by mark_seed_*).
-        if (auto_push_canonical or auto_push_per_seed) and results:
-            try:
-                updated_pkg = load_local_canonical_resume_package()
-                if isinstance(updated_pkg, dict):
-                    push_canonical_resume_package(updated_pkg, batch_id=batch_id)
-            except Exception:
-                pass
+                    # Persist failed: seed remains in needs_retry.  Do NOT mark completed.
+                    pq_post_result[sid] = {
+                        "closed": False,
+                        "status": "canonical_persist_failed",
+                        "closure_status": cl_status,
+                        "canonical_persist": persist_ok_result,
+                        "error": (
+                            "problem_queue seed produced result but canonical save failed; "
+                            "seed remains pending"
+                        ),
+                    }
+            else:
+                # Seed not closed — record as failed_retry without changing completed state.
+                try:
+                    if _pq_mark_failed is not None:
+                        _pq_mark_failed(sid, canonical=None)
+                except Exception:
+                    pass
+                pq_post_result[sid] = {
+                    "closed": False,
+                    "status": cl_status,
+                    "canonical_persist": {"ok": False},
+                }
+
+        canonical_result = pq_post_result
     # --- Rerun queue post-processing (legacy) — disabled ---
     # Rerun queue manager has been removed; problem_queue is the only repair channel.
     return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result, "per_seed_canonical": per_seed_canonical, "queue_diagnostics": queue_diagnostics, "batch_execution_trace": execution_trace, "problem_queue_post": pq_post_result}
@@ -3477,6 +3523,187 @@ def _persist_batch_state_into_canonical(batch_state: dict, market: str = "IL") -
             canonical_bs[field] = incoming
     pkg["batch_state"] = canonical_bs
     save_local_canonical_resume_package(pkg)
+
+
+
+def persist_canonical_problem_queue_seed(
+    seed_id: str,
+    *,
+    closure_result: dict | None = None,
+    push_to_github: bool = False,
+    batch_id: str | None = None,
+    market: str = "IL",
+) -> dict:
+    """Atomically update canonical after a problem-queue seed succeeds.
+
+    Correct persistence order (Bug-1 fix):
+      A. Load current canonical (previous state).
+      B. Build candidate:
+         - Merge new variants from build_final_export() into accumulated_clean_export.
+         - Freeze normal cursor: last_completed_seed_id and next_seed_id stay frozen
+           at the values stored in problem_repair_state.normal_continuation.
+         - Remove seed from batch_state.needs_retry_seed_ids.
+         - Do NOT remove seed from false_processed_seed_ids (preserves total=54).
+         - Update problem_repair_state: add seed to completed_seed_ids.
+      C. Validate candidate with validate_canonical_update.
+      D. Only if validation passes: save atomically, regenerate mirror, push.
+
+    Returns ``{"ok": True, ...}`` on success; ``{"ok": False, ...}`` on any
+    failure.  The caller must NOT mark the seed completed when ok=False.
+    """
+    def _sl(v: object) -> list:
+        return [s for s in (v or []) if isinstance(s, str) and s]
+
+    try:
+        from agent.problem_queue import (
+            load_canonical,
+            save_canonical as _pq_save,
+            compute_problem_repair_state,
+            classify_seed_closure,
+            regenerate_problem_queue,
+            DEFAULT_NORMAL_CONTINUATION_LAST,
+            DEFAULT_NORMAL_CONTINUATION_NEXT,
+        )
+    except Exception as exc:
+        return {
+            "ok": False, "local_saved": False, "saved_canonical": False,
+            "pushed_any": False, "issue": f"import error: {exc}",
+        }
+
+    try:
+        # A. Load previous canonical state.
+        previous = load_local_canonical_resume_package() or {}
+        if not isinstance(previous, dict):
+            previous = {}
+
+        prev_bs = previous.get("batch_state") if isinstance(previous.get("batch_state"), dict) else {}
+        prs_existing = previous.get("problem_repair_state") if isinstance(previous.get("problem_repair_state"), dict) else {}
+        normal = prs_existing.get("normal_continuation") if isinstance(prs_existing.get("normal_continuation"), dict) else {}
+
+        # B. Resolve frozen normal cursor values.
+        frozen_last = (
+            normal.get("last_completed_seed_id")
+            or prev_bs.get("last_completed_seed_id")
+            or DEFAULT_NORMAL_CONTINUATION_LAST
+        )
+        frozen_next = (
+            normal.get("next_seed_id")
+            or prev_bs.get("next_seed_id")
+            or DEFAULT_NORMAL_CONTINUATION_NEXT
+        )
+
+        # B. Build merged variants from accumulated output.
+        merged_variants: list = []
+        try:
+            fe = build_final_export()
+            merged_variants = [v for v in (fe.get("variants") or []) if isinstance(v, dict)]
+        except Exception:
+            pass
+        if not merged_variants:
+            # Fallback: keep existing canonical variants (dedupe / no-variant case).
+            acc = previous.get("accumulated_clean_export") or {}
+            if isinstance(acc.get("variants"), list):
+                merged_variants = list(acc["variants"])
+
+        # B. Build candidate as deep copy of previous with targeted updates.
+        candidate = copy.deepcopy(previous)
+        candidate["created_at"] = _now()
+        # Use MERGED source so validate_canonical_update bypasses the
+        # batch_state_advanced check (we are adding variants via final_export
+        # but intentionally NOT advancing the normal continuation cursor).
+        candidate["_candidate_source"] = CANDIDATE_SOURCE_MERGED
+
+        # Freeze normal cursor in batch_state.
+        cand_bs = candidate.setdefault("batch_state", {})
+        cand_bs["last_completed_seed_id"] = frozen_last
+        cand_bs["next_seed_id"] = frozen_next
+        # Remove seed from needs_retry only; false_processed_seed_ids is kept
+        # intact so that compute_problem_repair_state still sees total = 54.
+        cand_bs["needs_retry_seed_ids"] = [
+            s for s in _sl(cand_bs.get("needs_retry_seed_ids")) if s != seed_id
+        ]
+
+        # Update accumulated variants.
+        candidate_acc = candidate.setdefault("accumulated_clean_export", {})
+        candidate_acc["variants"] = merged_variants
+
+        # Update problem_repair_state in candidate (mirrors mark_seed_completed).
+        cand_prs = candidate.setdefault("problem_repair_state", {})
+        completed_ids = _sl(cand_prs.get("completed_seed_ids"))
+        if seed_id not in completed_ids:
+            completed_ids.append(seed_id)
+        cand_prs["completed_seed_ids"] = completed_ids
+        cand_prs["last_completed_seed_id"] = seed_id
+        cand_prs["failed_retry_seed_ids"] = [
+            s for s in _sl(cand_prs.get("failed_retry_seed_ids")) if s != seed_id
+        ]
+        # Recompute progress from the candidate state.
+        candidate["problem_repair_state"] = compute_problem_repair_state(candidate)
+
+        # Append a status-log entry.
+        _, cl_status = (
+            classify_seed_closure(closure_result) if isinstance(closure_result, dict)
+            else (True, "completed_added")
+        )
+        log = candidate.setdefault("problem_repair_status_log", [])
+        if isinstance(log, list):
+            log.append({
+                "seed_id": seed_id,
+                "status": cl_status,
+                "recorded_at": _now(),
+                "source": "problem_queue",
+            })
+
+        # C. Validate before saving.
+        vr = validate_canonical_update(previous, candidate, market=market)
+        if not vr.get("passed", False):
+            issues = vr.get("issues") or []
+            return {
+                "ok": False,
+                "local_saved": False,
+                "saved_canonical": False,
+                "pushed_any": False,
+                "issue": "; ".join(issues) if issues else "validation failed",
+                "validate_result": vr,
+            }
+
+        # D. Save atomically.
+        _pq_save(candidate)
+
+        # Regenerate the derived problem_queue mirror.
+        try:
+            regenerate_problem_queue(candidate)
+        except Exception:
+            pass
+
+        # Optionally push to GitHub.
+        pushed_any = False
+        github_push: dict = {"ok": False, "skipped": True}
+        if push_to_github:
+            try:
+                pr = push_canonical_resume_package(candidate, batch_id=batch_id)
+                pushed_any = bool(pr and pr.get("ok"))
+                github_push = pr or {}
+            except Exception as exc:
+                github_push = {"ok": False, "error": str(exc)}
+
+        return {
+            "ok": True,
+            "local_saved": True,
+            "saved_canonical": True,
+            "pushed_any": pushed_any,
+            "validate_result": vr,
+            "github_push": github_push,
+        }
+
+    except Exception as exc:
+        return {
+            "ok": False,
+            "local_saved": False,
+            "saved_canonical": False,
+            "pushed_any": False,
+            "issue": str(exc),
+        }
 
 
 def persist_canonical_after_seed(
