@@ -6,8 +6,22 @@ def ensure_data_dirs():
     for p in ['data/input','data/output','data/cache']: (project_root()/p).mkdir(parents=True,exist_ok=True)
 def ensure_output_files():
     ensure_data_dirs();
-    for p in get_output_paths().values():
+    list_keys = [
+        'vehicle_variants_verified',
+        'vehicle_variants_partial',
+        'vehicle_conflicts',
+        'vehicle_sources',
+        'unresolved_models',
+        'run_history',
+    ]
+    object_keys = ['batch_state']
+    paths = get_output_paths()
+    for key in list_keys:
+        p = paths[key]
         if not p.exists(): p.write_text('[]\n',encoding='utf-8')
+    for key in object_keys:
+        p = paths[key]
+        if not p.exists(): p.write_text('{}\n',encoding='utf-8')
     for p in [project_root()/'data/cache/search_cache.json',project_root()/'data/cache/extraction_cache.json']:
         if not p.exists(): p.write_text('{}\n',encoding='utf-8')
 def load_json_list(path:Path)->list:
@@ -29,7 +43,7 @@ def append_unique(path:Path,records:list[dict],key_field:str):
     save_json(path,list(idx.values()))
 def get_output_paths():
     b=project_root()/'data/output'
-    return {k:b/f'{k}.json' for k in ['vehicle_variants_verified','vehicle_variants_partial','vehicle_conflicts','vehicle_sources','unresolved_models','run_history']}
+    return {k:b/f'{k}.json' for k in ['vehicle_variants_verified','vehicle_variants_partial','vehicle_conflicts','vehicle_sources','unresolved_models','run_history','batch_state']}
 def load_outputs_summary()->dict:
     ensure_output_files(); paths=get_output_paths();
     return {k:len(load_json_list(v)) for k,v in paths.items()}

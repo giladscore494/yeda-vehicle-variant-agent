@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -61,6 +62,14 @@ def _run_next_safe_batch(batch_size: int, market: str, auto_push_per_seed: bool)
         auto_push_canonical=auto_push_per_seed,
     )
     return {"repair_refresh": repair_res, "batch": result}
+
+
+def _render_json_download(path: Path | None, label: str, file_name: str, missing_message: str) -> None:
+    if path and path.exists():
+        with open(path, "rb") as f:
+            st.download_button(label, f.read(), file_name=file_name, mime="application/json")
+    else:
+        st.warning(missing_message)
 
 
 st.title("Yeda Vehicle Variant Agent")
@@ -127,10 +136,8 @@ with diag_tab:
     snap = _status_snapshot(market=market)
     paths = get_output_paths()
 
-    with open(paths["batch_state"], "rb") as f:
-        st.download_button("Download batch_state.json", f.read(), file_name="batch_state.json", mime="application/json")
-    with open("data/canonical/resume_package_canonical.json", "rb") as f:
-        st.download_button("Download resume_package_canonical.json", f.read(), file_name="resume_package_canonical.json", mime="application/json")
+    _render_json_download(paths.get("batch_state"), "Download batch_state.json", "batch_state.json", "batch_state.json not found yet")
+    _render_json_download(Path("data/canonical/resume_package_canonical.json"), "Download resume_package_canonical.json", "resume_package_canonical.json", "resume_package_canonical.json not found yet")
 
     st.json(
         {
