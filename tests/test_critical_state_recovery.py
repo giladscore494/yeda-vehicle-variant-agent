@@ -47,10 +47,24 @@ def test_run_next_batch_never_completed_all_when_needs_retry_present(monkeypatch
 
 
 def test_status_snapshot_uses_canonical_not_abarth(monkeypatch):
-    monkeypatch.setattr(app_mod, "get_ordered_seed_list", lambda market="IL": [_seed("abarth__124_spider__2016__2020__il")])
-    monkeypatch.setattr(app_mod, "load_local_canonical_resume_package", lambda: {"batch_state": {"processed_seed_ids": ["x"]}})
-    monkeypatch.setattr(app_mod, "sync_batch_state_from_canonical", lambda market="IL": {"processed_seed_ids": ["x"], "next_seed_id": "haval__h6__2022__2026__il", "needs_retry_seed_ids": []})
-    monkeypatch.setattr(app_mod, "get_batch_progress", lambda market="IL": {"next_seed": {"seed_id": "abarth__124_spider__2016__2020__il"}})
-    monkeypatch.setattr(app_mod, "build_final_export", lambda: {"variants": []})
+    # The new _status_snapshot reads from load_problem_queue_canonical (canonical-first).
+    # Patch it to return a canonical with the expected next_seed_id.
+    canonical = {
+        "batch_state": {
+            "processed_seed_ids": ["x"],
+            "needs_retry_seed_ids": [],
+            "next_seed_id": "haval__h6__2022__2026__il",
+        },
+        "problem_repair_state": {
+            "active": False,
+            "total": 0,
+            "progress": {"completed": 0, "pending": 0, "failed_retry": 0, "current_position": "0 / 0"},
+            "normal_continuation": {"next_seed_id": "haval__h6__2022__2026__il"},
+            "current_seed_id": None,
+            "last_completed_seed_id": None,
+        },
+        "accumulated_clean_export": {"variants": []},
+    }
+    monkeypatch.setattr(app_mod, "load_problem_queue_canonical", lambda: canonical)
     snap = app_mod._status_snapshot("IL")
     assert snap["next_normal_seed"] == "haval__h6__2022__2026__il"

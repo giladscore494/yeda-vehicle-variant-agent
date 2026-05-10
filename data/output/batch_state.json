@@ -2,8 +2,8 @@
   "schema_version": "batch_state_v1",
   "market": "IL",
   "created_at": "2026-05-08T16:44:55.429137+00:00",
-  "updated_at": "2026-05-10T20:10:13.513253+00:00",
-  "last_batch_id": "a582c9ce-a95d-4466-80b5-bd34f11c7c02",
+  "updated_at": "2026-05-10T20:30:33.458124+00:00",
+  "last_batch_id": "d27f985b-8d9b-4177-ac91-c18999b0b7e1",
   "total_seeds": 2,
   "processed_seed_ids": [
     "abarth__124_spider__2016__2020__il"
@@ -19,12 +19,12 @@
     }
   ],
   "failed_seed_ids": [
-    "hyundai__excel__1990__1998__il"
+    "bmw__850i__2018__2026__il"
   ],
   "skipped_seed_ids": [],
   "in_progress_seed_id": null,
-  "last_completed_seed_id": "gmc__yukon__2000__2026__il",
-  "next_seed_id": "haval__h6__2022__2026__il",
+  "last_completed_seed_id": "abarth__124_spider__2016__2020__il",
+  "next_seed_id": "bmw__850i__2018__2026__il",
   "run_history": [],
   "failed_details": [
     {
@@ -43,9 +43,9 @@
       "created_at": "2026-05-10T12:57:31.358172+00:00"
     },
     {
-      "seed_id": "hyundai__excel__1990__1998__il",
+      "seed_id": "bmw__850i__2018__2026__il",
       "reason": "test_run_next_batch_never_completed_all_when_needs_retry_present.<locals>.<lambda>() takes 0 positional arguments but 4 were given",
-      "created_at": "2026-05-10T20:10:13.511911+00:00"
+      "created_at": "2026-05-10T20:30:33.454592+00:00"
     }
   ],
   "needs_retry_seed_ids": [
@@ -606,12 +606,12 @@
       "verified_variants": 0,
       "partial_variants": 0,
       "unresolved": 0,
-      "failed": 0,
+      "failed": 1,
       "completed": false
     }
   },
   "_last_queue_seed_ids": [
-    "hyundai__excel__1990__1998__il"
+    "bmw__850i__2018__2026__il"
   ],
   "_last_total_attempts": 6
 }

@@ -50,7 +50,7 @@ ALLOWED_NO_VARIANTS_REASONS = {
     "blocked_by_validation",
 }
 
-REPAIR_QUEUE_SOURCES = {"zero_variant_repair", "needs_retry", "hole_repair", "fill_coverage_holes"}
+REPAIR_QUEUE_SOURCES = {"zero_variant_repair", "needs_retry", "hole_repair", "fill_coverage_holes", "problem_queue"}
 MAX_RETRY_ATTEMPTS = 5
 
 
@@ -2421,7 +2421,50 @@ def run_next_batch(
     auto_push_per_seed: bool = False,
     commit_message_prefix: str = "Update canonical vehicle variants",
 ):
-    # --- Rerun queue gate ---
+    # --- Canonical problem-queue gate (primary selector) ---
+    # Uses load_local_canonical_resume_package (patchable in tests) so that
+    # test fixtures that patch that function also control the PQ gate.
+    try:
+        from agent.problem_queue import (
+            select_next_seed as _pq_select,
+            classify_seed_closure as _pq_classify,
+            mark_seed_completed as _pq_mark_completed,
+            mark_seed_failed_retry as _pq_mark_failed,
+        )
+        _pq_local_canonical = load_local_canonical_resume_package()
+        _pq_canonical = _pq_local_canonical if isinstance(_pq_local_canonical, dict) else {}
+        _pq_selection = _pq_select(_pq_canonical)
+        _pq_active = _pq_selection.get("mode") == "problem_queue"
+        _pq_seed_id = _pq_selection.get("seed_id") if _pq_active else None
+    except Exception:
+        _pq_active = False
+        _pq_seed_id = None
+        _pq_canonical = {}
+        _pq_selection = {"mode": "normal_batch", "seed_id": None, "blocks_normal_batch": False}
+        _pq_classify = None
+        _pq_mark_completed = None
+        _pq_mark_failed = None
+
+    if _pq_active:
+        # Hard guard: s1 and invalid tokens must never become the active seed.
+        _pq_invalid = not _pq_seed_id or not _pq_seed_id.replace("_", "").replace("-", "").strip()
+        if _pq_invalid or _pq_seed_id in {"s1", "", None}:
+            return {
+                "status": "blocked",
+                "error": f"problem_queue selected invalid seed_id: {_pq_seed_id!r}",
+                "batch_mode": "problem_queue",
+                "results": [],
+            }
+        # Hard guard: block any attempt to run Haval while problem_queue is active.
+        if _pq_seed_id == "haval__h6__2022__2026__il":
+            return {
+                "status": "blocked",
+                "error": "problem_queue is active but selected seed is haval__h6 (normal continuation) — refusing to advance normal batch",
+                "batch_mode": "problem_queue",
+                "results": [],
+            }
+
+    # --- Rerun queue gate (legacy — only used when problem_queue is NOT active) ---
     # If data/output/rerun_queue.json exists with pending seeds, force the
     # batch to consume only the queue head and refuse to advance the normal
     # continuation cursor.  This is the single active repair gate.
@@ -2430,7 +2473,7 @@ def run_next_batch(
         _rerun_manager = RerunQueueManager(market=market)
     except Exception:
         _rerun_manager = None
-    _rerun_active = bool(_rerun_manager and _rerun_manager.queue_exists() and _rerun_manager.has_pending())
+    _rerun_active = (not _pq_active) and bool(_rerun_manager and _rerun_manager.queue_exists() and _rerun_manager.has_pending())
     _rerun_queue_data = _rerun_manager.load_queue() if _rerun_active else {}
     _rerun_normal_next = (_rerun_queue_data.get("normal_continuation") or {}).get("next_seed_id") if _rerun_active else None
     _rerun_normal_last_completed = (_rerun_queue_data.get("normal_continuation") or {}).get("last_completed_seed_id") if _rerun_active else None
@@ -2512,7 +2555,28 @@ def run_next_batch(
         force_refresh = True
         use_cache = False
     # --- Build queue ---
-    if _rerun_active:
+    if _pq_active:
+        # Problem-queue mode: run exactly the canonical current seed.
+        # Normal continuation cursor must not advance.
+        seed_dict = next(
+            (seed_to_dict(s, default_market=market) for s in ordered if s["seed_id"] == _pq_seed_id),
+            None,
+        )
+        if seed_dict is None:
+            # Synthesize a minimal seed dict when the ordered list does not contain it.
+            seed_dict = {
+                "seed_id": _pq_seed_id,
+                "make": "",
+                "model": "",
+                "year_start": 0,
+                "year_end": 0,
+                "market": market,
+            }
+        queue = [seed_dict]
+        coverage = audit_coverage_until_last_completed(candidates, state, outputs)
+        holes = []
+        batch_mode = "problem_queue"
+    elif _rerun_active:
         head = _rerun_manager.next_seed() or {}
         seed_dict = next((seed_to_dict(s, default_market=market) for s in ordered if s["seed_id"] == head.get("seed_id")), None)
         if seed_dict is None:
@@ -2635,14 +2699,61 @@ def run_next_batch(
     payload = {"batch": {"batch_id": batch_id, "started_at": _now(), "requested_limit": limit, "processed": len(results), "batch_mode": batch_mode}, "results": results, "coverage_audit_after_batch": coverage_after}
     save_json(latest_batch_path, payload)
     canonical_result = None
-    if len(results) > 0 and not _rerun_active:
-        # In RERUN_QUEUE mode the per-seed persist_canonical_after_seed call
-        # has already saved the canonical with frozen normal continuation.
-        # Calling persist_canonical_resume_package here would re-run
-        # build_canonical_candidate's normalization and reject the package
-        # for "moved backward" because canonical seed order places rerun
-        # seeds before the normal continuation point.
+    if len(results) > 0 and not _rerun_active and not _pq_active:
+        # In RERUN_QUEUE and PROBLEM_QUEUE modes the per-seed persist call
+        # has already saved the canonical.  Calling persist_canonical_resume_package
+        # here would rebuild from scratch and may conflict with frozen cursors.
         canonical_result = persist_canonical_resume_package(batch_id=batch_id, push_to_github=auto_push_canonical, market=market)
+    # --- Problem-queue post-processing ---
+    # After each seed result in problem_queue mode, update the canonical
+    # problem_repair_state exclusively via the problem_queue module.
+    pq_post_result = None
+    if _pq_active and results and _pq_classify is not None:
+        pq_post_result = {}
+        for entry in results:
+            seed_obj = entry.get("seed") or {}
+            sid = seed_obj.get("seed_id")
+            if not sid:
+                continue
+            res = entry.get("result") or {}
+            accounting = res.get("accounting") or {}
+            variants_added = int(
+                accounting.get("variants_added_to_canonical") or res.get("variants_created") or 0
+            )
+            dedupe_rows = accounting.get("dedupe_proof") or []
+            if isinstance(dedupe_rows, list):
+                matched_ids = [
+                    r.get("matched_variant_id")
+                    for r in dedupe_rows
+                    if isinstance(r, dict) and r.get("matched_variant_id")
+                ]
+                dedupe_dict = {"matched_variant_ids": matched_ids}
+            elif isinstance(dedupe_rows, dict):
+                dedupe_dict = dedupe_rows
+            else:
+                dedupe_dict = {}
+            closure_input = {
+                "variants_added_to_canonical": variants_added,
+                "dedupe_proof": dedupe_dict,
+                "no_variants_reason": accounting.get("no_variants_reason") or res.get("no_variants_reason"),
+            }
+            closed, cl_status = _pq_classify(closure_input)
+            try:
+                if closed:
+                    _pq_mark_completed(sid, result=closure_input, canonical=None)
+                else:
+                    _pq_mark_failed(sid, canonical=None)
+                pq_post_result[sid] = {"closed": closed, "status": cl_status}
+            except Exception as exc:
+                pq_post_result[sid] = {"closed": False, "error": str(exc)}
+        # Push canonical to GitHub if enabled (canonical already persisted by mark_seed_*).
+        if (auto_push_canonical or auto_push_per_seed) and results:
+            try:
+                updated_pkg = load_local_canonical_resume_package()
+                if isinstance(updated_pkg, dict):
+                    push_canonical_resume_package(updated_pkg, batch_id=batch_id)
+            except Exception:
+                pass
     # --- Rerun queue post-processing ---
     rerun_finalize = None
     if _rerun_active and _rerun_manager is not None and results:
@@ -2680,7 +2791,7 @@ def run_next_batch(
                 rerun_finalize = _rerun_manager.finalize_if_complete()
             except Exception as exc:
                 rerun_finalize = {"ok": False, "error": str(exc)}
-    return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result, "per_seed_canonical": per_seed_canonical, "queue_diagnostics": queue_diagnostics, "batch_execution_trace": execution_trace, "rerun_queue_finalize": rerun_finalize, "rerun_queue_progress": (_rerun_manager.progress_summary() if _rerun_manager is not None else None)}
+    return {"status": "completed", "batch_id": batch_id, "batch_mode": batch_mode, "processed": len(results), "remaining": max(remaining, 0), "results": results, "holes_detected": bool(holes), "holes_count_before": len(holes), "holes_processed_this_batch": len(results) if holes else 0, "coverage_audit_after_batch": coverage_after, "canonical_persist": canonical_result, "per_seed_canonical": per_seed_canonical, "queue_diagnostics": queue_diagnostics, "batch_execution_trace": execution_trace, "rerun_queue_finalize": rerun_finalize, "rerun_queue_progress": (_rerun_manager.progress_summary() if _rerun_manager is not None else None), "problem_queue_post": pq_post_result}
 
 
 def repair_coverage_until_clean(limit_per_pass=20, max_passes=10, market="IL"):

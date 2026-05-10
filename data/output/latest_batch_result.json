@@ -1,19 +1,19 @@
 {
   "batch": {
-    "batch_id": "a582c9ce-a95d-4466-80b5-bd34f11c7c02",
-    "started_at": "2026-05-10T20:10:13.514354+00:00",
+    "batch_id": "d27f985b-8d9b-4177-ac91-c18999b0b7e1",
+    "started_at": "2026-05-10T20:30:33.459487+00:00",
     "requested_limit": 1,
     "processed": 1,
-    "batch_mode": "rerun_queue"
+    "batch_mode": "problem_queue"
   },
   "results": [
     {
       "seed": {
-        "seed_id": "hyundai__excel__1990__1998__il",
-        "make": "Hyundai",
-        "model": "Excel",
-        "year_start": 1990,
-        "year_end": 1998,
+        "seed_id": "bmw__850i__2018__2026__il",
+        "make": "Bmw",
+        "model": "850I",
+        "year_start": 2018,
+        "year_end": 2026,
         "market": "IL"
       },
       "result": {

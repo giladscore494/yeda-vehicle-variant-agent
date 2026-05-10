@@ -9,74 +9,7 @@
     "next_seed_id": "haval__h6__2022__2026__il"
   },
   "total": 54,
-  "pending": [
-    {
-      "seed_id": "hyundai__ioniq_5_n__2024__2026__il",
-      "make": "Hyundai",
-      "model": "Ioniq 5 N",
-      "year_start": 2024,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "hyundai__ioniq_6__2023__2026__il",
-      "make": "Hyundai",
-      "model": "Ioniq 6",
-      "year_start": 2023,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "hyundai__ioniq__2016__2022__il",
-      "make": "Hyundai",
-      "model": "Ioniq",
-      "year_start": 2016,
-      "year_end": 2022,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "hyundai__ix35__2010__2015__il",
-      "make": "Hyundai",
-      "model": "ix35",
-      "year_start": 2010,
-      "year_end": 2015,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "hyundai__kona__2017__2026__il",
-      "make": "Hyundai",
-      "model": "Kona",
-      "year_start": 2017,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    },
-    {
-      "seed_id": "infiniti__qx80__2010__2022__il",
-      "make": "Infiniti",
-      "model": "QX80",
-      "year_start": 2010,
-      "year_end": 2022,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 0,
-      "last_status": null
-    }
-  ],
+  "pending": [],
   "completed": [
     {
       "seed_id": "fiat__bravo__1995__2014__il",
@@ -285,6 +218,32 @@
       "last_status": "success",
       "variants_added": 2,
       "resolved_at": "2026-05-10T20:10:14.536700+00:00"
+    },
+    {
+      "seed_id": "hyundai__kona__2017__2026__il",
+      "make": "Hyundai",
+      "model": "Kona",
+      "year_start": 2017,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 2,
+      "resolved_at": "2026-05-10T20:25:45.488550+00:00"
+    },
+    {
+      "seed_id": "infiniti__qx80__2010__2022__il",
+      "make": "Infiniti",
+      "model": "QX80",
+      "year_start": 2010,
+      "year_end": 2022,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "success",
+      "variants_added": 2,
+      "resolved_at": "2026-05-10T20:25:45.565123+00:00"
     }
   ],
   "failed_retry": [
@@ -799,14 +758,78 @@
         "has_no_variants_reason": false,
         "has_dedupe_proof": false
       }
+    },
+    {
+      "seed_id": "hyundai__ioniq_5_n__2024__2026__il",
+      "make": "Hyundai",
+      "model": "Ioniq 5 N",
+      "year_start": 2024,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "hyundai__ioniq_6__2023__2026__il",
+      "make": "Hyundai",
+      "model": "Ioniq 6",
+      "year_start": 2023,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "hyundai__ioniq__2016__2022__il",
+      "make": "Hyundai",
+      "model": "Ioniq",
+      "year_start": 2016,
+      "year_end": 2022,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
+    },
+    {
+      "seed_id": "hyundai__ix35__2010__2015__il",
+      "make": "Hyundai",
+      "model": "ix35",
+      "year_start": 2010,
+      "year_end": 2015,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 1,
+      "last_status": "failed_retry",
+      "last_result_summary": {
+        "variants_added": 0,
+        "has_no_variants_reason": false,
+        "has_dedupe_proof": false
+      }
     }
   ],
   "invalid_seed_ids": [],
-  "updated_at": "2026-05-10T20:10:21.734841+00:00",
+  "updated_at": "2026-05-10T20:25:45.565600+00:00",
   "progress": {
-    "completed": 16,
-    "pending": 6,
-    "failed_retry": 32,
-    "percent": 30
+    "completed": 18,
+    "pending": 0,
+    "failed_retry": 36,
+    "percent": 33
   }
 }
