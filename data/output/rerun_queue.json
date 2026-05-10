@@ -1,6 +1,6 @@
 {
   "schema_version": "rerun_queue_v1",
-  "created_at": "2026-05-10T19:31:25.091789+00:00",
+  "created_at": "2026-05-10T19:32:53.959989+00:00",
   "market": "IL",
   "source_canonical_path": "data/canonical/resume_package_canonical.json",
   "reason": "processed_zero_variant_without_proof",
@@ -10,6 +10,17 @@
   },
   "total": 54,
   "pending": [
+    {
+      "seed_id": "bmw__850i__2018__2026__il",
+      "make": "BMW",
+      "model": "850i",
+      "year_start": 2018,
+      "year_end": 2026,
+      "market": "IL",
+      "reason": "processed_zero_variant_without_proof",
+      "attempts": 0,
+      "last_status": null
+    },
     {
       "seed_id": "bmw__z4_sdrive20i__2019__2026__il",
       "make": "BMW",
@@ -595,30 +606,13 @@
     }
   ],
   "completed": [],
-  "failed_retry": [
-    {
-      "seed_id": "bmw__850i__2018__2026__il",
-      "make": "BMW",
-      "model": "850i",
-      "year_start": 2018,
-      "year_end": 2026,
-      "market": "IL",
-      "reason": "processed_zero_variant_without_proof",
-      "attempts": 1,
-      "last_status": "failed_retry",
-      "last_result_summary": {
-        "variants_added": 0,
-        "has_no_variants_reason": false,
-        "has_dedupe_proof": false
-      }
-    }
-  ],
+  "failed_retry": [],
   "invalid_seed_ids": [],
-  "updated_at": "2026-05-10T19:31:28.792981+00:00",
+  "updated_at": "2026-05-10T19:32:53.960740+00:00",
   "progress": {
     "completed": 0,
-    "pending": 53,
-    "failed_retry": 1,
+    "pending": 54,
+    "failed_retry": 0,
     "percent": 0
   }
 }
