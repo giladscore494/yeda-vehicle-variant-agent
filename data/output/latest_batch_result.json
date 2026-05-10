@@ -1,0 +1,28 @@
+{
+  "batch": {
+    "batch_id": "94d62be6-7d32-4c0c-9166-b3fc65832e76",
+    "started_at": "2026-05-10T18:36:28.840699+00:00",
+    "requested_limit": 1,
+    "processed": 1,
+    "batch_mode": "needs_retry"
+  },
+  "results": [
+    {
+      "seed": {
+        "seed_id": "bmw__850i__2018__2026__il",
+        "make": "Bmw",
+        "model": "850I",
+        "year_start": 2018,
+        "year_end": 2026,
+        "market": "IL"
+      },
+      "result": {
+        "status": "error",
+        "error": "test_run_next_batch_never_completed_all_when_needs_retry_present.<locals>.<lambda>() takes 0 positional arguments but 4 were given"
+      }
+    }
+  ],
+  "coverage_audit_after_batch": {
+    "missing_seeds": []
+  }
+}
