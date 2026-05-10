@@ -1,7 +1,7 @@
 {
   "batch": {
-    "batch_id": "71638c8e-ac97-4e3a-9bd2-7a79c43c0d72",
-    "started_at": "2026-05-10T20:41:13.585746+00:00",
+    "batch_id": "0c202e03-8b2a-40ee-9e9b-b629521eccda",
+    "started_at": "2026-05-10T20:52:28.661254+00:00",
     "requested_limit": 1,
     "processed": 1,
     "batch_mode": "problem_queue"
@@ -9,11 +9,11 @@
   "results": [
     {
       "seed": {
-        "seed_id": "bmw__850i__2018__2026__il",
-        "make": "Bmw",
-        "model": "850I",
-        "year_start": 2018,
-        "year_end": 2026,
+        "seed_id": "daewoo__lacetti__2003__2011__il",
+        "make": "",
+        "model": "",
+        "year_start": 0,
+        "year_end": 0,
         "market": "IL"
       },
       "result": {
