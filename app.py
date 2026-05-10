@@ -11,7 +11,7 @@ from core.ingest import get_makes, get_models_by_make, count_makes, count_models
 from agent.runner import run_single_model
 _BATCH_RUNNER_IMPORT_ERROR = None
 try:
-    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, persist_canonical_after_seed, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync, evaluate_batch_50_guard
+    from agent.batch_runner import run_next_batch, get_batch_progress, load_batch_state, rebuild_batch_state_from_outputs, build_final_export, build_resume_package, build_canonical_candidate, detect_import_file_type, import_progress_json, repair_coverage_until_clean, cleanup_retryable_schema_errors, persist_canonical_resume_package, persist_canonical_after_seed, push_local_canonical_to_github, pull_canonical_from_github, canonical_integrity_report, load_local_canonical_resume_package, save_local_canonical_resume_package, diagnose_canonical_github_sync, validate_canonical_update, evaluate_continue_guard, canonical_variant_count, rebuild_canonical_metadata_from_accumulated, _validate_canonical_coverage_sync, evaluate_batch_50_guard, repair_false_processed_zero_variant_seeds
 except ImportError as exc:
     _BATCH_RUNNER_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
 
@@ -111,6 +111,9 @@ except ImportError as exc:
 
     def evaluate_batch_50_guard(*args, **kwargs):
         return {"passed": False, "issues": [_BATCH_RUNNER_IMPORT_ERROR]}
+
+    def repair_false_processed_zero_variant_seeds(*args, **kwargs):
+        return _get_batch_runner_error_result()
 from tools.gemini_client import GeminiClient
 
 st.set_page_config(page_title="Yeda Vehicle Variant Agent", layout="wide")
@@ -322,6 +325,34 @@ with tabs[2]:
         st.warning("Coverage holes detected. Next batch will repair these before continuing.")
     st.dataframe(pd.DataFrame(audit.get("missing_seeds", [])))
     st.write({"continue_guard_passed": continue_guard.get("passed"), "continue_guard_issues": continue_guard.get("issues", [])})
+
+    # --- Repair false processed seeds button (state-repair, no Gemini) ---
+    if int(continue_guard.get("false_processed_seed_count", 0) or 0) > 0:
+        st.warning(
+            f"⚠️ Guard: {continue_guard.get('false_processed_seed_count')} false-processed zero-variant seed(s) detected. "
+            "Use 'Repair false processed seeds' to fix the state without calling Gemini."
+        )
+        if st.button("Repair false processed seeds", key="repair_false_processed_seeds_btn"):
+            with st.spinner("Repairing false-processed seeds…"):
+                _repair_res = repair_false_processed_zero_variant_seeds(market=market)
+            if _repair_res.get("ok"):
+                st.success(
+                    f"Repair complete: {_repair_res.get('repaired_count', 0)} seed(s) moved to needs-retry. "
+                    f"Processed count: {_repair_res.get('processed_seed_count_before')} → {_repair_res.get('processed_seed_count_after')}."
+                )
+                st.write({
+                    "repaired_count": _repair_res.get("repaired_count"),
+                    "moved_to_needs_retry_count": _repair_res.get("moved_to_needs_retry_count"),
+                    "processed_seed_count_before": _repair_res.get("processed_seed_count_before"),
+                    "processed_seed_count_after": _repair_res.get("processed_seed_count_after"),
+                    "backup_canonical_path": _repair_res.get("backup_canonical_path"),
+                    "backup_batch_state_path": _repair_res.get("backup_batch_state_path"),
+                })
+                st.subheader("Guard result after repair")
+                st.json(_repair_res.get("guard_after", {}))
+            else:
+                st.error(f"Repair failed: {_repair_res.get('error', 'Unknown error')}")
+                st.json(_repair_res)
 
     batch_limit_ui = st.selectbox("Batch limit", [1,3,5,10,20,50], index=4, key='batch_limit_ui')
     st.caption("Batch size does not reduce API cost per vehicle. Cost is mainly token/model dependent. Batch 50 mainly reduces manual overhead.")

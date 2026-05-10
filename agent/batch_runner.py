@@ -1678,6 +1678,130 @@ def repair_false_processed_seeds(package: dict, ordered_seeds: list[dict] | None
     }
 
 
+def repair_false_processed_zero_variant_seeds(market: str = "IL") -> dict:
+    """State-repair action: fix corrupted processed state for false-processed zero-variant seeds.
+
+    Loads the local canonical resume package, identifies seeds in processed_seed_ids that have:
+      - matched_variants_count == 0
+      - no dedupe_proof
+      - no no_variants_reason
+
+    Then:
+      - Creates timestamped backups of canonical and batch_state before modifying anything.
+      - Removes those seed_ids from processed_seed_ids.
+      - Adds those seed_ids to needs_retry_seed_ids and false_processed_seed_ids.
+      - Adds repair_status / repair_reason markers in seed_accounting for each moved seed.
+      - Recomputes canonical metadata (coverage_by_make, verified/partial lists) from
+        accumulated_clean_export.variants so that mismatch warnings disappear.
+      - Saves the repaired canonical package and batch_state locally.
+
+    Does NOT call Gemini, does NOT delete canonical variants, does NOT push to GitHub.
+
+    Returns a summary dict with:
+      ok, repaired_count, moved_to_needs_retry_count, processed_seed_count_before,
+      processed_seed_count_after, backup_canonical_path, backup_batch_state_path,
+      repaired_seed_ids, guard_after (guard result after repair), error (on failure).
+    """
+    ordered = get_ordered_seed_list(market)
+    canonical = load_local_canonical_resume_package()
+    if not isinstance(canonical, dict):
+        return {"ok": False, "error": "canonical package missing — cannot repair"}
+
+    # --- counts before repair ---
+    bs_before = canonical.get("batch_state") if isinstance(canonical.get("batch_state"), dict) else {}
+    processed_before = list(bs_before.get("processed_seed_ids") or [])
+    processed_seed_count_before = len(processed_before)
+
+    # --- find false-processed seeds ---
+    false_processed = find_processed_zero_variant_seeds(canonical, ordered_seeds=ordered)
+    if not false_processed:
+        return {
+            "ok": True,
+            "repaired_count": 0,
+            "moved_to_needs_retry_count": 0,
+            "processed_seed_count_before": processed_seed_count_before,
+            "processed_seed_count_after": processed_seed_count_before,
+            "backup_canonical_path": None,
+            "backup_batch_state_path": None,
+            "repaired_seed_ids": [],
+            "guard_after": evaluate_continue_guard(market=market),
+        }
+
+    false_ids = [r["seed_id"] for r in false_processed if isinstance(r, dict) and r.get("seed_id")]
+
+    # --- create timestamped backups ---
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    canonical_path = _canonical_resume_path()
+    batch_state_path = _batch_state_path()
+
+    # Backup paths start as None; they are set on success and remain None if backup
+    # creation fails (non-fatal — a warning is printed and repair continues).
+    backup_canonical_path: str | None = None
+    backup_batch_state_path: str | None = None
+    try:
+        bk_dir = canonical_path.parent
+        bk_dir.mkdir(parents=True, exist_ok=True)
+        bk_canonical = bk_dir / f"resume_package_canonical_backup_{ts}.json"
+        save_json(bk_canonical, canonical)
+        backup_canonical_path = str(bk_canonical)
+    except Exception as exc:
+        print(f"[repair] WARNING: could not create canonical backup: {exc}")
+
+    try:
+        bs_dir = batch_state_path.parent
+        bs_dir.mkdir(parents=True, exist_ok=True)
+        current_bs = load_json_object(batch_state_path) if batch_state_path.exists() else {}
+        bk_bs = bs_dir / f"batch_state_backup_{ts}.json"
+        save_json(bk_bs, current_bs)
+        backup_batch_state_path = str(bk_bs)
+    except Exception as exc:
+        print(f"[repair] WARNING: could not create batch_state backup: {exc}")
+
+    # --- apply in-memory repair to the package ---
+    repaired_pkg = repair_false_processed_seeds(canonical, ordered_seeds=ordered, market=market)["package"]
+
+    # --- stamp seed_accounting with repair markers ---
+    bs_repaired = repaired_pkg.get("batch_state") if isinstance(repaired_pkg.get("batch_state"), dict) else {}
+    accounting = bs_repaired.setdefault("seed_accounting", {})
+    repair_ts = _now()
+    for sid in false_ids:
+        entry = accounting.get(sid) if isinstance(accounting.get(sid), dict) else {}
+        entry["repair_status"] = "moved_from_processed_to_needs_retry"
+        entry["repair_reason"] = "false_processed_zero_variant_without_proof"
+        entry["repair_timestamp"] = repair_ts
+        accounting[sid] = entry
+    bs_repaired["seed_accounting"] = accounting
+
+    # --- recompute canonical metadata from accumulated_clean_export.variants ---
+    repaired_pkg = rebuild_canonical_metadata_from_accumulated(repaired_pkg, ordered)
+    # After recompute the _metadata_repaired_from_accumulated flag may be set;
+    # clear it so the coverage_by_make warning disappears in the UI.
+    repaired_pkg.pop("_metadata_repaired_from_accumulated", None)
+
+    # --- persist repaired canonical and batch_state ---
+    save_local_canonical_resume_package(repaired_pkg)
+    repaired_bs = repaired_pkg.get("batch_state") if isinstance(repaired_pkg.get("batch_state"), dict) else {}
+    _save_state({**repaired_bs, "schema_version": BATCH_STATE_SCHEMA, "market": market})
+
+    processed_after = list(repaired_bs.get("processed_seed_ids") or [])
+    processed_seed_count_after = len(processed_after)
+    moved_count = len(set(false_ids))
+
+    guard_after = evaluate_continue_guard(market=market)
+
+    return {
+        "ok": True,
+        "repaired_count": moved_count,
+        "moved_to_needs_retry_count": moved_count,
+        "processed_seed_count_before": processed_seed_count_before,
+        "processed_seed_count_after": processed_seed_count_after,
+        "backup_canonical_path": backup_canonical_path,
+        "backup_batch_state_path": backup_batch_state_path,
+        "repaired_seed_ids": sorted(set(false_ids)),
+        "guard_after": guard_after,
+    }
+
+
 def _apply_false_processed_repair_to_batch_state(
     batch_state: dict,
     ordered_seeds: list[dict],
