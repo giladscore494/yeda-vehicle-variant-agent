@@ -1,10 +1,10 @@
 {
   "batch": {
-    "batch_id": "c6ed4fa0-49bb-4112-8fbf-0db70946cc8f",
-    "started_at": "2026-05-10T18:54:45.184816+00:00",
+    "batch_id": "f1b18eaa-dfbe-46ca-9a55-639fdb4e7b82",
+    "started_at": "2026-05-10T19:31:28.792079+00:00",
     "requested_limit": 1,
     "processed": 1,
-    "batch_mode": "needs_retry"
+    "batch_mode": "rerun_queue"
   },
   "results": [
     {

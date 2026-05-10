@@ -40,8 +40,59 @@ def _status_snapshot(market: str = "IL") -> dict:
     last_push = _safe_dict(_safe_dict(canonical.get("merge_metadata")).get("last_push_result"))
 
     rerun_manager = RerunQueueManager(market=market)
+
+    # Auto-create the explicit rerun queue file from canonical state when
+    # canonical reports needs_retry seeds but no data/output/rerun_queue.json
+    # exists yet.  This guarantees that the UI surfaces the RERUN_QUEUE mode
+    # on first load — without it the dashboard would incorrectly fall back
+    # to normal_batch and advance the cursor past the BMW 850i seed.
+    canonical_bs = _safe_dict(canonical.get("batch_state"))
+    canonical_needs_retry = [sid for sid in (canonical_bs.get("needs_retry_seed_ids") or []) if isinstance(sid, str) and sid]
+    if canonical_needs_retry and not rerun_manager.queue_exists():
+        try:
+            rerun_manager.ensure_queue_exists_from_canonical(ordered_seeds=ordered)
+        except Exception:
+            pass
+
     rerun_active = rerun_manager.queue_exists() and rerun_manager.has_pending()
     rerun_progress = rerun_manager.progress_summary() if rerun_manager.queue_exists() else None
+
+    # If canonical still reports any needs_retry seeds, the rerun queue is
+    # by definition not closed — even if the queue file is momentarily
+    # absent or unreadable, the work is not done.
+    rerun_queue_closed = (not rerun_active) and rerun_progress is None and not canonical_needs_retry
+
+    # ------------------------------------------------------------------
+    # Dedicated axes
+    # ------------------------------------------------------------------
+    # While a rerun queue is active the normal batch axis is FROZEN: it
+    # must continue to show ``haval__h6`` as the paused next seed and
+    # ``gmc__yukon`` as the last completed normal seed — and must never
+    # leak BMW 850i (a rerun-queue seed) as the next normal seed.
+    rp = _safe_dict(rerun_progress)
+    canonical_last_completed = canonical_bs.get("last_completed_seed_id") or batch_state.get("last_completed_seed_id")
+    canonical_next_seed = canonical_bs.get("next_seed_id") or batch_state.get("next_seed_id") or _safe_dict(progress.get("next_seed")).get("seed_id")
+    if rerun_active:
+        normal_next_paused = rp.get("normal_continuation_paused_at") or rp.get("normal_continuation_seed") or canonical_next_seed
+        normal_last_completed = canonical_last_completed
+        # The "next normal seed" in rerun mode is the paused continuation
+        # target — never the head of the rerun queue.
+        next_normal_seed = normal_next_paused
+    else:
+        normal_next_paused = None
+        normal_last_completed = canonical_last_completed
+        next_normal_seed = canonical_next_seed
+
+    pending_count = int(rp.get("pending_count") or 0)
+    completed_count_rerun = int(rp.get("completed_count") or 0)
+    failed_retry_count = int(rp.get("failed_retry_count") or 0)
+    total_rerun = int(rp.get("total_rerun") or 0)
+    current_rerun_seed = rp.get("current_rerun_seed") or rp.get("current_seed")
+    current_rerun_position = rp.get("current_rerun_position")
+    if not current_rerun_position and total_rerun:
+        pos = completed_count_rerun + 1 if pending_count else (completed_count_rerun or total_rerun)
+        current_rerun_position = f"{pos} / {total_rerun}"
+    rerun_progress_percent = rp.get("progress_percent") or 0
 
     return {
         "active_mode": "rerun_queue" if rerun_active else "normal_batch",
@@ -50,16 +101,30 @@ def _status_snapshot(market: str = "IL") -> dict:
         "progress": progress,
         "total_seeds": len(ordered),
         "processed_count": len(processed),
+        "overall_processed_count": len(processed),
         "needs_retry": needs_retry,
         "invalid_retry": invalid_retry,
         "current_repair_seed": needs_retry[0] if needs_retry else None,
-        "next_normal_seed": batch_state.get("next_seed_id") or _safe_dict(progress.get("next_seed")).get("seed_id"),
-        "safe_to_continue": (not rerun_active) and len(needs_retry) == 0,
+        "next_normal_seed": next_normal_seed,
+        # Normal batch axis (frozen while rerun_active):
+        "normal_next_seed_paused_at": normal_next_paused,
+        "normal_last_completed_seed_id": normal_last_completed,
+        "safe_to_continue": (not rerun_active) and len(needs_retry) == 0 and not canonical_needs_retry,
         "variants_count": len(list(_safe_dict(final_export).get("variants") or [])),
         "last_push": last_push,
         "rerun_active": rerun_active,
         "rerun_progress": rerun_progress,
-        "rerun_queue_closed": (not rerun_active) and rerun_progress is None,
+        "rerun_queue_closed": rerun_queue_closed,
+        # Dedicated rerun progress axis:
+        "rerun_total": total_rerun,
+        "rerun_completed": completed_count_rerun,
+        "rerun_pending": pending_count,
+        "rerun_failed_retry": failed_retry_count,
+        "current_rerun_seed": current_rerun_seed,
+        "current_rerun_position": current_rerun_position,
+        "last_completed_rerun_seed": rp.get("last_completed_rerun_seed"),
+        "normal_continuation_paused_at": (rp.get("normal_continuation_paused_at") or rp.get("normal_continuation_seed")) if rerun_active else None,
+        "rerun_progress_percent": rerun_progress_percent,
     }
 
 
@@ -105,30 +170,35 @@ with main_tab:
 
     if snap.get("rerun_active"):
         st.subheader("Mode: Rerun Queue")
-        total_rerun = int(rerun_progress.get("total_rerun") or 0)
-        completed = int(rerun_progress.get("completed_count") or 0)
-        pending = int(rerun_progress.get("pending_count") or 0)
-        failed_retry = int(rerun_progress.get("failed_retry_count") or 0)
+        total_rerun = int(snap.get("rerun_total") or 0)
+        completed = int(snap.get("rerun_completed") or 0)
+        pending = int(snap.get("rerun_pending") or 0)
+        failed_retry = int(snap.get("rerun_failed_retry") or 0)
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Total rerun seeds", total_rerun)
         c2.metric("Completed", completed)
         c3.metric("Pending", pending)
         c4.metric("Failed retry", failed_retry)
-        position = int(rerun_progress.get("current_position") or (completed + 1 if pending else completed))
         st.write(
             {
                 "active_mode": "rerun_queue",
-                "current_rerun_seed": rerun_progress.get("current_rerun_seed") or rerun_progress.get("current_seed"),
-                "current_rerun_position": rerun_progress.get("current_rerun_position") or (f"{position} / {total_rerun}" if total_rerun else None),
-                "last_completed_rerun_seed": rerun_progress.get("last_completed_rerun_seed"),
-                "normal_continuation_paused_at": rerun_progress.get("normal_continuation_paused_at") or rerun_progress.get("normal_continuation_seed"),
-                "variants_count": snap["variants_count"],
-                "processed_count": snap["processed_count"],
+                "rerun_total": total_rerun,
+                "rerun_completed": completed,
+                "rerun_pending": pending,
+                "rerun_failed_retry": failed_retry,
+                "current_rerun_seed": snap.get("current_rerun_seed"),
+                "current_rerun_position": snap.get("current_rerun_position"),
+                "last_completed_rerun_seed": snap.get("last_completed_rerun_seed"),
+                "normal_continuation_paused_at": snap.get("normal_continuation_paused_at"),
+                "normal_next_seed_paused_at": snap.get("normal_next_seed_paused_at"),
+                "normal_last_completed_seed_id": snap.get("normal_last_completed_seed_id"),
+                "rerun_progress_percent": snap.get("rerun_progress_percent"),
+                "overall_processed_count": snap.get("overall_processed_count"),
                 "total_seeds": snap["total_seeds"],
-                "progress_percent": rerun_progress.get("progress_percent"),
+                "variants_count": snap["variants_count"],
             }
         )
-        st.progress(min(1.0, max(0.0, (rerun_progress.get("progress_percent") or 0) / 100.0)))
+        st.progress(min(1.0, max(0.0, float(snap.get("rerun_progress_percent") or 0) / 100.0)))
     else:
         st.subheader("Mode: Normal Batch")
         c1, c2, c3 = st.columns(3)
