@@ -18130,5 +18130,702 @@
       ],
       "conflicts": []
     }
+  },
+  {
+    "run_id": "285f69ea-d675-4c1a-a4a3-4d7a77e891f5",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.8",
+          "transmission": "manual",
+          "body_type": "sedan"
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "7e47e618-db31-49a9-bd91-7ffb760bcc93",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.6",
+          "transmission": "manual",
+          "body_type": "sedan"
+        },
+        {
+          "engine": "1.8",
+          "transmission": "automatic",
+          "body_type": "sedan"
+        },
+        {
+          "engine": "2.0",
+          "transmission": "automatic",
+          "body_type": "wagon"
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "fadec795-47b5-4022-a191-12e80db3ae13",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.6"
+        },
+        {
+          "engine": "2.0"
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "5d1caaa0-f533-42c4-bbbe-a4bea3756440",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        {
+          "source_id": "s1"
+        }
+      ],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.4 Turbo",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "petrol",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "hatchback",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "drivetrain": {
+            "value": "FWD",
+            "status": "partial",
+            "sources_count": 1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "ab027753-0988-4050-8924-0fd25b066265",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        {
+          "source_id": "s1"
+        }
+      ],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.4 Turbo 145",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "transmission": {
+            "value": "manual",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "petrol",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "hatchback",
+            "status": "partial",
+            "sources_count": 1
+          }
+        },
+        {
+          "engine": {
+            "value": "1.4 Turbo 165",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "transmission": {
+            "value": "manual",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "petrol",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "hatchback",
+            "status": "partial",
+            "sources_count": 1
+          }
+        },
+        {
+          "engine": {
+            "value": "1.4 Turbo 180",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "transmission": {
+            "value": "manual",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "petrol",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "hatchback",
+            "status": "partial",
+            "sources_count": 1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "20b296b6-a825-48e5-927c-1554c0dbf421",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        {
+          "source_id": "s1"
+        }
+      ],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "electric 115kW",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "electric",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "drivetrain": {
+            "value": "FWD",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "seats": {
+            "value": 5,
+            "status": "unverified",
+            "sources_count": 0
+          },
+          "transmission": {
+            "value": null,
+            "status": "unknown",
+            "sources_count": 0
+          }
+        },
+        {
+          "engine": {
+            "value": "electric 176kW",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "fuel_type": {
+            "value": "electric",
+            "status": "verified",
+            "sources_count": 2
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "drivetrain": {
+            "value": "FWD",
+            "status": "partial",
+            "sources_count": 1
+          },
+          "seats": {
+            "value": 5,
+            "status": "unverified",
+            "sources_count": 0
+          },
+          "transmission": {
+            "value": null,
+            "status": "unknown",
+            "sources_count": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "fb48e4b9-d307-4595-b4c5-ee4138ddd9ac",
+    "discovery_raw_text": "{\"candidate_variants\":[{\"engine\":\"1.6\"}],\"x\":1}",
+    "discovery_parsed_json": {
+      "candidate_variants": [
+        {
+          "engine": "1.6"
+        }
+      ],
+      "x": 1
+    }
+  },
+  {
+    "run_id": "f0e5f807-62bd-4674-8132-460b93221e84",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.8",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "e_cvt",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "partial",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "1a3fea8f-bea3-4a8c-a6a7-9acc99070a5d",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.2",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "cvt",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        },
+        {
+          "engine": {
+            "value": "1.8",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "e_cvt",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        },
+        {
+          "engine": {
+            "value": "2.0",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "e_cvt",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        },
+        {
+          "engine": {
+            "value": "ev",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "transmission": {
+            "value": "single_speed_ev",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          },
+          "body_type": {
+            "value": "crossover",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "f53e2b4a-a288-464a-bb45-5f66ed00fa19",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [],
+      "candidate_variants": [
+        {
+          "engine": {
+            "value": "1.8",
+            "status": "verified",
+            "sources_count": 1,
+            "source_urls": [
+              "u1"
+            ],
+            "reason": "ok"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "fd1c1910-cbd1-4fe6-b44c-8b0090899828",
+    "discovery_raw_text": "{x}",
+    "discovery_parsed_json": {
+      "candidate_variants": []
+    }
+  },
+  {
+    "run_id": "dbc30059-a761-4d66-bfd6-51a4a6814d94",
+    "discovery_raw_text": "{\"candidate_variants\": [{\"engine\": \"1.6L\", \"transmission\": \"manual\"}], \"sources\": []}",
+    "discovery_parsed_json": {
+      "candidate_variants": [
+        {
+          "engine": "1.6L",
+          "transmission": "manual"
+        }
+      ],
+      "sources": []
+    }
+  },
+  {
+    "run_id": "7b0291b2-a010-42a4-96b4-40126af65292",
+    "discovery_raw_text": "{\"candidate_variants\": [{\"engine\": \"1.6L\", \"transmission\": \"automatic\"}, {\"engine\": \"1.6L\", \"transmission\": \"manual\"}, {\"engine\": \"1.4L\", \"transmission\": \"manual\"}, {\"engine\": \"1.4L Turbo\", \"transmission\": \"automatic\"}, {\"engine\": \"1.4L Turbo\", \"transmission\": \"manual\"}], \"sources\": []}",
+    "discovery_parsed_json": {
+      "candidate_variants": [
+        {
+          "engine": "1.6L",
+          "transmission": "automatic"
+        },
+        {
+          "engine": "1.6L",
+          "transmission": "manual"
+        },
+        {
+          "engine": "1.4L",
+          "transmission": "manual"
+        },
+        {
+          "engine": "1.4L Turbo",
+          "transmission": "automatic"
+        },
+        {
+          "engine": "1.4L Turbo",
+          "transmission": "manual"
+        }
+      ],
+      "sources": []
+    }
+  },
+  {
+    "run_id": "eea4080b-e9cf-487e-8eff-1d3e648b5f9a",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.2",
+          "transmission": "cvt",
+          "fuel_type": "petrol",
+          "body_type": "crossover"
+        },
+        {
+          "engine": "1.8",
+          "transmission": "cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover"
+        },
+        {
+          "engine": "2.0",
+          "transmission": "automatic",
+          "fuel_type": "petrol",
+          "body_type": "crossover"
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "9a473f23-2f5a-4c78-a96c-8c033ac6c8ef",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "candidate_variants": [
+        {
+          "engine": "1.2 Turbo",
+          "transmission": "cvt",
+          "fuel_type": "petrol",
+          "body_type": "crossover",
+          "generation": "X10"
+        },
+        {
+          "engine": "1.8 Hybrid",
+          "transmission": "e_cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover",
+          "generation": "X10"
+        },
+        {
+          "engine": "2.0 Hybrid",
+          "transmission": "e_cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover",
+          "generation": "X10"
+        },
+        {
+          "engine": "2.0 Hybrid",
+          "transmission": "e_cvt",
+          "fuel_type": "hybrid",
+          "body_type": "crossover",
+          "generation": "X10"
+        }
+      ]
+    }
+  },
+  {
+    "run_id": "8d29ee3a-288a-4a61-8ed4-f0c0ca78e989",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    }
+  },
+  {
+    "run_id": "e75c4aae-f7e5-4254-9680-14f02d0e43e1",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    }
+  },
+  {
+    "run_id": "14d26bc2-5cff-4e46-aeed-c1ce0dd80679",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    }
+  },
+  {
+    "run_id": "cd0e1ab6-066a-4142-8aa5-2e5a54058073",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    }
+  },
+  {
+    "run_id": "b0135a9d-b4dd-4272-8c81-566a738f0ac0",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    }
+  },
+  {
+    "run_id": "d67cf83e-652d-492d-8ed1-e9464bbd4ff5",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    }
+  },
+  {
+    "run_id": "c3a9760c-2d44-4b0b-a4f2-ac5b95fe584a",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    }
+  },
+  {
+    "run_id": "d2319dd7-499c-4128-9029-ac595713636d",
+    "discovery_raw_text": null,
+    "discovery_parsed_json": {
+      "sources": [
+        1,
+        2
+      ],
+      "search_queries": [
+        "q"
+      ],
+      "candidate_variants": [
+        1
+      ],
+      "conflicts": []
+    }
   }
 ]
