@@ -1407,7 +1407,11 @@ def process_seed_with_variant_retry(seed: dict, state: dict | None = None, max_a
         st.setdefault("seed_accounting", {})[sid] = fail
         return {**(last or {}), "status": "failed_after_retries", "accounting": fail, "blocked": True, "message": "Seed processing blocked: max retry attempts already exhausted."}
     start_attempt = previous_attempts + 1
-    end_attempt = min(previous_attempts + capped, MAX_RETRY_ATTEMPTS)
+    # When force_retry_failed, allow capped more attempts beyond MAX_RETRY_ATTEMPTS
+    if force_retry_failed and previous_attempts >= MAX_RETRY_ATTEMPTS:
+        end_attempt = previous_attempts + capped
+    else:
+        end_attempt = min(previous_attempts + capped, MAX_RETRY_ATTEMPTS)
     for attempt in range(start_attempt, end_attempt + 1):
         # Part E: on attempt 2+ send the retry prompt that demands a no_variants_reason
         retry_hint = attempt > 1
@@ -1457,6 +1461,7 @@ def _process_seeds(
     commit_message_prefix: str = "Update canonical vehicle variants",
     market: str = "IL",
     batch_mode: str = "resume_forward",
+    force_retry_failed: bool = False,
 ) -> tuple[list, list, list]:
     """Process a batch of seeds and return (results, per_seed_canonical, execution_trace).
 
@@ -1495,7 +1500,7 @@ def _process_seeds(
             progress_callback({"index": idx, "total": min(limit, len(seed_queue)), "seed": seed, "results": list(results)})
         processor_called = False
         try:
-            result = process_seed_with_variant_retry(seed, state=state, max_attempts=3, market=seed["market"], use_cache=effective_use_cache, force_refresh=effective_force_refresh)
+            result = process_seed_with_variant_retry(seed, state=state, max_attempts=3, market=seed["market"], use_cache=effective_use_cache, force_refresh=effective_force_refresh, force_retry_failed=force_retry_failed)
             processor_called = True
         except Exception as exc:
             result = {"status": "error", "error": str(exc)}
@@ -1578,6 +1583,11 @@ def _process_seeds(
             state.setdefault("seed_accounting", {})[sid] = accounting
         if status in {"completed", "partial"}:
             state["last_completed_seed_id"] = sid
+            # Successful retry: remove from failed/retry tracking lists
+            if sid in state.get("failed_seed_ids", []):
+                state["failed_seed_ids"].remove(sid)
+            if sid in state.get("needs_retry_seed_ids", []):
+                state["needs_retry_seed_ids"].remove(sid)
         state["in_progress_seed_id"] = None
         results.append({"seed": seed, "result": result})
         _refresh_coverage(state, ordered)
@@ -1982,6 +1992,7 @@ def run_next_batch(
         commit_message_prefix=commit_message_prefix,
         market=market,
         batch_mode=batch_mode,
+        force_retry_failed=include_failed,
     )
     outputs_after = _load_outputs()
     coverage_after = audit_coverage_until_last_completed(candidates, state, outputs_after)

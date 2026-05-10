@@ -552,6 +552,156 @@ def test_process_seed_with_variant_retry_continues_previous_attempts(monkeypatch
     assert out["accounting"]["attempts"] == 4
     assert state["seed_accounting"]["s1"]["attempts"] == 4
 
+# ---------------------------------------------------------------------------
+# Regression: force_retry_failed behaviour
+# ---------------------------------------------------------------------------
+
+def test_process_seed_blocked_when_max_attempts_exhausted_no_force(monkeypatch):
+    """Without force_retry_failed, a seed at MAX_RETRY_ATTEMPTS returns failed_after_retries
+    immediately and does NOT call run_single_model."""
+    seed = _seed("s1")
+    state = _default_state()
+    state["seed_accounting"]["s1"] = {
+        "attempts": br.MAX_RETRY_ATTEMPTS,
+        "status": "failed_after_retries",
+    }
+
+    call_log = {"n": 0}
+
+    def _run(*a, **k):
+        call_log["n"] += 1
+        return _variant_run()
+
+    monkeypatch.setattr(br, "run_single_model", _run)
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": False})
+    monkeypatch.setattr(br, "_persist_batch_state_into_canonical", lambda *a, **k: None)
+
+    results, _per_seed, _trace = br._process_seeds(
+        [seed], state, [seed], limit=1, market="IL",
+        force_retry_failed=False,
+    )
+
+    assert results[0]["result"]["status"] == "failed_after_retries"
+    assert call_log["n"] == 0, "run_single_model must NOT be called when force_retry_failed=False"
+
+
+def test_process_seed_retried_when_force_retry_failed_true(monkeypatch):
+    """With force_retry_failed=True, a seed at MAX_RETRY_ATTEMPTS DOES call run_single_model."""
+    seed = _seed("s1")
+    state = _default_state()
+    state["seed_accounting"]["s1"] = {
+        "attempts": br.MAX_RETRY_ATTEMPTS,
+        "status": "failed_after_retries",
+    }
+    state["failed_seed_ids"].append("s1")
+
+    call_log = {"n": 0}
+
+    def _run(*a, **k):
+        call_log["n"] += 1
+        return _variant_run()
+
+    monkeypatch.setattr(br, "run_single_model", _run)
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "load_local_canonical_resume_package", lambda: None)
+    monkeypatch.setattr(br, "build_final_export", lambda: {"variants": []})
+    monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": False})
+    monkeypatch.setattr(br, "_persist_batch_state_into_canonical", lambda *a, **k: None)
+
+    results, _per_seed, _trace = br._process_seeds(
+        [seed], state, [seed], limit=1, market="IL",
+        force_retry_failed=True,
+    )
+
+    assert call_log["n"] >= 1, "run_single_model MUST be called when force_retry_failed=True"
+
+
+def test_include_failed_uses_force_refresh_and_no_cache(monkeypatch):
+    """run_next_batch(include_failed=True) must pass force_refresh=True and use_cache=False."""
+    seed = _seed("s1")
+    state_base = {
+        "market": "IL",
+        "processed_seed_ids": [],
+        "failed_seed_ids": ["s1"],
+        "failed_details": [],
+        "needs_retry_seed_ids": [],
+        "seed_accounting": {"s1": {"attempts": br.MAX_RETRY_ATTEMPTS, "status": "failed_after_retries"}},
+        "last_completed_seed_id": None,
+        "in_progress_seed_id": None,
+        "_last_queue_seed_ids": [],
+        "_last_total_attempts": -1,
+    }
+    captured = {}
+
+    def _fake_process_seeds(queue, state, ordered, limit, force_refresh, use_cache, *args, force_retry_failed=False, **kwargs):
+        captured["force_refresh"] = force_refresh
+        captured["use_cache"] = use_cache
+        captured["force_retry_failed"] = force_retry_failed
+        return [], [], []
+
+    monkeypatch.setattr(br, "evaluate_continue_guard", lambda market="IL": {"passed": True, "issues": [], "repair_required": False})
+    monkeypatch.setattr(br, "get_ordered_seed_list", lambda market="IL": [seed])
+    monkeypatch.setattr(br, "load_batch_state", lambda market="IL": state_base)
+    monkeypatch.setattr(br, "_load_outputs", lambda: {"run_history": [], "unresolved": [], "conflicts": [], "verified": [], "partial": [], "sources": []})
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "save_json", lambda *a, **k: None)
+    monkeypatch.setattr(br, "audit_coverage_until_last_completed", lambda *a, **k: {"holes_count": 0, "missing_seeds": [], "missing_seed_ids": []})
+    monkeypatch.setattr(br, "_process_seeds", _fake_process_seeds)
+    monkeypatch.setattr(br, "persist_canonical_resume_package", lambda **k: {"ok": True})
+
+    br.run_next_batch(limit=1, market="IL", include_failed=True)
+
+    assert captured.get("force_refresh") is True, "force_refresh must be True when include_failed=True"
+    assert captured.get("use_cache") is False, "use_cache must be False when include_failed=True"
+    assert captured.get("force_retry_failed") is True, "force_retry_failed must be True when include_failed=True"
+
+
+def test_successful_retry_removes_seed_from_failed_and_retry_lists(monkeypatch):
+    """After a successful retry, seed must be removed from failed_seed_ids and needs_retry_seed_ids."""
+    seed = _seed("s1")
+    state = _default_state()
+    state["seed_accounting"]["s1"] = {
+        "attempts": br.MAX_RETRY_ATTEMPTS,
+        "status": "failed_after_retries",
+    }
+    state["failed_seed_ids"].append("s1")
+    state["needs_retry_seed_ids"].append("s1")
+
+    def _successful_run(*a, **k):
+        return {
+            "status": "completed",
+            "variants_created": 1,
+            "verified_count": 1,
+            "partial_count": 0,
+            "trace": {
+                "candidate_variants_count": 1,
+                "discovery_parsed_json_debug": {},
+                "gemini_request_attempted": True,
+                "final_cache_hit": False,
+                "discovery_cache_hit": False,
+            },
+        }
+
+    monkeypatch.setattr(br, "run_single_model", _successful_run)
+    monkeypatch.setattr(br, "_save_state", lambda s: None)
+    monkeypatch.setattr(br, "_refresh_coverage", lambda s, o: None)
+    monkeypatch.setattr(br, "load_local_canonical_resume_package", lambda: None)
+    monkeypatch.setattr(br, "build_final_export", lambda: {"variants": []})
+    monkeypatch.setattr(br, "persist_canonical_after_seed", lambda **k: {"ok": False})
+
+    results, _per_seed, _trace = br._process_seeds(
+        [seed], state, [seed], limit=1, market="IL",
+        force_retry_failed=True,
+    )
+
+    assert "s1" not in state.get("failed_seed_ids", []), "seed must be removed from failed_seed_ids on success"
+    assert "s1" not in state.get("needs_retry_seed_ids", []), "seed must be removed from needs_retry_seed_ids on success"
+
+
 def test_repair_seed_blocks_if_model_call_skipped_without_error(monkeypatch):
     seed = _seed("s1")
     state = _default_state()
