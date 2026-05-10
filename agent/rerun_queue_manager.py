@@ -338,6 +338,49 @@ class RerunQueueManager:
         self._strip_queue_seeds_from_canonical([p["seed_id"] for p in pending], normal_continuation=cont)
         return queue
 
+    def ensure_queue_exists_from_canonical(self, ordered_seeds: list[dict] | None = None) -> dict:
+        """Idempotently create ``rerun_queue.json`` when it is missing.
+
+        Prefers seeds listed in ``canonical.batch_state.needs_retry_seed_ids``
+        (the runtime-detected zero-variant problem set).  Falls back to the
+        curated :data:`EXACT_54_RERUN_SEEDS` list when canonical has none but
+        a queue is still requested.  Returns the queue payload (existing or
+        newly created) plus an ``_action`` field describing what happened.
+        """
+        if self.queue_path.exists():
+            existing = self.load_queue()
+            existing.setdefault("_action", "exists")
+            return existing
+        package = self._load_canonical()
+        bs = package.get("batch_state") if isinstance(package, dict) and isinstance(package.get("batch_state"), dict) else {}
+        needs_retry = [sid for sid in (bs.get("needs_retry_seed_ids") or []) if _is_valid_seed_id(sid)]
+        normal_cont = {
+            "last_completed_seed_id": bs.get("last_completed_seed_id") or DEFAULT_NORMAL_CONTINUATION["last_completed_seed_id"],
+            "next_seed_id": bs.get("next_seed_id") or DEFAULT_NORMAL_CONTINUATION["next_seed_id"],
+        }
+        if needs_retry:
+            from agent.batch_runner import get_ordered_seed_list
+            ordered = ordered_seeds or get_ordered_seed_list(self.market)
+            ordered_lookup = {s.get("seed_id"): s for s in (ordered or []) if isinstance(s, dict)}
+            seeds: list[dict] = []
+            for sid in needs_retry:
+                src = ordered_lookup.get(sid) or {}
+                seeds.append({
+                    "seed_id": sid,
+                    "make": src.get("make"),
+                    "model": src.get("model"),
+                    "year_start": src.get("year_start"),
+                    "year_end": src.get("year_end"),
+                    "market": src.get("market", self.market),
+                })
+            queue = self.create_queue_from_exact_seed_list(seeds=seeds, normal_continuation=normal_cont)
+            queue["_action"] = "created_from_needs_retry"
+            return queue
+        # No needs_retry to source from: do not auto-create.  Callers may
+        # explicitly invoke create_queue_from_exact_seed_list() to use the
+        # curated 54-seed list.
+        return {"_action": "noop_no_needs_retry"}
+
     def scan_and_create_queue(self, ordered_seeds: list[dict] | None = None) -> dict:
         """Scan canonical for processed-zero-variant seeds and persist a queue.
 
@@ -510,30 +553,47 @@ class RerunQueueManager:
         queue = self.load_queue()
         if not queue:
             return {
+                "active_mode": "normal_batch",
                 "total_rerun": 0,
                 "pending_count": 0,
                 "completed_count": 0,
                 "failed_retry_count": 0,
                 "current_seed": None,
+                "current_rerun_seed": None,
+                "current_position": 0,
+                "current_rerun_position": None,
+                "last_completed_rerun_seed": None,
                 "normal_continuation_seed": DEFAULT_NORMAL_CONTINUATION["next_seed_id"],
+                "normal_continuation_paused_at": None,
                 "can_run_normal_batch": True,
+                "rerun_queue_closed": True,
                 "progress_percent": 0,
             }
         total = int(queue.get("total") or 0)
         pending = list(queue.get("pending") or [])
         completed = list(queue.get("completed") or [])
         failed = list(queue.get("failed_retry") or [])
-        percent = int(round(100 * len(completed) / total)) if total > 0 else 0
+        percent = round(100 * len(completed) / total, 2) if total > 0 else 0
         normal = queue.get("normal_continuation") or {}
+        last_completed_rerun = completed[-1].get("seed_id") if completed else None
+        current_seed_id = pending[0].get("seed_id") if pending else None
+        position = (len(completed) + 1) if pending else (len(completed) or total)
+        active_mode = "rerun_queue" if pending else "normal_batch"
         return {
+            "active_mode": active_mode,
             "total_rerun": total,
             "pending_count": len(pending),
             "completed_count": len(completed),
             "failed_retry_count": len(failed),
-            "current_seed": pending[0].get("seed_id") if pending else None,
-            "current_position": (len(completed) + 1) if pending else (len(completed) or total),
+            "current_seed": current_seed_id,
+            "current_rerun_seed": current_seed_id,
+            "current_position": position,
+            "current_rerun_position": (f"{position} / {total}" if total else None),
+            "last_completed_rerun_seed": last_completed_rerun,
             "normal_continuation_seed": normal.get("next_seed_id"),
+            "normal_continuation_paused_at": normal.get("next_seed_id") if pending else None,
             "can_run_normal_batch": len(pending) == 0 and len(failed) == 0,
+            "rerun_queue_closed": len(pending) == 0 and len(failed) == 0,
             "progress_percent": percent,
         }
 
@@ -596,6 +656,14 @@ class RerunQueueManager:
                 key=lambda s: order.get((s or {}).get("seed_id"), 10_000_000),
             )
             bs["processed_seeds"] = current_seeds
+            # Clear the merged seeds from needs_retry_seed_ids so that a new
+            # rerun queue is not auto-recreated with the same (now-resolved)
+            # seeds on the next run.  Without this, RerunQueueManager
+            # .ensure_queue_exists_from_canonical() would reopen the queue.
+            merged_set = set(completed_ids)
+            bs["needs_retry_seed_ids"] = [
+                sid for sid in (bs.get("needs_retry_seed_ids") or []) if sid not in merged_set
+            ]
             if normal_cont.get("next_seed_id"):
                 bs["next_seed_id"] = normal_cont["next_seed_id"]
             if normal_cont.get("last_completed_seed_id"):

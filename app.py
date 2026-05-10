@@ -44,6 +44,7 @@ def _status_snapshot(market: str = "IL") -> dict:
     rerun_progress = rerun_manager.progress_summary() if rerun_manager.queue_exists() else None
 
     return {
+        "active_mode": "rerun_queue" if rerun_active else "normal_batch",
         "canonical": canonical,
         "batch_state": batch_state,
         "progress": progress,
@@ -58,10 +59,21 @@ def _status_snapshot(market: str = "IL") -> dict:
         "last_push": last_push,
         "rerun_active": rerun_active,
         "rerun_progress": rerun_progress,
+        "rerun_queue_closed": (not rerun_active) and rerun_progress is None,
     }
 
 
 def _run_next_safe_batch(batch_size: int, market: str, auto_push_per_seed: bool) -> dict:
+    # Ensure the explicit RERUN_QUEUE finite state exists before any batch
+    # is dispatched.  When the canonical reports needs_retry seeds but no
+    # data/output/rerun_queue.json file is present, this creates the queue
+    # from canonical.needs_retry_seed_ids so the rerun-queue gate (not the
+    # legacy zero_variant_repair/needs_retry batch modes) drives the run.
+    rerun_mgr = RerunQueueManager(market=market)
+    try:
+        rerun_mgr.ensure_queue_exists_from_canonical()
+    except Exception:
+        pass
     repair_res = repair_and_audit_zero_variant_processed_seeds(market=market)
     result = run_next_batch(
         limit=batch_size,
@@ -105,10 +117,15 @@ with main_tab:
         position = int(rerun_progress.get("current_position") or (completed + 1 if pending else completed))
         st.write(
             {
-                "current_seed": rerun_progress.get("current_seed"),
-                "current_position": f"{position} / {total_rerun}" if total_rerun else None,
-                "normal_continuation_paused_at": rerun_progress.get("normal_continuation_seed"),
-                "variants": snap["variants_count"],
+                "active_mode": "rerun_queue",
+                "current_rerun_seed": rerun_progress.get("current_rerun_seed") or rerun_progress.get("current_seed"),
+                "current_rerun_position": rerun_progress.get("current_rerun_position") or (f"{position} / {total_rerun}" if total_rerun else None),
+                "last_completed_rerun_seed": rerun_progress.get("last_completed_rerun_seed"),
+                "normal_continuation_paused_at": rerun_progress.get("normal_continuation_paused_at") or rerun_progress.get("normal_continuation_seed"),
+                "variants_count": snap["variants_count"],
+                "processed_count": snap["processed_count"],
+                "total_seeds": snap["total_seeds"],
+                "progress_percent": rerun_progress.get("progress_percent"),
             }
         )
         st.progress(min(1.0, max(0.0, (rerun_progress.get("progress_percent") or 0) / 100.0)))
@@ -120,7 +137,10 @@ with main_tab:
         c3.metric("Safe To Continue", "Yes" if snap["safe_to_continue"] else "No")
         st.write(
             {
+                "active_mode": "normal_batch",
                 "next_normal_seed": snap["next_normal_seed"],
+                "last_completed_normal_seed": snap["batch_state"].get("last_completed_seed_id"),
+                "rerun_queue_closed": snap.get("rerun_queue_closed", True),
                 "last_github_push_status": snap["last_push"],
             }
         )
