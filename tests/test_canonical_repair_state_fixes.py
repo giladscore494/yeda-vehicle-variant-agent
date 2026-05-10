@@ -116,7 +116,8 @@ def test_invalid_needs_retry_seed_id_filtered(monkeypatch):
 # ---------------------------------------------------------------------------
 
 def _make_54_seeds():
-    return [_seed(f"make__{i:02d}__model__{2018}__2026__il", make=f"Make{i}", model="Model")
+    year_start = 2018
+    return [_seed(f"make__{i:02d}__model__{year_start}__2026__il", make=f"Make{i}", model="Model")
             for i in range(54)]
 
 
