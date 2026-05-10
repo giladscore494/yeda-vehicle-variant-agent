@@ -40,6 +40,7 @@ HAVAL_SEED_ID = "haval__h6__2022__2026__il"
 GMC_SEED_ID = "gmc__yukon__2000__2026__il"
 
 PROBLEM_IDS = [BMW_SEED_ID, Z4_SEED_ID] + [
+    # 52 generic seeds to reach the production total of 54 problem seeds.
     f"make{i}__model{i}__2010__2020__il" for i in range(52)
 ]
 assert len(PROBLEM_IDS) == 54
